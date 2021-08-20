@@ -1,0 +1,14 @@
+Source: wlanpi-common
+Section: embedded
+Priority: extra
+Maintainer: Jiri Brejcha <jirka@jiribrejcha.net>
+Build-Depends: debhelper (>=9), build-essential
+Standards-Version: 3.9.8
+Homepage: https://github.com/WLAN-Pi/wlanpi-common
+
+Package: wlanpi-common
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Common WLAN Pi scripts and files
+ Common WLAN Pi scripts and files.
