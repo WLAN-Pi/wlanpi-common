@@ -1,6 +1,6 @@
 Source: wlanpi-common
 Section: embedded
-Priority: extra
+Priority: optional
 Maintainer: Jiri Brejcha <jirka@jiribrejcha.net>
 Build-Depends: debhelper (>=9), build-essential
 Standards-Version: 3.9.8

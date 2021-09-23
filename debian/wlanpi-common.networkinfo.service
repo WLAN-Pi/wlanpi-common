@@ -2,8 +2,8 @@
 Description=Networkinfo daemon responsible for collecting network details of the WLAN Pi
 
 [Service]
-ExecStart=@networkinfo@/networkinfo.sh
-WorkingDirectory=@networkinfo@
+ExecStart=/opt/wlanpi-common/networkinfo/networkinfo.sh
+WorkingDirectory=/opt/wlanpi-common/networkinfo
 
 [Install]
 WantedBy=multi-user.target

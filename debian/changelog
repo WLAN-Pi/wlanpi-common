@@ -1,5 +1,11 @@
+wlanpi-common (1.0.1) unstable; urgency=medium
+
+  * Re-package
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 23 Sep 2021 12:39:47 -0400
+
 wlanpi-common (1.0.0) unstable; urgency=medium
 
-  * Debianised package
+  * Debianise package
 
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 20 Aug 2021 21:39:47 +0000
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 20 Aug 2021 21:39:47 -0400

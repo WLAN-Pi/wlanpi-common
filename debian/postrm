@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Removes __pycache__ folders and .pyc files which prevent full uninstallation and installation folder deletion
-echo "Cleaning up installation directory"
-rm -rf /opt/wlanpi-common
