@@ -2,7 +2,7 @@
 
 These are support scripts and files used by other WLAN Pi packages on the RPi4/CM4 platforms.
 
-Previously, some of these files were part of the FPMS package.
+Previously, some of these files were part of the `fpms` package. This has now changed and `wlanpi-fpms` depends on this new standalone `wlanpi-common` package.
 
 ## Components
 
@@ -10,6 +10,4 @@ networkinfo scripts deliver features like CDP/LLDP neighbour detection, allow yo
 
 ## Installation instructions
 
-The goal is to make `wlan-pi-fpms` package depend on `wlanpi-common`.
-
-Assuming you are using one of the newer images running WLAN Pi OS, you can install `wlanpi-common` by executing `apt install wlanpi-common`.
+Assuming you are using one of the newer images running WLAN Pi OS, you can install or upgrade `wlanpi-common` by executing `sudo apt update && sudo apt install wlanpi-common`.
