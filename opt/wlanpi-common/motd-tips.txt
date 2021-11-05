@@ -3,3 +3,4 @@ Did you know about the WLAN Pi Telegram bot, which allows you to control your WL
 Follow us on Twitter @WLANPi ;)
 What's your public IP address? Simply type "publicip".
 Execute "stats" to see the CPU, memory and disk utilization, temperature, uptime, etc.
+To update your WLAN Pi, simply execute "sudo apt update && sudo apt upgrade".
