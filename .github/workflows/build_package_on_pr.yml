@@ -1,4 +1,4 @@
-name: Build Debian Package On PR
+name: Build Debian package on PR
 on:
   pull_request:
     paths:
