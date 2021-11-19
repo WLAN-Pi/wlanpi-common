@@ -5,3 +5,4 @@ opt/wlanpi-common/networkinfo/ipconfig.sh /usr/bin/ipconfig
 opt/wlanpi-common/networkinfo/portblinker.sh /usr/bin/portblinker
 opt/wlanpi-common/networkinfo/lldpneigh.sh /usr/bin/lldpneigh
 opt/wlanpi-common/networkinfo/cdpneigh.sh /usr/bin/cdpneigh
+opt/wlanpi-common/wifichannel.sh /usr/bin/wifichannel
