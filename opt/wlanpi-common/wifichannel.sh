@@ -3,7 +3,21 @@
 # Author: Jiri Brejcha (jirka@jiribrejcha)
 # Inspired by Adrian Granados from Intuibits and Keith Parsons from WLAN Pros
 
+usage(){
+echo "This tool converts channel number to frequency in MHz, and frequency in MHz to channel number. Simply pass a correct frequency or channel number as the first and only argument to the script."
+exit 0
+}
+
 input="$1"
+
+# Check if argument is a number
+case $input in
+    ''|*[!0-9]*) usage ;;
+esac
+
+if [ -z "$input" ] || [  ]; then
+    usage
+fi
 
 # Converts frequency in MHz to channel number
 freq_to_channel(){
@@ -26,7 +40,8 @@ channel_to_freq(){
         echo "$((($input * 5) + 2407))"
     elif [ "$input" -ge 36 ] && [ "$input" -le 165 ]; then
         echo "$((($input * 5) + 5000))"
-    elif [ "$input" -ge 1 ] && [ "$input" -le 233 ]; then
+    fi
+    if [ "$input" -ge 1 ] && [ "$input" -le 233 ]; then
         echo "$((($input * 5) + 5950))"
     fi
 }
