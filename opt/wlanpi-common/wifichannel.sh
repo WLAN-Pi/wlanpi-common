@@ -15,10 +15,6 @@ case $input in
     ''|*[!0-9]*) usage ;;
 esac
 
-if [ -z "$input" ] || [  ]; then
-    usage
-fi
-
 # Converts frequency in MHz to channel number
 freq_to_channel(){
     if [ "$input" -eq 2484 ]; then
