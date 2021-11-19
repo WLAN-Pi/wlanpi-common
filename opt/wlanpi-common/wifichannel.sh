@@ -25,9 +25,8 @@ case $input in
     ''|*[!0-9]*) unknown_band ;;
 esac
 
-
 # Valid 5 GHz channels
-
+valid_5_channels=(36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 100 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144 149 151 153 155 157 159 161 165)
 
 # Converts frequency in MHz to channel number
 freq_to_channel(){
@@ -45,9 +44,12 @@ freq_to_channel(){
         fi
 
     # 5 GHz
-    elif [ "$input" -ge 5160 ] && [ "$input" -lt 5885 ]; then
-        band="5"
-        echo "Band:   $band GHz   Channel: $(((($input - 5180) / 5) + 36))"
+    elif [ "$input" -ge 5160 ] && [ "$input" -lt 5885 ] && [ $(($input%10)) -eq 0 ]; then
+        channel_5="$(((($input - 5180) / 5) + 36))"
+        if [[ " ${valid_5_channels[*]} " =~ " ${channel_5} " ]]; then
+            band="5"
+            echo "Band:   $band GHz   Channel: $channel_5"
+        fi
 
     # 6 GHz
     elif [ "$input" -ge 5955 ] && [ "$input" -lt 7115 ]; then
@@ -81,10 +83,11 @@ channel_to_freq(){
         fi
 
     # 5 GHz
-    elif [ "$input" -ge 36 ] && [ "$input" -le 165 ]; then
+    elif [[ " ${valid_5_channels[*]} " =~ " ${input} " ]]; then
         band="5"
         echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5000)) MHz"
     fi
+
 
     # 6 GHz
     if [ "$input" -ge 1 ] && [ "$input" -le 233 ] && [ $(($input%4)) -eq 1 ]; then
