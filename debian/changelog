@@ -1,8 +1,8 @@
-wlanpi-common (1.0.3-1) unstable; urgency=medium
+wlanpi-common (1.0.3-2) unstable; urgency=medium
 
   * Added wifichannel tool
 
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 19 Nov 2021 00:30:56 +0000
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 19 Nov 2021 01:22:01 +0000
  
 wlanpi-common (1.0.2-1) unstable; urgency=medium
 
