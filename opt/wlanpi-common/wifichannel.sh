@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author: Jiri Brejcha (jirka@jiribrejcha)
-# Inspired by Adrian Granados from Intuibits and Keith Parsons from WLAN Pros
+# Inspired by Adrian Granados from Intuibits, Keith Parsons from WLAN Pros, idea sparked by Nick Turner
 
 usage(){
 echo "This tool converts channel number to frequency in MHz, and frequency in MHz to channel number. Simply pass a correct frequency or channel number as the first and only argument to the script."
