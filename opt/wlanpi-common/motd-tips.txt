@@ -4,3 +4,4 @@ Follow us on Twitter @WLANPi ;)
 What's your public IP address? Simply type "publicip".
 Execute "stats" to see the CPU, memory and disk utilization, temperature, uptime, etc.
 To update your WLAN Pi, simply execute "sudo apt update && sudo apt upgrade".
+Convert Wi-Fi channel numbers and center frequencies on your WLAN Pi. Type "wifichannel 6" or "wifichannel 229" or "wifichannel 5500".
