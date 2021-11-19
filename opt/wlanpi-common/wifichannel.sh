@@ -1,46 +1,97 @@
 #!/bin/bash
 
-# Author: Jiri Brejcha (jirka@jiribrejcha)
+# Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 # Inspired by Adrian Granados from Intuibits, Keith Parsons from WLAN Pros, idea sparked by Nick Turner
 
 usage(){
-echo "This tool converts channel number to frequency in MHz, and frequency in MHz to channel number. Simply pass a correct frequency or channel number as the first and only argument to the script."
-exit 0
+echo "This tool converts channel number to center frequency in MHz, and center frequency in MHz to channel number. Please pass a correct frequency or channel number as the first and only argument to it."
 }
 
 input="$1"
+band=""
+
+# Checks if it is a valid 2.4, 5 or 6 GHz channel or frequency
+unknown_band(){
+if [ -z "$band" ]; then
+    echo "Error: Have you entered a valid frequency or channel number?"
+    echo
+    usage
+    exit 1
+fi
+}
 
 # Checks if argument is a number
 case $input in
-    ''|*[!0-9]*) usage ;;
+    ''|*[!0-9]*) unknown_band ;;
 esac
+
+
+# Valid 5 GHz channels
+
 
 # Converts frequency in MHz to channel number
 freq_to_channel(){
+    # 2.4 GHz
     if [ "$input" -eq 2484 ]; then
-        echo "14"
-    elif [ "$input" -ge 2412 ] && [ "$input" -lt 2484 ]; then
-        echo "$(((($input - 2412) / 5) + 1))"
+        band="2.4"
+        echo "Band:   $band GHz   Channel: 14   Recommended: No"
+    elif [ "$input" -ge 2412 ] && [ "$input" -lt 2484 ] && [ $(($input%2412%5)) -eq 0 ]; then
+        band="2.4"
+        channel_2_4="$(((($input - 2412) / 5) + 1))"
+        if [ "$channel_2_4" -eq 1 ] || [ "$channel_2_4" -eq 6 ] || [ "$channel_2_4" -eq 11 ]; then
+            echo "Band:   $band GHz   Channel: $channel_2_4   Recommended: Yes"
+        else
+            echo "Band:   $band GHz   Channel: $channel_2_4   Recommended: No"
+        fi
+
+    # 5 GHz
     elif [ "$input" -ge 5160 ] && [ "$input" -lt 5885 ]; then
-        echo "$(((($input - 5180) / 5) + 36))"
+        band="5"
+        echo "Band:   $band GHz   Channel: $(((($input - 5180) / 5) + 36))"
+
+    # 6 GHz
     elif [ "$input" -ge 5955 ] && [ "$input" -lt 7115 ]; then
-        echo "$(((($input - 5955) / 5) + 1))"
-    else usage
+        channel_6="$(((($input - 5955) / 5) + 1))"
+        # Valid 6 GHz PSC channel
+        if [ $(($channel_6%4)) -eq 1 ] && [ $(($channel_6%16)) -eq 5 ]; then
+            band="6"
+            echo "Band:   $band GHz   Channel: $channel_6   PSC: Yes"
+        # Valid 6 GHz channel
+        elif [ $(($channel_6%4)) -eq 1 ]; then
+            band="6"
+            echo "Band:   $band GHz   Channel: $channel_6"
+        fi
     fi
+    unknown_band
 }
 
 # Converts channel number to frequency in MHz
 channel_to_freq(){
+    # 2.4 GHz
     if [ "$input" -eq 14 ]; then
-        echo "2484"
+        band="2.4"
+        echo "Band: $band GHz   Center frequency: 2484 MHz   Recommended: No"
+
     elif [ "$input" -ge 1 ] && [ "$input" -le 13 ]; then
-        echo "$((($input * 5) + 2407))"
+        band="2.4"
+        if [ "$input" -eq 1 ] || [ "$input" -eq 6 ] || [ "$input" -eq 11 ]; then
+            echo "Band: $band GHz   Center frequency: $((($input * 5) + 2407)) MHz   Recommended: Yes"
+        else
+            echo "Band: $band GHz   Center frequency: $((($input * 5) + 2407)) MHz   Recommended: No"
+        fi
+
+    # 5 GHz
     elif [ "$input" -ge 36 ] && [ "$input" -le 165 ]; then
-        echo "$((($input * 5) + 5000))"
+        band="5"
+        echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5000)) MHz"
     fi
-    if [ "$input" -ge 1 ] && [ "$input" -le 233 ]; then
-        echo "$((($input * 5) + 5950))"
+
+    # 6 GHz
+    if [ "$input" -ge 1 ] && [ "$input" -le 233 ] && [ $(($input%4)) -eq 1 ]; then
+        band="6"
+        echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5950)) MHz"
     fi
+    unknown_band
 }
 
 # Main
