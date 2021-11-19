@@ -10,7 +10,7 @@ exit 0
 
 input="$1"
 
-# Check if argument is a number
+# Checks if argument is a number
 case $input in
     ''|*[!0-9]*) usage ;;
 esac
@@ -29,6 +29,7 @@ freq_to_channel(){
     fi
 }
 
+# Converts channel number to frequency in MHz
 channel_to_freq(){
     if [ "$input" -eq 14 ]; then
         echo "2484"
@@ -42,11 +43,7 @@ channel_to_freq(){
     fi
 }
 
-usage(){
-echo "Pass a correct frequency or channel number as the first and only argument to the script"
-}
-
-
+# Main
 if [ "$input" -ge 2412 ]; then
     freq_to_channel
 else
