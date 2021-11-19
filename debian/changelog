@@ -1,17 +1,23 @@
+wlanpi-common (1.0.3) unstable; urgency=medium
+
+  * Added wifichannel tool
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 19 Nov 2021 00:30:56 +0000
+ 
 wlanpi-common (1.0.2-1) unstable; urgency=medium
 
-  * Add MOTD tips
+  * Added MOTD tips
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 05 Nov 2021 13:07:04 +0000
 
 wlanpi-common (1.0.1) unstable; urgency=medium
 
-  * Re-package
+  * Re-packaged
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 23 Sep 2021 12:39:47 -0400
 
 wlanpi-common (1.0.0) unstable; urgency=medium
 
-  * Debianise package
+  * Debianised package
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 20 Aug 2021 21:39:47 -0400
