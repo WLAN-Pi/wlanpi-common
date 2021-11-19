@@ -64,6 +64,7 @@ freq_to_channel(){
             echo "Band:   $band GHz   Channel: $channel_6"
         fi
     fi
+
     unknown_band
 }
 
@@ -88,12 +89,16 @@ channel_to_freq(){
         echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5000)) MHz"
     fi
 
-
     # 6 GHz
-    if [ "$input" -ge 1 ] && [ "$input" -le 233 ] && [ $(($input%4)) -eq 1 ]; then
+    # Valid 6 GHz PSC channel
+    if [ "$input" -ge 1 ] && [ "$input" -le 233 ] && [ $(($input%4)) -eq 1 ] && [ $(($input%16)) -eq 5 ]; then
+        band="6"
+        echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5950)) MHz   PSC: Yes"
+    elif [ $(($input%4)) -eq 1 ]; then
         band="6"
         echo "Band:   $band GHz   Center frequency: $((($input * 5) + 5950)) MHz"
     fi
+
     unknown_band
 }
 
