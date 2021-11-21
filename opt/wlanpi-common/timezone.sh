@@ -100,7 +100,7 @@ list() {
     debugger "Getting TZ list..."
 
     # get TZ list (note that if fails, $tz contains error output)
-    tz_list=$(timedatectl list-timezones | grep .  2>&1)
+    tz_list=$(timedatectl list-timezones  2>&1)
     if [ "$?" != '0' ]; then
         err_string="Error getting TZ list: $tz"
         echo $err_string
@@ -108,7 +108,7 @@ list() {
         exit 1
     else
         debugger "Got TZ List: $tz"
-        echo $tz_list
+        echo "$tz_list"
         exit 0
     fi
 }
