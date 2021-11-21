@@ -98,7 +98,7 @@ usage () {
         echo ""
         echo "  reg-domain -v : show script version"
         echo "  reg-domain get: show current reg domain"
-        echo "  reg-domain set [api str]: set reg domain"
+        echo "  reg-domain set [domain str]: set reg domain"
         echo "  reg-domain : show usage info"
         echo ""
         exit 0
