@@ -119,9 +119,6 @@ case "$1" in
   set)
         set
         ;;
-  remove)
-        uninstall
-        ;;
   help)
         help
         ;;
