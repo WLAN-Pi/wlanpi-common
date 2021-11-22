@@ -1,3 +1,9 @@
+wlanpi-common (1.0.4) unstable; urgency=medium
+
+  * Added Timezone, Reg domain, Chat bot scripts
+
+ -- Nigel Bowden <wifinigel@gmail.com>  Mon, 22 Nov 2021 20:21:45 +0000
+ 
 wlanpi-common (1.0.3-5) unstable; urgency=medium
 
   * Added wifichannel tool
