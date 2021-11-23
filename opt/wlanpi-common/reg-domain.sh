@@ -46,7 +46,7 @@ check_file_exists() {
 }
 
 # return current domain from reg domain file
-get() {
+get_domain () {
 
     check_file_exists
 
@@ -66,7 +66,7 @@ get() {
 }
 
 # set domain in reg domain file
-set() {
+set_domain () {
 
     check_file_exists
 
@@ -113,10 +113,10 @@ case "$1" in
         echo "$VERSION"
         ;;
   get)
-        get
+        get_domain
         ;;
   set)
-        set
+        set_domain
         ;;
   help)
         help
