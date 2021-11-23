@@ -32,17 +32,30 @@ debugger() {
     fi
 }
 
+err_report() {
+    err_str="$1 - Error!"
+
+    echo "$err_str"
+    logger "$err_str"
+    debugger "$err_str"
+
+    return 0
+}
+
 # check if file exists
 check_file_exists() {
 
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
+    if [ -z "$1" ]; then
+       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       exit 1
+    fi
+
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_str="($SCRIPT_NAME) File not found: ${filenme}"
-      echo $err_string
-      logger $err_string
+      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
       exit 1
     fi
 
@@ -58,9 +71,7 @@ get_key () {
     debugger "($SCRIPT_NAME) Getting token current value..."
     api_key=$(cat $CONFIG_FILE | grep bot_token | awk -F'"' '{print $4}')
     if [ "$?" != '0' ]; then
-        err_string="($SCRIPT_NAME) Error extracting chat-bot API key from $CONFIG_FILE"
-        echo $err_string
-        logger $err_string
+        err_report "($SCRIPT_NAME) Error extracting chat-bot API key from $CONFIG_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Got token value: $api_key"
@@ -75,14 +86,17 @@ set_key () {
     check_file_exists $CONFIG_FILE
 
     debugger "($SCRIPT_NAME) Setting API key in file: $CONFIG_FILE"
+
+    if [ -z "$API_KEY" ]; then
+       err_report "($SCRIPT_NAME) No API key passed to : set_key()"
+       exit 1
+    fi
     
     # set the new key in the chat bot config file
      sed -i "s/\"bot_token\":\s*\".*\"\s*,/\"bot_token\": \"$API_KEY\",/" "$CONFIG_FILE"
 
     if [ "$?" != '0' ]; then
-        err_string="($SCRIPT_NAME) Error adding chat-bot API key to $CONFIG_FILE"
-        echo $err_string
-        logger $err_string
+        err_report "($SCRIPT_NAME) Error adding chat-bot API key to $CONFIG_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Added token value: $API_KEY"
@@ -133,13 +147,13 @@ help () {
 
 # usage output
 usage () {
-        echo "Usage: chat-bot-key.sh {-v | get | set | help}"
+        echo "Usage: wlanpi-bot-key.sh {-v | get | set | help}"
         echo ""
-        echo "  chat-bot-key.sh -v : show script version"
-        echo "  chat-bot-key -i : set API key interactively"
-        echo "  chat-bot-key.sh get: show current API key"
-        echo "  chat-bot-key.sh set [api str]: set API key"
-        echo "  chat-bot-key.sh : show usage info"
+        echo "  wlanpi-bot-key.sh -v : show script version"
+        echo "  wlanpi-bot-key.sh -i : set API key interactively"
+        echo "  wlanpi-bot-key.sh get: show current API key"
+        echo "  wlanpi-bot-key.sh set [api str]: set API key"
+        echo "  wlanpi-bot-key.sh : show usage info"
         echo ""
         return 0
 

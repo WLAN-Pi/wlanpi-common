@@ -37,17 +37,30 @@ debugger() {
     fi
 }
 
+err_report() {
+    err_str="$1 - Error!"
+
+    echo "$err_str"
+    logger "$err_str"
+    debugger "$err_str"
+
+    return 0
+}
+
 # check if file exists
 check_file_exists() {
 
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
+    if [ -z "$1" ]; then
+       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       exit 1
+    fi
+
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_str="($SCRIPT_NAME) File not found: ${filenme}"
-      echo $err_string
-      logger $err_string
+      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
       exit 1
     fi
 
@@ -63,9 +76,7 @@ get_hostname() {
     debugger "($SCRIPT_NAME) Getting hostname..."
     hostname=$($HOSTNAME_SCRIPT 2>&1)
     if [ "$?" != '0' ]; then
-        err_string="($SCRIPT_NAME) Hostname command failed: $hostname"
-        echo $err_string
-        logger $err_string
+        err__report "($SCRIPT_NAME) Hostname command failed: $hostname"
         exit 1
     else
         debugger "($SCRIPT_NAME) Hostname value: $hostname"
@@ -74,11 +85,24 @@ get_hostname() {
     fi
 }
 
-# set API key value for chat bot in config file
+# set new hostname
 set_hostname() {
 
+    debugger "($SCRIPT_NAME) Setting hostname..."
+
     new_hostname=$HOSTNAME
+    debugger "($SCRIPT_NAME) New hostname: $new_hostname"
+
+    # check we have correct hostname script filename
+    check_file_exists $HOSTNAME_SCRIPT
+
     current_hostname=$($HOSTNAME_SCRIPT)
+    debugger "($SCRIPT_NAME) Current hostname: $current_hostname"
+
+    if [ -z "$new_hostname" ]; then
+       err_report "($SCRIPT_NAME) No hostname passed to : set_hostname()"
+       exit 1
+    fi
 
     # check we have correct hostnamectl script filename
     check_file_exists $HOSTNAMECTL_SCRIPT
@@ -87,15 +111,11 @@ set_hostname() {
     check_file_exists $HOSTS_FILE
 
     debugger "($SCRIPT_NAME) Setting hostname with hostname ctl cmd to: $new_hostname"
-    debugger "($SCRIPT_NAME) Current hostname: $current_hostname"
-    debugger "($SCRIPT_NAME) New hostname: $new_hostname"
 
     # set hostname in /etc/hostname with hostnamectl commmand
     err=$($HOSTNAMECTL_SCRIPT set-hostname $new_hostname 2>&1)
     if [ "$?" != '0' ]; then
-        err_string="($SCRIPT_NAME) Hostname set command failed: $err"
-        debugger "$err_string"
-        logger $err_string
+        err__report "($SCRIPT_NAME) Hostname set command failed: $err"
         exit 1
     else
         debugger "($SCRIPT_NAME) Set hostname with hostnamectl to : $new_hostname"
@@ -108,9 +128,7 @@ set_hostname() {
     sed -i "s/${current_hostname}/${new_hostname}/g" $HOSTS_FILE
     
     if [ "$?" != '0' ]; then
-        err_string="($SCRIPT_NAME) Error updating hostname in $HOSTS_FILE"
-        echo $err_string
-        logger $err_string
+        err__report "($SCRIPT_NAME) Error updating hostname in $HOSTS_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Swapped out hostname OK in $HOSTS_FILE to : $new_hostname"
@@ -130,10 +148,10 @@ help () {
 usage () {
         echo "Usage: hostname.sh {-v | get | set | help}"
         echo ""
-        echo "  hostname.sh -v : show current script version"
-        echo "  hostname.sh get: show current hostname"
-        echo "  hostname.sh set [hostname_str]: set hostname"
-        echo "  hostname.sh : show usage info"
+        echo "  wlanpi-hostname.sh -v : show current script version"
+        echo "  wlanpi-hostname.sh get: show current hostname"
+        echo "  wlanpi-hostname.sh set [hostname_str]: set hostname"
+        echo "  wlanpi-hostname.sh : show usage info"
         echo ""
         exit 0
 

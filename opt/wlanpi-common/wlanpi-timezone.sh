@@ -26,6 +26,7 @@ set -e
 TIMEDATECTL=/usr/bin/timedatectl
 VERSION=0.1.0
 TZ=$2
+SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
 # just in case we need to debug this script:
@@ -35,34 +36,47 @@ debugger() {
     fi
 }
 
-# check if config file exists
+err_report() {
+    err_str="$1 - Error!"
+
+    echo "$err_str"
+    logger "$err_str"
+    debugger "$err_str"
+
+    return 0
+}
+
+# check if file exists
 check_file_exists() {
 
-    debugger "Checking timedatectl file exists where we expect to find it..."
+    debugger "($SCRIPT_NAME) Checking file exists: $1"
 
-    if [ ! -e "${TIMEDATECTL}" ] ; then
-      err_str="timedatectl file not found: ${REG_DOMAIN_FILE}"
-      echo $err_string
-      logger $err_string
+    if [ -z "$1" ]; then
+       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       exit 1
+    fi
+
+    filename=$1
+
+    if [ ! -e "${filename}" ] ; then
+      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
       exit 1
     fi
 
-    debugger "File exists."
+    debugger "($SCRIPT_NAME) File exists."
 }
 
 # return current timezone info
-get() {
+get_tz() {
 
-    check_file_exists
+    check_file_exists $TIMEDATECTL
 
     debugger "Getting TZ value..."
 
     # get TZ (note that if fails, $tz contains error output)
-    tz=$(timedatectl | grep zone | awk '{print $3}'  2>&1)
+    tz=$($TIMEDATECTL | grep zone | awk '{print $3}'  2>&1)
     if [ "$?" != '0' ]; then
-        err_string="Error getting TZ: $tz"
-        echo $err_string
-        logger $err_string
+        err_report "Error getting TZ: $tz"
         exit 1
     else
         debugger "Got TZ: $tz"
@@ -71,20 +85,23 @@ get() {
     fi
 }
 
-# set domain in reg domain file
-set() {
+# set timezone
+set_tz() {
 
-    check_file_exists
+    check_file_exists $TIMEDATECTL
 
     debugger "Setting timezone..."
+
+    if [ -z "$TZ" ]; then
+       err_report "($SCRIPT_NAME) No timezone passed to : set_timezone()"
+       exit 1
+    fi
     
     # set the timezone
-    err_msg=$(timedatectl set-timezone $TZ 2>&1)
+    err_msg=$($TIMEDATECTL set-timezone $TZ 2>&1)
 
     if [ "$?" != '0' ]; then
-        err_string="Error setting timezone: $err_msg"
-        echo "$err_string"
-        logger $err_string
+        err_report "Error setting timezone: $err_msg"
         exit 1
     else
         debugger "Updated TZ"
@@ -95,16 +112,14 @@ set() {
 # list timezones available
 list() {
 
-    check_file_exists
+    check_file_exists $TIMEDATECTL
 
     debugger "Getting TZ list..."
 
     # get TZ list (note that if fails, $tz contains error output)
-    tz_list=$(timedatectl list-timezones  2>&1)
+    tz_list=$($TIMEDATECTL list-timezones  2>&1)
     if [ "$?" != '0' ]; then
-        err_string="Error getting TZ list: $tz"
-        echo $err_string
-        logger $err_string
+        err_report "Error getting TZ list: $tz"
         exit 1
     else
         debugger "Got TZ List: $tz"
@@ -123,11 +138,11 @@ help () {
 usage () {
         echo "Usage: timezone {-v | get | set | list | help}"
         echo ""
-        echo "  timezone -v : show script version"
-        echo "  timezone get: show current reg domain"
-        echo "  timezone set [api str]: set reg domain"
-        echo "  timezone list : get all available timezones"
-        echo "  timezone : show usage info"
+        echo "  wlanpi-timezone.sh -v : show script version"
+        echo "  wlanpi-timezone.sh get: show current reg domain"
+        echo "  wlanpi-timezone.sh set [api str]: set reg domain"
+        echo "  wlanpi-timezone.sh list : get all available timezones"
+        echo "  wlanpi-timezone.sh : show usage info"
         echo ""
         exit 0
 
@@ -141,10 +156,10 @@ case "$1" in
         echo "$VERSION"
         ;;
   get)
-        get
+        get_tz
         ;;
   set)
-        set
+        set_tz
         ;;
   list)
         list

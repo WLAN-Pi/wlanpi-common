@@ -21,6 +21,7 @@ set -e
 REG_DOMAIN_FILE=/etc/default/crda
 VERSION=0.1.0
 DOMAIN=$2
+SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
 # just in case we need to debug this script:
@@ -30,33 +31,47 @@ debugger() {
     fi
 }
 
-# check if config file exists
+err_report() {
+    err_str="$1 - Error!"
+
+    echo "$err_str"
+    logger "$err_str"
+    debugger "$err_str"
+
+    return 0
+}
+
+# check if file exists
 check_file_exists() {
 
-    debugger "Checking reg domain file exists..."
+    debugger "($SCRIPT_NAME) Checking file exists: $1"
 
-    if [ ! -e "${REG_DOMAIN_FILE}" ] ; then
-      err_str="Reg domain file not found: ${REG_DOMAIN_FILE}"
-      echo $err_string
-      logger $err_string
+    if [ -z "$1" ]; then
+       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       exit 1
+    fi
+
+    filename=$1
+
+    if [ ! -e "${filename}" ] ; then
+      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
       exit 1
     fi
 
-    debugger "File exists."
+    debugger "($SCRIPT_NAME) File exists."
 }
 
 # return current domain from reg domain file
 get_domain () {
 
-    check_file_exists
+    check_file_exists $REG_DOMAIN_FILE
 
     # target field: REGDOMAIN=GB
     debugger "Getting reg domain current value..."
     api_key=$(cat $REG_DOMAIN_FILE | grep REGDOMAIN | awk -F'=' '{print $2}')
+
     if [ "$?" != '0' ]; then
-        err_string="Error extracting reg domain from $REG_DOMAIN_FILE"
-        echo $err_string
-        logger $err_string
+        err_report "Error extracting reg domain from $REG_DOMAIN_FILE"
         exit 1
     else
         debugger "Got reg domain: $api_key"
@@ -68,17 +83,20 @@ get_domain () {
 # set domain in reg domain file
 set_domain () {
 
-    check_file_exists
+    check_file_exists $REG_DOMAIN_FILE
 
     debugger "Setting domain: $REG_DOMAIN_FILE"
+
+    if [ -z "$DOMAIN" ]; then
+       err_report "($SCRIPT_NAME) No domain passed to : set_domain()"
+       exit 1
+    fi
     
     # set the new key in the chat bot config file
      sed -i "s/REGDOMAIN=.*/REGDOMAIN=$DOMAIN/" "$REG_DOMAIN_FILE"
 
     if [ "$?" != '0' ]; then
-        err_string="Error adding domain to $REG_DOMAIN_FILE"
-        echo $err_string
-        logger $err_string
+        err_report "Error adding domain to $REG_DOMAIN_FILE"
         exit 1
     else
         debugger "Added domain value: $API_KEY"
@@ -96,10 +114,10 @@ help () {
 usage () {
         echo "Usage: reg-domain {-v | get | set | help}"
         echo ""
-        echo "  reg-domain -v : show script version"
-        echo "  reg-domain get: show current reg domain"
-        echo "  reg-domain set [domain str]: set reg domain"
-        echo "  reg-domain : show usage info"
+        echo "  wlanpi-reg-domain.sh -v : show script version"
+        echo "  wlanpi-reg-domain.sh get: show current reg domain"
+        echo "  wlanpi-reg-domain.sh set [domain str]: set reg domain"
+        echo "  wlanpi-reg-domain.sh : show usage info"
         echo ""
         exit 0
 
