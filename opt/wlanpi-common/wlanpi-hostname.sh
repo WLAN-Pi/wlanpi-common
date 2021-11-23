@@ -37,7 +37,7 @@ debugger() {
     fi
 }
 
-# check if config file exists
+# check if file exists
 check_file_exists() {
 
     debugger "($SCRIPT_NAME) Checking file exists: $1"
