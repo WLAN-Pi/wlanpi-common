@@ -30,6 +30,12 @@ VERSION=0.1.0
 HOSTNAME=$2
 DEBUG=0
 
+# check if the script is running as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must run as root. Add \"sudo\" please".
+   exit 1
+fi
+
 # just in case we need to debug this script:
 debugger() {
     if [ "$DEBUG" != '0' ];then
