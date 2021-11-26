@@ -1,4 +1,4 @@
-wlanpi-common (1.0.4-2) unstable; urgency=medium
+wlanpi-common (1.0.4-3) unstable; urgency=medium
 
   * Added Timezone, Reg domain, Chat bot scripts
 
