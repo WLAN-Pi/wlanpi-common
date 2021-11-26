@@ -6,6 +6,6 @@ opt/wlanpi-common/networkinfo/portblinker.sh /usr/bin/portblinker
 opt/wlanpi-common/networkinfo/lldpneigh.sh /usr/bin/lldpneigh
 opt/wlanpi-common/networkinfo/cdpneigh.sh /usr/bin/cdpneigh
 opt/wlanpi-common/wifichannel.sh /usr/bin/wifichannel
-opt/wlanpi-common/timezone.sh /usr/bin/timezone
-opt/wlanpi-common/reg-domain.sh /usr/bin/regdomain
-opt/wlanpi-common/chat-bot-key.sh /usr/bin/chatbotkey
+opt/wlanpi-common/wlanpi-timezone.sh /usr/bin/wlanpi-timezone
+opt/wlanpi-common/wlanpi-reg-domain.sh /usr/bin/wlanpi-regdomain
+opt/wlanpi-common/wlanpi-bot-key.sh /usr/bin/wlanpi-bot-key
