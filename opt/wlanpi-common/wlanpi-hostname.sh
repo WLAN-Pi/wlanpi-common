@@ -44,11 +44,11 @@ debugger() {
 }
 
 err_report() {
-    err_str="$1 - Error!"
+    err_str="$1"
 
     echo "$err_str"
-    logger "$err_str"
-    debugger "$err_str"
+    logger "($SCRIPT_NAME) $err_str - Error!"
+    debugger "($SCRIPT_NAME) $err_str - Error!"
 
     return 0
 }
@@ -59,14 +59,14 @@ check_file_exists() {
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
     if [ -z "$1" ]; then
-       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       err_report "No filename passed to : check_file_exists()"
        exit 1
     fi
 
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
+      err_report "File not found: ${filenme}"      
       exit 1
     fi
 
@@ -82,7 +82,7 @@ get_hostname() {
     debugger "($SCRIPT_NAME) Getting hostname..."
     hostname=$($HOSTNAME_SCRIPT 2>&1)
     if [ "$?" != '0' ]; then
-        err__report "($SCRIPT_NAME) Hostname command failed: $hostname"
+        err_report "Hostname command failed: $hostname"
         exit 1
     else
         debugger "($SCRIPT_NAME) Hostname value: $hostname"
@@ -106,7 +106,7 @@ set_hostname() {
     debugger "($SCRIPT_NAME) Current hostname: $current_hostname"
 
     if [ -z "$new_hostname" ]; then
-       err_report "($SCRIPT_NAME) No hostname passed to : set_hostname()"
+       err_report "No hostname passed to : set_hostname()"
        exit 1
     fi
 
@@ -121,7 +121,7 @@ set_hostname() {
     # set hostname in /etc/hostname with hostnamectl commmand
     err=$($HOSTNAMECTL_SCRIPT set-hostname $new_hostname 2>&1)
     if [ "$?" != '0' ]; then
-        err__report "($SCRIPT_NAME) Hostname set command failed: $err"
+        err_report "Hostname set command failed: $err"
         exit 1
     else
         debugger "($SCRIPT_NAME) Set hostname with hostnamectl to : $new_hostname"
@@ -129,12 +129,11 @@ set_hostname() {
 
     debugger "($SCRIPT_NAME) Setting hostname in file $HOSTS_FILE"
     
-
     # substitue the existing hostname in /etc/hosts (if it exists)
     sed -i "s/${current_hostname}/${new_hostname}/g" $HOSTS_FILE
     
     if [ "$?" != '0' ]; then
-        err__report "($SCRIPT_NAME) Error updating hostname in $HOSTS_FILE"
+        err_report "Error updating hostname in $HOSTS_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Swapped out hostname OK in $HOSTS_FILE to : $new_hostname"

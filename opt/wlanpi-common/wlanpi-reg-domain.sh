@@ -38,11 +38,11 @@ debugger() {
 }
 
 err_report() {
-    err_str="$1 - Error!"
+    err_str="$1"
 
     echo "$err_str"
-    logger "$err_str"
-    debugger "$err_str"
+    logger "($SCRIPT_NAME) $err_str - Error!"
+    debugger "($SCRIPT_NAME) $err_str - Error!"
 
     return 0
 }
@@ -53,14 +53,14 @@ check_file_exists() {
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
     if [ -z "$1" ]; then
-       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       err_report "No filename passed to : check_file_exists()"
        exit 1
     fi
 
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
+      err_report "File not found: ${filenme}"      
       exit 1
     fi
 
@@ -94,7 +94,7 @@ set_domain () {
     debugger "Setting domain: $REG_DOMAIN_FILE"
 
     if [ -z "$DOMAIN" ]; then
-       err_report "($SCRIPT_NAME) No domain passed to : set_domain()"
+       err_report "No domain passed to : set_domain()"
        exit 1
     fi
     

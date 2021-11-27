@@ -39,11 +39,11 @@ debugger() {
 }
 
 err_report() {
-    err_str="$1 - Error!"
+    err_str="$1"
 
     echo "$err_str"
-    logger "$err_str"
-    debugger "$err_str"
+    logger "($SCRIPT_NAME) $err_str - Error!"
+    debugger "($SCRIPT_NAME) $err_str - Error!"
 
     return 0
 }
@@ -54,14 +54,14 @@ check_file_exists() {
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
     if [ -z "$1" ]; then
-       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       err_report "No filename passed to : check_file_exists()"
        exit 1
     fi
 
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
+      err_report "File not found: ${filenme}"      
       exit 1
     fi
 
@@ -77,7 +77,7 @@ get_key () {
     debugger "($SCRIPT_NAME) Getting token current value..."
     api_key=$(cat $CONFIG_FILE | grep bot_token | awk -F'"' '{print $4}')
     if [ "$?" != '0' ]; then
-        err_report "($SCRIPT_NAME) Error extracting chat-bot API key from $CONFIG_FILE"
+        err_report "Error extracting chat-bot API key from $CONFIG_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Got token value: $api_key"
@@ -94,7 +94,7 @@ set_key () {
     debugger "($SCRIPT_NAME) Setting API key in file: $CONFIG_FILE"
 
     if [ -z "$API_KEY" ]; then
-       err_report "($SCRIPT_NAME) No API key passed to : set_key()"
+       err_report "No API key passed to : set_key()"
        exit 1
     fi
     
@@ -102,7 +102,7 @@ set_key () {
      sed -i "s/\"bot_token\":\s*\".*\"\s*,/\"bot_token\": \"$API_KEY\",/" "$CONFIG_FILE"
 
     if [ "$?" != '0' ]; then
-        err_report "($SCRIPT_NAME) Error adding chat-bot API key to $CONFIG_FILE"
+        err_report "Error adding chat-bot API key to $CONFIG_FILE"
         exit 1
     else
         debugger "($SCRIPT_NAME) Added token value: $API_KEY"

@@ -37,11 +37,11 @@ debugger() {
 }
 
 err_report() {
-    err_str="$1 - Error!"
+    err_str="$1"
 
     echo "$err_str"
-    logger "$err_str"
-    debugger "$err_str"
+    logger "($SCRIPT_NAME) $err_str - Error!"
+    debugger "($SCRIPT_NAME) $err_str - Error!"
 
     return 0
 }
@@ -52,14 +52,14 @@ check_file_exists() {
     debugger "($SCRIPT_NAME) Checking file exists: $1"
 
     if [ -z "$1" ]; then
-       err_report "($SCRIPT_NAME) No filename passed to : check_file_exists()"
+       err_report "No filename passed to : check_file_exists()"
        exit 1
     fi
 
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "($SCRIPT_NAME) File not found: ${filenme}"      
+      err_report "File not found: ${filename}"      
       exit 1
     fi
 
@@ -93,7 +93,7 @@ set_tz() {
     debugger "Setting timezone..."
 
     if [ -z "$TZ" ]; then
-       err_report "($SCRIPT_NAME) No timezone passed to : set_timezone()"
+       err_report "No timezone passed to : set_timezone()"
        exit 1
     fi
     
