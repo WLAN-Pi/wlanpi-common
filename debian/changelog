@@ -1,3 +1,9 @@
+wlanpi-common (1.0.6) unstable; urgency=medium
+
+  * wifichannel enhancements
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 02 Dec 2021 18:28:12 +0000
+ 
 wlanpi-common (1.0.5) unstable; urgency=medium
 
   * Tidied up help pages and added more emojis
