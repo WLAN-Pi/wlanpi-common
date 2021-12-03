@@ -8,5 +8,5 @@ opt/wlanpi-common/networkinfo/cdpneigh.sh /usr/bin/cdpneigh
 opt/wlanpi-common/wifichannel.sh /usr/bin/wifichannel
 opt/wlanpi-common/wlanpi-timezone.sh /usr/bin/wlanpi-timezone
 opt/wlanpi-common/wlanpi-reg-domain.sh /usr/bin/wlanpi-regdomain
-opt/wlanpi-common/wlanpi-bot-key.sh /usr/bin/wlanpi-bot-key
+opt/wlanpi-common/wlanpi-chat-bot-key.sh /usr/bin/wlanpi-chat-bot-key
 opt/wlanpi-common/wlanpi-hostname.sh /usr/bin/wlanpi-hostname
