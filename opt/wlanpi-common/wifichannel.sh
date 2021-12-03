@@ -1,23 +1,31 @@
 #!/bin/bash
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
-# Idea sparked by Nick Turner, inspired by Adrian Granados @ Intuibits and Keith Parsons @ WLAN Pros
+# Idea sparked by Nick Turner @nickjvturner, thanks to Adrian Granados @adriangranados and Keith Parsons @KeithRParsons
+#
+# This script converts channel number to center frequency in MHz, and vice versa.
+# 
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.5"
+VERSION="1.0.6"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
-    echo "Usage: $SCRIPT_NAME channel_number | center_frequency | -v | -h | -2.4 | -5 | -6"
+    echo "Converts channel number to center frequency in MHz, and vice versa."
     echo
-    echo "-v   ... shows version"
-    echo "-h   ... shows help"
-    echo "-2.4 ... lists all 2.4 GHz channels"
-    echo "-5   ... lists all 5 GHz channels"
-    echo "-6   ... lists all 6 GHz channels"
+    echo "Usage:"
+    echo "  $SCRIPT_NAME <channel-number>"
+    echo "  $SCRIPT_NAME <center-frequency>"
+    echo "  $SCRIPT_NAME [options]"
     echo
-    echo "This tool converts channel number to center frequency in MHz, and center frequency in MHz to channel number. Please pass a correct frequency or channel number as the first and only argument to it."
+    echo "Options:"
+    echo "  -v, --version  Show version"
+    echo "  -h, --help     Show this screen"
+    echo "  -2.4, -2       List all 2.4 GHz channels"
+    echo "  -5             List all 5 GHz channels"
+    echo "  -6             List all 6 GHz channels"
+    echo
     exit 0
 }
 
@@ -39,16 +47,15 @@ if [ "$#" -ne 1 ]; then
     invalid_input
 fi
 
-# All 5 GHz channels
+# 5 GHz channels
 VALID_5_CHANNELS=(36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144 149 151 153 155 157 159 161 165)
 UNBONDED_5_CHANNELS=(36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165)
-# UNII 5 GHz bands
 UNII_1_CHANNELS=(36 38 40 42 44 46 48)
 UNII_2_CHANNELS=(52 54 56 58 60 62 64)
 UNII_2E_CHANNELS=(100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144)
 UNII_3_CHANNELS=(149 151 153 155 157 159 161 165)
 
-# Lists all 2.4 GHz channels
+# List all 2.4 GHz channels
 show_all_2_4(){
     for i in {1..14}; do
         INPUT="$i"
@@ -72,7 +79,7 @@ show_all_2_4(){
     exit 0
 }
 
-# Lists all 5 GHz channels
+# List all 5 GHz channels
 show_all_5(){
     BAND="5"
     for INPUT in "${UNBONDED_5_CHANNELS[@]}"; do
@@ -90,7 +97,7 @@ show_all_5(){
     exit 0
 }
 
-# Lists all 6 GHz channels
+# List all 6 GHz channels
 show_all_6(){
     BAND="6"
     for INPUT in {1..233}; do
@@ -113,7 +120,7 @@ show_all_6(){
     exit 0
 }
 
-# Converts frequency in MHz to channel number
+# Convert frequency in MHz to channel number
 freq_to_channel(){
     # 2.4 GHz
     if [ "$INPUT" -eq 2484 ]; then
@@ -153,7 +160,7 @@ freq_to_channel(){
     invalid_input
 }
 
-# Converts channel number to frequency in MHz
+# Convert channel number to frequency in MHz
 channel_to_freq(){
     # 2.4 GHz
     if [ "$INPUT" -eq 14 ]; then
@@ -206,7 +213,7 @@ channel_to_freq(){
 case $INPUT in
     -h | --help) usage ;;
     -v | --version) version ;;
-    -2.4) show_all_2_4 ;;
+    -2.4 | -2) show_all_2_4 ;;
     -5) show_all_5 ;;
     -6) show_all_6 ;;
     ''|*[!0-9]*) invalid_input ;;
