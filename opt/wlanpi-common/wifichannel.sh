@@ -5,7 +5,7 @@
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.4"
+VERSION="1.0.5"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
@@ -51,7 +51,7 @@ UNII_3_CHANNELS=(149 151 153 155 157 159 161 165)
 # Lists all 2.4 GHz channels
 show_all_2_4(){
     for i in {1..14}; do
-        INPUT="$i"    
+        INPUT="$i"
         if [ "$INPUT" -eq 14 ]; then
             BAND="2.4"
             echo "Band: $BAND GHz   Channel: $INPUT   Center freq: 2484 MHz   Recommended: No"
@@ -90,7 +90,7 @@ show_all_5(){
     exit 0
 }
 
-# Lists all 5 GHz channels
+# Lists all 6 GHz channels
 show_all_6(){
     BAND="6"
     for INPUT in {1..233}; do
@@ -102,14 +102,15 @@ show_all_6(){
             PAD=" "
         fi
 
-        if [ $(($INPUT%4)) -eq 1 ]; then        
+        if [ $(($INPUT%4)) -eq 1 ]; then
             if [ $(($INPUT%16)) -eq 5 ]; then
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes"
             else
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No"
             fi
         fi
     done
+    exit 0
 }
 
 # Converts frequency in MHz to channel number
@@ -188,9 +189,8 @@ channel_to_freq(){
     if [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ] && [ $(($INPUT%16)) -eq 5 ]; then
         BAND="6"
         echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes"
-    fi
     # 6 GHz non-PSC channel
-    if [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%16)) -eq 1 ]; then
+    elif [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ]; then
         BAND="6"
         echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No"
     fi
