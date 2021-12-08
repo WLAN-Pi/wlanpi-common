@@ -8,7 +8,7 @@ on:
       - 'debian/changelog'
 
 jobs:
-  build:
+  sbuild:
     runs-on: 'ubuntu-20.04'
 
     strategy:
@@ -37,7 +37,7 @@ jobs:
     if: always()
     name: Post Workflow Status to Slack
     needs:
-      - linux
+      - sbuild
     runs-on: 'ubuntu-20.04'
     steps:
       - name: Slack Workflow Notification
