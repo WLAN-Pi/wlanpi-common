@@ -1,16 +1,19 @@
 name: Build Debian package on PR
 on:
+  # Allow manual runs of workflow from Actions tab
+  workflow_dispatch:
+
   pull_request:
     paths:
       - 'debian/changelog'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: 'ubuntu-20.04'
 
     strategy:
       matrix:
-        distro: [buster]
+        distro: [buster,bullseye]
         arch: [armhf,arm64]
     
     steps:
@@ -27,5 +30,20 @@ jobs:
       - name: Upload Artifact to GitHub
         uses: actions/upload-artifact@v2
         with:
-          name: wlanpi-common_package
+          name: wlanpi-profiler-${{ matrix.distro }}-${{ matrix.arch }}
           path: ${{ steps.build-debian-package.outputs.deb-package }}
+
+  slack-workflow-status:
+    if: always()
+    name: Post Workflow Status to Slack
+    needs:
+      - linux
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@master
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          channel: '#common'
+          name: 'WLAN Pi CI Bot'
