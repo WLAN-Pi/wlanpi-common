@@ -1,11 +1,11 @@
 #!/bin/bash
-# Shows public IP address and related details 
+# Shows public IPv4 address and related details 
 
 #Get all data in JSON format 
-DATAINJSON=$(timeout 3 curl -s 'ifconfig.co/json')
+DATAINJSON=$(timeout 3 curl -s --ipv4 'ifconfig.co/json')
 
 if [ ! "$DATAINJSON" ]; then
-    echo "No public IP address detected"
+    echo "No public IPv4 address detected"
     #Conciously exiting with 0 to prevent error message in Python code that calls this script 
     exit 0
 fi
@@ -25,7 +25,7 @@ if [ "$PUBLICIP" ]; then
     echo "$PUBLICIPHOSTNAME"
     echo "$PUBLICIPASN"
 else
-    echo "No public IP address detected"
+    echo "No public IPv4 address detected"
 fi
 
 exit 0
