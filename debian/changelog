@@ -1,8 +1,14 @@
-wlanpi-common (1.0.7-1) unstable; urgency=medium
+wlanpi-common (1.0.9) unstable; urgency=medium
 
   * Link publicip6 and add tip to motd
 
  -- Josh Schmelzle <josh@joshschmelzle.com>  Sun, 12 Dec 2021 12:40:25 -0500
+
+wlanpi-common (1.0.8) unstable; urgency=medium
+
+  * added additional error checking for sed failure
+
+ -- Nigel Bowden <wifinigel@gmail.com>  Sun, 12 Dec 2021 08:44:45 +0000
 
 wlanpi-common (1.0.7) unstable; urgency=medium
 
