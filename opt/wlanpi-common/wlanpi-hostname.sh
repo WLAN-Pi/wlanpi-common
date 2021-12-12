@@ -130,10 +130,11 @@ set_hostname() {
     debugger "($SCRIPT_NAME) Setting hostname in file $HOSTS_FILE"
     
     # substitue the existing hostname in /etc/hosts (if it exists)
+    debugger "($SCRIPT_NAME) Swapping out existing name ($current_hostname) for new hostname ($new_hostname) in file: $HOSTS_FILE"
     sed -i "s/${current_hostname}/${new_hostname}/g" $HOSTS_FILE
     
-    if [ "$?" != '0' ]; then
-        err_report "Error updating hostname in $HOSTS_FILE"
+    if ! [[ $(cat ${HOSTS_FILE} | grep ${new_hostname}) ]]; then
+        err_report "($SCRIPT_NAME) New hostname $new_hostname has not been set correctly in hosts file $HOSTS_FILE (please edit manually)"
         exit 1
     else
         debugger "($SCRIPT_NAME) Swapped out hostname OK in $HOSTS_FILE to : $new_hostname"
