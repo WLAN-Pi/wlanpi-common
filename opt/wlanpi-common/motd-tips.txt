@@ -1,7 +1,7 @@
 Have you tried typing "reachability" followed by return key?
 Did you know about the WLAN Pi Telegram bot, which allows you to control your WLAN Pi remotely?
 Follow us on Twitter @WLANPi ;)
-What's your public IP address? Simply type "publicip".
+What's your public IP address? Simply type "publicip". Connected to a dualstack environment? Try "publicip6".
 Execute "stats" to see the CPU, memory and disk utilization, temperature, uptime, etc.
 To update your WLAN Pi, simply execute "sudo apt update && sudo apt upgrade".
 Convert Wi-Fi channel numbers and center frequencies on your WLAN Pi. Type "wifichannel 6" or "wifichannel 229" or "wifichannel 5500".
