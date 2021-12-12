@@ -1,5 +1,6 @@
 opt/wlanpi-common/networkinfo/reachability.sh /usr/bin/reachability
 opt/wlanpi-common/networkinfo/publicip.sh /usr/bin/publicip
+opt/wlanpi-common/networkinfo/publicip6.sh /usr/bin/publicip6
 opt/wlanpi-common/networkinfo/watchinternet.sh /usr/bin/watchinternet
 opt/wlanpi-common/networkinfo/ipconfig.sh /usr/bin/ipconfig
 opt/wlanpi-common/networkinfo/portblinker.sh /usr/bin/portblinker
