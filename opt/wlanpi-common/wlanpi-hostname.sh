@@ -116,6 +116,11 @@ set_hostname() {
     # check we have correct hosts filename
     check_file_exists $HOSTS_FILE
 
+    if [[ $(echo ${new_hostname} | grep "_") ]]; then
+        err_report "Cannot use: $new_hostname as it contains a '_' character which is illegal under RFC-952"
+        exit 1
+    fi
+
     debugger "($SCRIPT_NAME) Setting hostname with hostname ctl cmd to: $new_hostname"
 
     # set hostname in /etc/hostname with hostnamectl commmand
