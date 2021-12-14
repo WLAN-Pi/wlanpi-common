@@ -19,8 +19,8 @@
 set -e
 
 CHAT_BOT_ROOT=/opt/wlanpi-chat-bot
-CONFIG_FILE=$CHAT_BOT_ROOT/etc/config.json
-VERSION=0.1.0
+CONFIG_FILE=/etc/wlanpi-chat-bot/config.json
+VERSION=0.1.1
 SCRIPT_NAME=$(echo ${0##*/})
 API_KEY=$2
 DEBUG=0
