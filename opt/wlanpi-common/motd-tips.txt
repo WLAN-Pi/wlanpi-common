@@ -7,4 +7,4 @@ To update your WLAN Pi, simply execute "sudo apt update && sudo apt upgrade".
 Convert Wi-Fi channel numbers and center frequencies on your WLAN Pi. Type "wifichannel 6" or "wifichannel 229" or "wifichannel 5500".
 Are you using the right RF regulatory domain? Check by "sudo wlanpi-regdomain get".
 Change your WLAN Pi hostname by "sudo wlanpi-hostname set <new-hostname>"
-Using the right timezone? Here is how to check "sudo wlanpi-timezone get".
+Using the right timezone? Here is how to check "sudo wlanpi-timezone get" and change it "sudo "wlanpi-timezone set Europe/London".
