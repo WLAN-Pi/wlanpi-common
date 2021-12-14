@@ -1,3 +1,10 @@
+wlanpi-common (1.0.11) unstable; urgency=medium
+
+  * Fix chat bot config file path, now located in /etc/wlanpi-chat-bot/config.json
+  * Added detail to MOTD tips 
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 14 Dec 2021 09:48:12 +0000
+ 
 wlanpi-common (1.0.10) unstable; urgency=medium
 
   * Add check for hostname with "_" chars and test script for wlanpi-hostname.sh
