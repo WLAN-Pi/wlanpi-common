@@ -22,7 +22,11 @@ if [ "$PUBLICIP" ]; then
     echo "$PUBLICIP"
     echo "$PUBLICIPCOUNTRY"
     echo "$PUBLICIPASNORG"
-    echo "$PUBLICIPHOSTNAME"
+    if [ ! "$PUBLICIPHOSTNAME" ]; then
+        : 
+    else
+        echo "$PUBLICIPHOSTNAME"
+    fi
     echo "$PUBLICIPASN"
 else
     echo "No public IPv4 address detected"
