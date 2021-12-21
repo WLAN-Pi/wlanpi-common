@@ -22,7 +22,7 @@ if [ "$PUBLICIP" ]; then
     echo "$PUBLICIP"
     echo "$PUBLICIPCOUNTRY"
     echo "$PUBLICIPASNORG"
-    if [ ! "$PUBLICIPHOSTNAME" ]; then
+    if [ "$PUBLICIPHOSTNAME" == "null" ]; then
         : 
     else
         echo "$PUBLICIPHOSTNAME"
