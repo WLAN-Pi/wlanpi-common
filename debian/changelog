@@ -1,3 +1,9 @@
+wlanpi-common (1.0.12) unstable; urgency=medium
+
+  * wlanpi-reg-domain command now changes reg domain and country code for Hotspot and Wi-Fi Console modes
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 18 Jan 2022 15:45:14 +0000
+
 wlanpi-common (1.0.11) unstable; urgency=medium
 
   * Fix chat bot config file path, now located in /etc/wlanpi-chat-bot/config.json
