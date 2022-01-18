@@ -1,3 +1,10 @@
+wlanpi-common (1.0.13) unstable; urgency=medium
+
+  * Fixes lldpcleanup.sh not found run when lldpneigh.sh is run by /usr/bin/lldpneigh 
+  * Fixes cdpcleanup.sh not found run when cdpneigh.sh is run by /usr/bin/cdpneigh
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 18 Jan 2022 20:22:04 +0000
+
 wlanpi-common (1.0.12) unstable; urgency=medium
 
   * wlanpi-reg-domain command now changes reg domain and country code for Hotspot and Wi-Fi Console modes
