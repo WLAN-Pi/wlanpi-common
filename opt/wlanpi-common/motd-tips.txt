@@ -1,5 +1,4 @@
 Have you tried typing "reachability" followed by return key?
-Control your WLAN Pi remotely by a Telegram bot. Create a new bot by messaging BotFather in the Telegram app, and set your API token by "sudo wlanpi-chat-bot-key set <http-api-token>".
 Follow us on Twitter @WLANPi ;)
 What's your public IP address? Simply type "publicip". Connected to a dualstack environment? Try "publicip6".
 Execute "stats" to see the CPU, memory and disk utilization, temperature, uptime, etc.
