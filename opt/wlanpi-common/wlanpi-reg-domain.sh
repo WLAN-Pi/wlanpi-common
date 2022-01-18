@@ -98,14 +98,14 @@ set_domain () {
        exit 1
     fi
     
-    # set the new key in the chat bot config file
+    # set the new reg domain in the config file
      sed -i "s/REGDOMAIN=.*/REGDOMAIN=$DOMAIN/" "$REG_DOMAIN_FILE"
 
     if [ "$?" != '0' ]; then
         err_report "Error adding domain to $REG_DOMAIN_FILE"
         exit 1
     else
-        debugger "Added domain value: $API_KEY"
+        debugger "Added domain value: $DOMAIN"
         exit 0
     fi
 }
