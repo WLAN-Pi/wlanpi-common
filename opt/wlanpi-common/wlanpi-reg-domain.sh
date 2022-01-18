@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Script to get/set reg domain on WLAN Pi Pro
+# Script to get/set reg domain and country code on WLAN Pi Pro
 # Author : Nigel Bowden
 #
 # This script manipulates the REGDOMAIN field in the 
@@ -21,7 +21,8 @@ set -e
 REG_DOMAIN_FILE="/etc/default/crda"
 HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
 WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
-VERSION=0.1.1
+SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
+VERSION=0.1.2
 DOMAIN=$2
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
@@ -130,6 +131,17 @@ set_domain () {
         exit 1
     else
         debugger "Added country code $DOMAIN to $WCONSOLE_FILE"
+    fi
+
+    # set the new country code for Server mode
+    check_file_exists "$SERVER_FILE"
+    debugger "Setting country code for Server mode: $SERVER_FILE"
+    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$SERVER_FILE"
+    if [ "$?" != '0' ]; then
+        err_report "Error adding country code to $SERVER_FILE"
+        exit 1
+    else
+        debugger "Added country code $DOMAIN to $SERVER_FILE"
     fi
 
    if ! grep -q "classic" /etc/wlanpi-state; then
