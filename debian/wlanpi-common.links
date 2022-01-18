@@ -6,6 +6,8 @@ opt/wlanpi-common/networkinfo/ipconfig.sh /usr/bin/ipconfig
 opt/wlanpi-common/networkinfo/portblinker.sh /usr/bin/portblinker
 opt/wlanpi-common/networkinfo/lldpneigh.sh /usr/bin/lldpneigh
 opt/wlanpi-common/networkinfo/cdpneigh.sh /usr/bin/cdpneigh
+opt/wlanpi-common/networkinfo/lldpcleanup.sh /usr/bin/lldpcleanup.sh
+opt/wlanpi-common/networkinfo/cdpcleanup.sh /usr/bin/cdpcleanup.sh
 opt/wlanpi-common/wifichannel.sh /usr/bin/wifichannel
 opt/wlanpi-common/wlanpi-timezone.sh /usr/bin/wlanpi-timezone
 opt/wlanpi-common/wlanpi-reg-domain.sh /usr/bin/wlanpi-reg-domain
