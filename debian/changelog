@@ -1,3 +1,9 @@
+wlanpi-common (1.0.14) unstable; urgency=medium
+
+  * wlanpi-reg-domain now also changes country code for Server mode
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 18 Jan 2022 20:41:00 +0000
+
 wlanpi-common (1.0.13) unstable; urgency=medium
 
   * Fixes lldpcleanup.sh not found run when lldpneigh.sh is run by /usr/bin/lldpneigh 
