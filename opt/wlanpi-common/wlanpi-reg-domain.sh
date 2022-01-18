@@ -18,8 +18,10 @@
 # fail on script errors
 set -e
 
-REG_DOMAIN_FILE=/etc/default/crda
-VERSION=0.1.0
+REG_DOMAIN_FILE="/etc/default/crda"
+HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
+WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
+VERSION=0.1.1
 DOMAIN=$2
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
@@ -60,7 +62,7 @@ check_file_exists() {
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "File not found: ${filenme}"      
+      err_report "File not found: ${filename}"
       exit 1
     fi
 
@@ -97,7 +99,7 @@ set_domain () {
        err_report "No domain passed to : set_domain()"
        exit 1
     fi
-    
+
     # set the new reg domain in the config file
      sed -i "s/REGDOMAIN=.*/REGDOMAIN=$DOMAIN/" "$REG_DOMAIN_FILE"
 
@@ -105,15 +107,40 @@ set_domain () {
         err_report "Error adding domain to $REG_DOMAIN_FILE"
         exit 1
     else
-        debugger "Added domain value: $DOMAIN"
-        exit 0
+        debugger "Added domain $DOMAIN to $REG_DOMAIN_FILE"
     fi
+
+    # set the new country code for Hotspot mode
+    check_file_exists "$HOTSPOT_FILE"
+    debugger "Setting country code for Hotspot mode: $HOTSPOT_FILE"
+    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$HOTSPOT_FILE"
+    if [ "$?" != '0' ]; then
+        err_report "Error adding country code to $HOTSPOT_FILE"
+        exit 1
+    else
+        debugger "Added country code $DOMAIN to $HOTSPOT_FILE"
+    fi
+
+    # set the new country code for Wi-Fi Console mode
+    check_file_exists "$WCONSOLE_FILE"
+    debugger "Setting country code for Wi-Fi Console mode: $WCONSOLE_FILE"
+    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$WCONSOLE_FILE"
+    if [ "$?" != '0' ]; then
+        err_report "Error adding country code to $WCONSOLE_FILE"
+        exit 1
+    else
+        debugger "Added country code $DOMAIN to $WCONSOLE_FILE"
+    fi
+
+   if ! grep -q "classic" /etc/wlanpi-state; then
+       echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
+   fi
+
 }
 
-# return help string that provides short-form overview
-# of this command
+# return help string that provides short-form overview of this command
 help () {
-    echo "Get or set the Wi-Fi registration domain"
+    echo "Get or set the Wi-Fi RF regulatory domain"
 }
 
 # usage output
