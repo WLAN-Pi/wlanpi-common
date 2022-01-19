@@ -1,3 +1,10 @@
+wlanpi-common (1.0.15) unstable; urgency=medium
+
+  * wifichannel gets U-NII-4 support (hidden in "wifichannel -5" output for now)
+  * wifichannel bug fixes and cleanup
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  wed, 19 Jan 2022 10:49:00 +0000
+
 wlanpi-common (1.0.14) unstable; urgency=medium
 
   * wlanpi-reg-domain now also changes country code for Server mode
