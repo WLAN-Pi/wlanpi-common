@@ -8,7 +8,7 @@
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.6"
+VERSION="1.0.7"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
@@ -48,12 +48,13 @@ if [ "$#" -ne 1 ]; then
 fi
 
 # 5 GHz channels
-VALID_5_CHANNELS=(36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144 149 151 153 155 157 159 161 165)
-UNBONDED_5_CHANNELS=(36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165)
+ALL_5_CHANNELS=(36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144 149 151 153 155 157 159 161 165 169 173 177 181)
+UNBONDED_5_CHANNELS=(36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 169 173 177 181)
 UNII_1_CHANNELS=(36 38 40 42 44 46 48)
-UNII_2_CHANNELS=(52 54 56 58 60 62 64)
-UNII_2E_CHANNELS=(100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144)
+UNII_2A_CHANNELS=(52 54 56 58 60 62 64)
+UNII_2C_CHANNELS=(100 102 104 106 108 110 112 114 116 118 120 122 124 126 128 132 134 136 138 140 142 144)
 UNII_3_CHANNELS=(149 151 153 155 157 159 161 165)
+UNII_4_CHANNELS=(169 173 177 181)
 
 # List all 2.4 GHz channels
 show_all_2_4(){
@@ -84,13 +85,13 @@ show_all_5(){
     BAND="5"
     for INPUT in "${UNBONDED_5_CHANNELS[@]}"; do
         if [[ " ${UNII_1_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   UNII-1"
-        elif [[ " ${UNII_2_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   UNII-2"
-        elif [[ " ${UNII_2E_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   UNII-2e"
+            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-1"
+        elif [[ " ${UNII_2A_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2A"
+        elif [[ " ${UNII_2C_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2C"
         elif [[ " ${UNII_3_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   UNII-3"
+            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-3"
         fi
         echo "$ALL_5_OUTPUT"
     done
@@ -138,7 +139,7 @@ freq_to_channel(){
     # 5 GHz
     elif [ "$INPUT" -ge 5160 ] && [ "$INPUT" -lt 5885 ] && [ $(($INPUT%10)) -eq 0 ]; then
         CHANNEL_5="$(((($INPUT - 5180) / 5) + 36))"
-        if [[ " ${VALID_5_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+        if [[ " ${ALL_5_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
             BAND="5"
             echo "Band:   $BAND GHz   Channel: $CHANNEL_5"
         fi
@@ -177,17 +178,17 @@ channel_to_freq(){
     fi
 
     # 5 GHz
-    if [[ " ${VALID_5_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+    if [[ " ${ALL_5_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
         BAND="5"
         CTF_5_OUTPUT="Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz"
         if [[ " ${UNII_1_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            CTF_5_OUTPUT="$CTF_5_OUTPUT   UNII-1"
-        elif [[ " ${UNII_2_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            CTF_5_OUTPUT="$CTF_5_OUTPUT   UNII-2"
-        elif [[ " ${UNII_2E_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            CTF_5_OUTPUT="$CTF_5_OUTPUT   UNII-2e"
+            CTF_5_OUTPUT="$CTF_5_OUTPUT   U-NII-1"
+        elif [[ " ${UNII_2A_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+            CTF_5_OUTPUT="$CTF_5_OUTPUT   U-NII-2A"
+        elif [[ " ${UNII_2C_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+            CTF_5_OUTPUT="$CTF_5_OUTPUT   U-NII-2C"
         elif [[ " ${UNII_3_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            CTF_5_OUTPUT="$CTF_5_OUTPUT   UNII-3"
+            CTF_5_OUTPUT="$CTF_5_OUTPUT   U-NII-3"
         fi
         echo "$CTF_5_OUTPUT"
     fi
