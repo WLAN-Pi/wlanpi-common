@@ -1,14 +1,13 @@
 #!/bin/bash
 
+# This script converts channel number to center frequency in MHz, and vice versa. 
+
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 # Idea sparked by Nick Turner @nickjvturner, thanks to Adrian Granados @adriangranados and Keith Parsons @KeithRParsons
-#
-# This script converts channel number to center frequency in MHz, and vice versa.
-# 
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.7"
+VERSION="1.0.8"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
@@ -85,15 +84,14 @@ show_all_5(){
     BAND="5"
     for INPUT in "${UNBONDED_5_CHANNELS[@]}"; do
         if [[ " ${UNII_1_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-1"
+            echo "Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-1"
         elif [[ " ${UNII_2A_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2A"
+            echo "Band: $BAND GHz   Channel:  $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2A"
         elif [[ " ${UNII_2C_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2C"
+            echo "Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2C"
         elif [[ " ${UNII_3_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
-            ALL_5_OUTPUT="Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-3"
+            echo "Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-3"
         fi
-        echo "$ALL_5_OUTPUT"
     done
     exit 0
 }
@@ -137,11 +135,21 @@ freq_to_channel(){
         fi
 
     # 5 GHz
-    elif [ "$INPUT" -ge 5160 ] && [ "$INPUT" -lt 5885 ] && [ $(($INPUT%10)) -eq 0 ]; then
+    elif [ "$INPUT" -ge 5160 ] && [ "$INPUT" -le 5905 ] && [ $(($INPUT%5)) -eq 0 ]; then
         CHANNEL_5="$(((($INPUT - 5180) / 5) + 36))"
         if [[ " ${ALL_5_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
             BAND="5"
-            echo "Band:   $BAND GHz   Channel: $CHANNEL_5"
+            if [[ " ${UNII_1_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+                echo "Band:   $BAND GHz   Channel: $CHANNEL_5   Center freq: $INPUT MHz   U-NII-1"
+            elif [[ " ${UNII_2A_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+                echo "Band:   $BAND GHz   Channel: $CHANNEL_5   Center freq: $INPUT MHz   U-NII-2A"
+            elif [[ " ${UNII_2C_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+                echo "Band:   $BAND GHz   Channel: $CHANNEL_5   Center freq: $INPUT MHz   U-NII-2C"
+            elif [[ " ${UNII_3_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+                echo "Band:   $BAND GHz   Channel: $CHANNEL_5   Center freq: $INPUT MHz   U-NII-3"
+            elif [[ " ${UNII_4_CHANNELS[*]} " =~ " ${CHANNEL_5} " ]]; then
+                echo "Band:   $BAND GHz   Channel: $CHANNEL_5   Center freq: $INPUT MHz   U-NII-4"
+            fi
         fi
 
     # 6 GHz
