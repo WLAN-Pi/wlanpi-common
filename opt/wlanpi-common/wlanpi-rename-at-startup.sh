@@ -24,4 +24,5 @@ if [ ${#LAST_3_CHARS_MAC} -eq 3 ]; then
     fi
 else
     logger "($SCRIPT_NAME) Failed to parse eth0 MAC address, skipping hostname change!"
+    exit 1
 fi
