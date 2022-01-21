@@ -1,0 +1,9 @@
+[Unit]
+Description=Renames the WLAN Pi at startup to wlanpi-<the last 3 characters of eth0 MAC address>
+
+[Service]
+ExecStart=/opt/wlanpi-common/wlanpi-rename-at-startup.sh
+WorkingDirectory=/opt/wlanpi-common/
+
+[Install]
+WantedBy=multi-user.target
