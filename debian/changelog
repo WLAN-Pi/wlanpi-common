@@ -1,4 +1,4 @@
-wlanpi-common (1.0.17-5) unstable; urgency=medium
+wlanpi-common (1.0.17) unstable; urgency=medium
 
   * Renames WLAN Pi at startup to "wlanpi-<the last 3 characters of eth0 MAC address>"
 
