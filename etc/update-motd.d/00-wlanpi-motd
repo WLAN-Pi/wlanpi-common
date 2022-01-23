@@ -7,7 +7,7 @@ if grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo ; then
 fi
 WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '"' -f 2 2>/dev/null)
 echo
-toilet -f wideterm --filter border:gay " $WLAN_PI_MODEL "
+toilet -f term --filter border:gay " $WLAN_PI_MODEL "
 
 # Calculate uptime
 UP_SECONDS=$(/usr/bin/cut -d "." -f1 /proc/uptime)
@@ -52,6 +52,7 @@ echo
 
 #Display WLAN Pi tips
 if [ -f /opt/wlanpi-common/motd-tips.txt ]; then
-    echo "Tip:" $(shuf -n 1 /opt/wlanpi-common/motd-tips.txt)
-    echo
+    echo " Tip " | toilet -f term --filter border:gay
+    echo "$(shuf -n 1 /opt/wlanpi-common/motd-tips.txt)"
+    echo ""
 fi
