@@ -13,3 +13,4 @@ opt/wlanpi-common/wlanpi-timezone.sh /usr/bin/wlanpi-timezone
 opt/wlanpi-common/wlanpi-reg-domain.sh /usr/bin/wlanpi-reg-domain
 opt/wlanpi-common/wlanpi-chat-bot-key.sh /usr/bin/wlanpi-chat-bot-key
 opt/wlanpi-common/wlanpi-hostname.sh /usr/bin/wlanpi-hostname
+etc/update-motd.d/00-wlanpi-motd /usr/bin/stats
