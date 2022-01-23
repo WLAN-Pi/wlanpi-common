@@ -1,3 +1,9 @@
+wlanpi-common (1.0.19) unstable; urgency=medium
+
+  * Improves MOTD "WLAN Pi Pro" and "Tip" layout
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 23 Jan 2022 22:23:00 +0000
+
 wlanpi-common (1.0.18) unstable; urgency=medium
 
   * Adds MOTD to wlanpi-common and removes it from pi-gen
