@@ -1,1 +1,2 @@
 opt/wlanpi-common/* opt/wlanpi-common/
+etc/update-motd.d/* etc/update-motd.d/
