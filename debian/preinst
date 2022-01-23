@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# Remove existing WLAN Pi MOTD if it exists
-if [ -e /etc/update-motd.d/00-wlanpi-motd ] ; then
-    rm -f /etc/update-motd.d/00-wlanpi-motd
-fi
