@@ -13,3 +13,4 @@ Have you tried "wifichannel -6"? It shows all 6 GHz channels, and highlights all
 SSH to your WLAN Pi, or access the web UI, via Bluetooth from your tablet or phone.
 Use your WLAN Pi as a Remote Sensor in WiFi Explorer Pro on macOS https://bit.ly/wifi-explorer-sensor
 Take a packet capture remotely with WLAN Pi used as a Remote Sensor in Airtool 2 on macOS https://bit.ly/airtool-remote-capture
+Get the latest features by upgrading your WLAN Pi software using "sudo apt update" followed by "sudo apt upgrade".
