@@ -1,16 +1,15 @@
-Have you tried typing "reachability" followed by return key?
 Follow us on Twitter @WLANPi ;)
-What's your public IP address? Simply type "publicip". Connected to a dualstack environment? Try "publicip6".
+Have you tried running "reachability"?
+Check your public IP address by executing "publicip". Connected to a dualstack network? Use "publicip6".
 Execute "stats" to see the CPU, memory and disk utilization, temperature, uptime, etc.
 To update your WLAN Pi, simply execute "sudo apt update && sudo apt upgrade".
-Convert Wi-Fi channel numbers and center frequencies on your WLAN Pi. Type "wifichannel 6" or "wifichannel 229" or "wifichannel 5500".
-Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change by "sudo wlanpi-reg-domain set GB" (replace GB by your country code).
-Change your WLAN Pi hostname by "sudo wlanpi-hostname set <new-hostname>"
-Using the right timezone? Here is how to check "sudo wlanpi-timezone get" and change it "sudo "wlanpi-timezone set Europe/London".
+Convert Wi-Fi channel numbers to center frequencies and vice versa on your WLAN Pi. Try "wifichannel 6", "wifichannel 229", "wifichannel 5500".
+Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change by "sudo wlanpi-reg-domain set <country code>".
+Change your WLAN Pi hostname using "sudo wlanpi-hostname set <new-hostname>"
+Check if you are using the right time zone using "sudo wlanpi-timezone get". Change it using "sudo "wlanpi-timezone set Europe/London".
 Enable passwordless SSH access to your WLAN Pi using public/private key pair https://bit.ly/wlanpi-ssh
 Let us know if you have any ideas or suggestions about how to improve WLAN Pi https://github.com/wlan-pi/feedback
 Have you tried "wifichannel -6"? It shows all 6 GHz channels, and highlights all Preferred Scanning Channels (PSC).
-SSH to your WLAN Pi, or access the web UI, via Bluetooth from your tablet or phone.
+SSH to your WLAN Pi, or access the web UI, via Bluetooth from your tablet or phone: Menu > Bluetooth > Pair Device
 Use your WLAN Pi as a Remote Sensor in WiFi Explorer Pro on macOS https://bit.ly/wifi-explorer-sensor
 Take a packet capture remotely with WLAN Pi used as a Remote Sensor in Airtool 2 on macOS https://bit.ly/airtool-remote-capture
-Get the latest features by upgrading your WLAN Pi software using "sudo apt update" followed by "sudo apt upgrade".
