@@ -5,4 +5,7 @@ if grep -q -E "^?PrintLastLog" /etc/ssh/sshd_config; then
     sudo sed -i "s/^#\?PrintLastLog.*/PrintLastLog no/" /etc/ssh/sshd_config
 else
     echo "PrintLastLog no" >> /etc/ssh/sshd_config
-  fi
+fi
+  
+# Enable wlanpi-rename-at-startup service
+systemctl enable wlanpi-rename-at-startup
