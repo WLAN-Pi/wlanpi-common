@@ -6,6 +6,4 @@ if grep -q -E "^?PrintLastLog" /etc/ssh/sshd_config; then
 else
     echo "PrintLastLog no" >> /etc/ssh/sshd_config
 fi
-  
-# Enable wlanpi-rename-at-startup service
-systemctl enable wlanpi-rename-at-startup
+
