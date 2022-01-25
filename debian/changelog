@@ -1,3 +1,9 @@
+wlanpi-common (1.0.21) unstable; urgency=medium
+
+  * Adds eth0 MAC address to output
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 25 Jan 2022 23:04:00 +0000
+
 wlanpi-common (1.0.20-1) unstable; urgency=medium
 
   * Rename networkinfo service to wlanpi-networkinfo
