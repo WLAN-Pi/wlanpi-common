@@ -1,6 +1,8 @@
 #!/bin/bash
 
-#Displays IP address, subnet mask, default gateway, DNS servers, speed, duplex, DHCP server IP address and name 
+#Displays IP address, subnet mask, default gateway, DNS servers, speed, duplex, DHCP server IP address and name, MAC address 
+
+# Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
 ETH0LEASES="/var/lib/dhcp/dhclient.eth0.leases"
 ACTIVEIP=$(ip a | grep "eth0" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
@@ -14,6 +16,7 @@ DOMAINNAME=$(grep -A 13 'interface "eth0"' "$ETH0LEASES" | tail -13 | grep -B 1 
 DEFAULTGW=$(/sbin/route -n | grep G | grep eth0 | cut -d ' ' -f 10)
 SPEED=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 2>/dev/null | grep "Speed" | sed 's/....$//' | cut -d ' ' -f2  || echo "Disconnected")
 DUPLEX=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 2>/dev/null | grep "Duplex" | cut -d ' ' -f 2 || echo "Disconnected")
+MACADDRESS=$(sed 's/://g' /sys/class/net/eth0/address)
 DNSSERVERS=$(grep "nameserver" /etc/resolv.conf | sed 's/nameserver/DNS:/g')
 
 if [ "$ETH0ISUP" ]; then
@@ -50,8 +53,9 @@ if [ "$ETH0ISUP" ]; then
     #Duplex
     echo "Duplex: $DUPLEX"
 
+    #eth0 MAC address
+    echo "MAC: $MACADDRESS"
+
 else
     echo "eth0 is down"
 fi
-
-
