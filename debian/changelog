@@ -1,4 +1,4 @@
-wlanpi-common (1.0.20) unstable; urgency=medium
+wlanpi-common (1.0.20-1) unstable; urgency=medium
 
   * Rename networkinfo service to wlanpi-networkinfo
 
