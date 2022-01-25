@@ -1,3 +1,9 @@
+wlanpi-common (1.0.20) unstable; urgency=medium
+
+  * Rename networkinfo service to wlanpi-networkinfo
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 25 Jan 2022 14:44:00 +0000
+
 wlanpi-common (1.0.19-9) unstable; urgency=medium
 
   * Improves MOTD "WLAN Pi Pro" and "Tip" layout
