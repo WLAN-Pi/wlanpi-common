@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#DEBHELPER#
+
 # Disable last login message after user SSHs in
 if grep -q -E "^?PrintLastLog" /etc/ssh/sshd_config; then
     sudo sed -i "s/^#\?PrintLastLog.*/PrintLastLog no/" /etc/ssh/sshd_config
