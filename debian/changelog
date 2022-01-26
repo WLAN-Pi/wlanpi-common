@@ -1,6 +1,12 @@
+wlanpi-common (1.0.22) unstable; urgency=medium
+
+  * Hostname change service no longer waits for network to start
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 26 Jan 2022 00:44:00 +0000
+
 wlanpi-common (1.0.21) unstable; urgency=medium
 
-  * Adds eth0 MAC address to output
+  * Adds eth0 MAC address to Menu > Network > Eth0 IP Config output
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 25 Jan 2022 23:04:00 +0000
 
