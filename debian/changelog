@@ -1,4 +1,4 @@
-wlanpi-common (1.0.22) unstable; urgency=medium
+wlanpi-common (1.0.22-1) unstable; urgency=medium
 
   * Hostname change service no longer waits for network to start
 
