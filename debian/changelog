@@ -1,3 +1,9 @@
+wlanpi-common (1.0.23) unstable; urgency=medium
+
+  * Adds wlanpi-update command
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 27 Jan 2022 12:10:00 +0000
+
 wlanpi-common (1.0.22-1) unstable; urgency=medium
 
   * Hostname change service no longer waits for network to start
