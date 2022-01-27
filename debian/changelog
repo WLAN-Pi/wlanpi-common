@@ -1,6 +1,6 @@
-wlanpi-common (1.0.25) unstable; urgency=medium
+wlanpi-common (1.0.25-1) unstable; urgency=medium
 
-  * Add tips, remove shortened links
+  * Add tips, remove tips with external links
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 27 Jan 2022 15:31:00 +0000
 

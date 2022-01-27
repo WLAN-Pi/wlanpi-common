@@ -9,11 +9,8 @@ Convert Wi-Fi channel numbers to center frequencies and vice versa on your WLAN 
 Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change by "sudo wlanpi-reg-domain set <country code>".
 Change your WLAN Pi hostname using "sudo wlanpi-hostname set <new-hostname>"
 Check if you are using the right time zone using "sudo wlanpi-timezone get". Change it using "sudo "wlanpi-timezone set Europe/London".
-Enable passwordless SSH access to your WLAN Pi using public/private key pair https://www.jiribrejcha.net/2021/12/use-ssh-key-stored-on-github-instead-of-an-ssh-password-to-access-your-wlan-pi/
 Let us know if you have any ideas or suggestions about how to improve WLAN Pi https://github.com/wlan-pi/feedback
 Have you tried "wifichannel -6"? It shows all 6 GHz channels, and highlights all Preferred Scanning Channels (PSC).
 SSH to your WLAN Pi, or access the web UI, via Bluetooth from your tablet or phone: Menu > Bluetooth > Pair Device
-Use your WLAN Pi as a Remote Sensor in WiFi Explorer Pro on macOS https://www.intuitibits.com/2019/09/24/wlanpi-as-a-sensor/
-Take a packet capture remotely with WLAN Pi used as a Remote Sensor in Airtool 2 on macOS https://www.intuitibits.com/products/airtool2/
 Start Profiler on a custom channel by "sudo profiler -c1" or "sudo profiler -c40".
 Connect your phone or tablet to WLAN Pi by scanning a QR code. Switch to Hotspot, Wi-Fi Console, or Server mode, and press the center button to display the QR code.
