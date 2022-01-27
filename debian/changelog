@@ -1,4 +1,4 @@
-wlanpi-common (1.0.23) unstable; urgency=medium
+wlanpi-common (1.0.23-1) unstable; urgency=medium
 
   * Adds wlanpi-update command
 
