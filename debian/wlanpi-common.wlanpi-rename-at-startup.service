@@ -1,10 +1,11 @@
 [Unit]
-Description=Renames the WLAN Pi at startup to wlanpi-<the last 3 characters of eth0 MAC address>
+Description=Renames WLAN Pi at startup to wlanpi-<last 3 chars of eth0 MAC address>
 Before=wlanpi-fpms.service
 
 [Service]
 ExecStart=/opt/wlanpi-common/wlanpi-rename-at-startup.sh
 WorkingDirectory=/opt/wlanpi-common/
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target
