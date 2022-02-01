@@ -1,3 +1,9 @@
+wlanpi-common (1.0.25-2.1) unstable; urgency=medium
+
+  * Restarts avahi-daemon when setting a new hostname
+
+ -- Adrian Granados <adrian@intuitibits.com>  Mon, 31 Jan 2022 23:20:00 -0600
+
 wlanpi-common (1.0.25-2) unstable; urgency=medium
 
   * Add tips, remove tips with external links
