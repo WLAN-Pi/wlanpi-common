@@ -9,6 +9,7 @@
 #  - /usr/bin/hostnamectl set-hostname <hostname> (sets the hostname in /etc/hostname)
 #  - /usr/bin/hostname (gets current hostname)
 #  - sed -i 's/oldname/newname/g' /etc/hosts
+#  - /usr/bin/systemctl restart avahi-daemon (for new hostname to take effect)
 #
 # Return values:
 #
@@ -24,6 +25,7 @@ set -e
 
 HOSTNAME_SCRIPT=/usr/bin/hostname
 HOSTNAMECTL_SCRIPT=/usr/bin/hostnamectl
+SYSTEMCTL_SCRIPT=/usr/bin/systemctl
 HOSTS_FILE=/etc/hosts
 SCRIPT_NAME=$(echo ${0##*/})
 VERSION=0.1.0
@@ -66,7 +68,7 @@ check_file_exists() {
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "File not found: ${filenme}"      
+      err_report "File not found: ${filenme}"
       exit 1
     fi
 
@@ -110,6 +112,12 @@ set_hostname() {
        exit 1
     fi
 
+    # check if current hostname is equal to new hostname
+    if [ "$current_hostname" == "$new_hostname" ]; then
+        debugger "($SCRIPT_NAME) Current and new hostnames are equal ($current_hostname) == ($new_hostname)"
+        exit 0
+    fi
+
     # check we have correct hostnamectl script filename
     check_file_exists $HOSTNAMECTL_SCRIPT
 
@@ -133,16 +141,26 @@ set_hostname() {
     fi
 
     debugger "($SCRIPT_NAME) Setting hostname in file $HOSTS_FILE"
-    
+
     # substitue the existing hostname in /etc/hosts (if it exists)
     debugger "($SCRIPT_NAME) Swapping out existing name ($current_hostname) for new hostname ($new_hostname) in file: $HOSTS_FILE"
     sed -i "s/${current_hostname}/${new_hostname}/g" $HOSTS_FILE
-    
+
     if ! [[ $(cat ${HOSTS_FILE} | grep ${new_hostname}) ]]; then
         err_report "($SCRIPT_NAME) New hostname $new_hostname has not been set correctly in hosts file $HOSTS_FILE (please edit manually)"
         exit 1
     else
         debugger "($SCRIPT_NAME) Swapped out hostname OK in $HOSTS_FILE to : $new_hostname"
+    fi
+
+    # restart avahi-daemon so that the new hostname takes effect
+    debugger "($SCRIPT_NAME) Restart avahi-daemon"
+    $SYSTEMCTL_SCRIPT restart avahi-daemon > /dev/null 2>&1
+    if [ "$?" != '0' ]; then
+        err_report "Failed to restart avahi-daemon"
+        exit 1
+    else
+        debugger "($SCRIPT_NAME) avahi-daemon restarted"
     fi
 
     debugger "($SCRIPT_NAME) Hostname set OK"
