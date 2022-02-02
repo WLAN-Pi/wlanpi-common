@@ -1,3 +1,9 @@
+wlanpi-common (1.0.27) unstable; urgency=medium
+
+  * Change hostname before bt-agent service starts
+  
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 16:53:00 +0000 
+
 wlanpi-common (1.0.26) unstable; urgency=medium
 
   * Rename "stats" command to "wlanpi-stats"
