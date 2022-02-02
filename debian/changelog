@@ -1,3 +1,9 @@
+wlanpi-common (1.0.26) unstable; urgency=medium
+
+  * Rename "stats" command to "wlanpi-stats"
+  
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 09:31:00 +0000 
+
 wlanpi-common (1.0.25-2.1) unstable; urgency=medium
 
   * Restarts avahi-daemon when setting a new hostname
