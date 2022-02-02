@@ -1,6 +1,7 @@
 [Unit]
 Description=Renames WLAN Pi at startup to wlanpi-<last 3 chars of eth0 MAC address>
 Before=wlanpi-fpms.service
+Before=bt-agent.service
 
 [Service]
 ExecStart=/opt/wlanpi-common/wlanpi-rename-at-startup.sh
