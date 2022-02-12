@@ -15,4 +15,5 @@ opt/wlanpi-common/wlanpi-chat-bot-key.sh usr/bin/wlanpi-chat-bot-key
 opt/wlanpi-common/wlanpi-hostname.sh usr/bin/wlanpi-hostname
 opt/wlanpi-common/wlanpi-update.sh usr/bin/wlanpi-update
 etc/update-motd.d/00-wlanpi-motd usr/bin/wlanpi-stats
+opt/wlanpi-common/wlanpi-mode.sh usr/bin/wlanpi-mode
 
