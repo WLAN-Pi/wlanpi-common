@@ -1,3 +1,9 @@
+wlanpi-common (1.0.29) unstable; urgency=medium
+
+  * Add wlanpi-gh-ssh-key command
+
+ -- Nigel Bowden <wifinigel@gmail.com>  Sun, 13 Feb 2022 20:59:31 +0000
+
 wlanpi-common (1.0.28) unstable; urgency=medium
 
   * Add wlanpi-mode command
