@@ -17,3 +17,4 @@ opt/wlanpi-common/wlanpi-update.sh usr/bin/wlanpi-update
 etc/update-motd.d/00-wlanpi-motd usr/bin/wlanpi-stats
 opt/wlanpi-common/wlanpi-mode.sh usr/bin/wlanpi-mode
 opt/wlanpi-common/wlanpi-gh-ssh-key.sh usr/bin/wlanpi-gh-ssh-key
+opt/wlanpi-common/wlanpi-fan.sh usr/bin/wlanpi-fan
