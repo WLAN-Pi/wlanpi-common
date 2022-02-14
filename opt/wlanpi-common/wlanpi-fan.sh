@@ -47,6 +47,9 @@ fan_on(){
 
 # Turns fan off
 fan_off(){
+    echo "WARNING: Disabling the fan might lead to overheating and permanent damage to the unit! Are you aware of the consequences? You are doing this at your own risk."
+    sleep 5
+    read -p "Disable the fan? (Yes/No): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     /usr/bin/raspi-gpio set 26 op pd dl
 }
 
