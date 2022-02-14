@@ -20,8 +20,17 @@ fi
 #Start monitoring internet connectivity immediately after the WLAN Pi boots up
 #"$DIRECTORY"/watchinternet.sh &
 
+MESSAGES="/var/log/messages"
+
+#On first boot and bring up, /var/log/messages may not exist yet.
+#Wait for log to be created by rsyslog or other before trying to read from it
+while [ ! -f $MESSAGES ]
+do
+   sleep 1
+done
+
 #Monitor up/down status changes of eth0 and execute neighbour detection or cleanup
-tail -fn0 /var/log/messages |
+tail -fn0 $MESSAGES |
 while read -r line
 do
   case "$line" in
