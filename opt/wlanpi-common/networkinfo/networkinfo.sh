@@ -34,7 +34,7 @@ tail -fn0 $MESSAGES |
 while read -r line
 do
   case "$line" in
-  *".ethernet eth0: Link is Up"*)
+  *"eth0: Link is Up"*)
     logger "networkinfo script: eth0 went up"
     #Kill any running instances of the CDP and LLDP scripts
     pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
@@ -44,7 +44,7 @@ do
     "$DIRECTORY"/lldpneigh.sh &
     "$DIRECTORY"/cdpneigh.sh &
   ;;
-  *".ethernet eth0: Link is Down"*)
+  *"eth0: Link is Down"*)
     logger "networkinfo script: eth0 went down"
     #Kill any running instances of the CDP and LLDP scripts
     pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
