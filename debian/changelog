@@ -1,3 +1,9 @@
+wlanpi-common (1.0.35) unstable; urgency=medium
+
+  * Fix eth0 detection for LLDP and CDP neighbour on RBPi 3b rev 1.2 host
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Wed, 16 Feb 2022 12:46:45 -0500
+
 wlanpi-common (1.0.34) unstable; urgency=medium
 
   * Hides "wlanpi-fan off" option and requires the user to confirm they are a developer aware of the consequences
