@@ -1,3 +1,10 @@
+wlanpi-common (1.0.34) unstable; urgency=medium
+
+  * Hides "wlanpi-fan off" option and requires the user to confirm they are a developer aware of the consequences
+  * Fixes "wlanpi-charger-boost off" command syntax
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 15 Feb 2022 11:17:00 +0000
+
 wlanpi-common (1.0.33) unstable; urgency=medium
 
   * Adds "wlanpi-charger-boost" which forces charger to draw up to 1.5 A

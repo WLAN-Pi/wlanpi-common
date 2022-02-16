@@ -40,14 +40,14 @@ version(){
     exit 0
 }
 
-# Enables charger boost
-enable_boost(){
+# Turns charger boost on
+boost_on(){
     /usr/bin/raspi-gpio set 21 op pd dh
 }
 
-# Disables charger boost
-disable_boost(){
-    /usr/bin/raspi-gpio set 21 op pd dh
+# Turns charger boost off
+boost_off(){
+    /usr/bin/raspi-gpio set 21 op pd dl
 }
 
 #-------------
@@ -58,7 +58,7 @@ disable_boost(){
 case $INPUT in
     -h | --help) usage ;;
     -v | --version) version ;;
-    on | --on) enable_boost ;;
-    off | --off) disable_boost ;;
+    on | --on) boost_on ;;
+    off | --off) boost_off ;;
     *) invalid_input ;;
 esac
