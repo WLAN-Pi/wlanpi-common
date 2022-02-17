@@ -5,7 +5,7 @@ WLAN_PI_MODEL="WLAN Pi Community Edition"
 if grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo ; then
     WLAN_PI_MODEL="WLAN Pi Pro"
 fi
-WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '"' -f 2 2>/dev/null)
+WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '=' -f 2 2>/dev/null)
 echo
 toilet -f term --filter border:gay " $WLAN_PI_MODEL "
 

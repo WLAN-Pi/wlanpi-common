@@ -1,3 +1,9 @@
+wlanpi-common (1.0.36) unstable; urgency=medium
+
+  * Fixes display of image version in MOTD
+
+ -- Adrian Granados <adrian@intuitibits.com>  Thu, 17 Feb 2022 13:59:37 -0600
+
 wlanpi-common (1.0.35) unstable; urgency=medium
 
   * Fix eth0 detection for LLDP and CDP neighbour on RBPi 3b rev 1.2 host
