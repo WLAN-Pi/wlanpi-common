@@ -21,10 +21,9 @@
 #
 
 # fail on script errors
-set -e
+#set -e
 
 TIMEDATECTL=/usr/bin/timedatectl
-VERSION=0.1.0
 TZ=$2
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
@@ -98,15 +97,18 @@ set_tz() {
     fi
     
     # set the timezone
-    err_msg=$($TIMEDATECTL set-timezone $TZ 2>&1)
+   cmd="$TIMEDATECTL set-timezone $TZ"
+   debugger "Set cmd: $cmd"
+   err_msg=$($cmd)
 
-    if [ "$?" != '0' ]; then
-        err_report "Error setting timezone: $err_msg"
-        exit 1
-    else
-        debugger "Updated TZ"
-        exit 0
-    fi
+   if [ "$?" != '0' ]; then
+       err_report "Error setting timezone"
+       exit 1
+   else
+       debugger "Updated TZ"
+       echo "Updated TZ"
+       exit 0
+   fi
 }
 
 # list timezones available
