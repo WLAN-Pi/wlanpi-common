@@ -1,3 +1,10 @@
+wlanpi-common (1.0.38) unstable; urgency=medium
+
+  * Port Blinker now supports WLAN Pi Pro
+  * Port Blinker no longer downs and ups eth0, but it switches between 100 Mbps and 1 Gbps which has very similar effect on CM4
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 23 Feb 2022 10:37:00 +0000
+
 wlanpi-common (1.0.37) unstable; urgency=medium
 
   * Fix cmd failure detection for set timezone
