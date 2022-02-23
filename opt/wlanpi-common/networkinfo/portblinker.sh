@@ -7,9 +7,9 @@
 COUNT=5
 # Default interface name if not specified explicitly otherwise
 INTERFACE="eth0"
-# Uses colors in output by default
+# Use colors in output by default
 COLOR="yes"
-VERSION="2.0.0"
+VERSION="2.0.1"
 SCRIPT_NAME="$(basename "$0")"
 
 # Check if the script is running as root
@@ -50,8 +50,10 @@ fi
 
 trap execute_on_int INT
 
+# Execute these commands when user presses CTRL+C or stops the process
 execute_on_int(){
-  sudo dhclient eth0 &
+  ethtool -s "$INTERFACE" speed 1000
+  sudo dhclient eth0 > /dev/null 2>&1 &
   echo ""
   echo "Stopping now"
   exit 0
@@ -63,14 +65,14 @@ blink_nonstop(){
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[91m100 Mbps\033[0m"
     else
-      echo "Down"
+      echo "100 Mbps"
     fi
     ethtool -s "$INTERFACE" speed 100
     sleep 6
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[92m1 Gbps\033[0m"
     else
-      echo "Up"
+      echo "1 Gbps"
     fi
     ethtool -s "$INTERFACE" speed 1000
     sleep 6
@@ -85,19 +87,19 @@ blink_n_times(){
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[91m100 Mbps\033[0m"
     else
-      echo "Down"
+      echo "100 Mbps"
     fi
-    sudo ifconfig "$INTERFACE" down
-    sleep 3
+    ethtool -s "$INTERFACE" speed 100
+    sleep 6
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[92m1 Gbps\033[0m"
     else
-      echo "Up"
+      echo "1 Gbps"
     fi
-    sudo ifconfig "$INTERFACE" up
-    sleep 7
+    ethtool -s "$INTERFACE" speed 1000
+    sleep 6
   done
-  sudo dhclient eth0 &
+  sudo dhclient eth0 > /dev/null 2>&1 &
 }
 
 blink_n_seconds(){
@@ -107,20 +109,21 @@ blink_n_seconds(){
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[91m100 Mbps\033[0m"
     else
-      echo "Down"
+      echo "100 Mbps"
     fi
-    sudo ifconfig "$INTERFACE" down
-    sleep 3
+    ethtool -s "$INTERFACE" speed 100
+    sleep 6
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[92m1 Gbps\033[0m"
     else
-      echo "Up"
+      echo "1 Gbps"
     fi
-    sudo ifconfig "$INTERFACE" up
-    sleep 7
+    ethtool -s "$INTERFACE" speed 1000
+    sleep 6
   done
 EOF
-sudo dhclient eth0 &
+ethtool -s "$INTERFACE" speed 1000
+sudo dhclient eth0 > /dev/null 2>&1 &
 }
 
 # Was any interface name passed as an argument
