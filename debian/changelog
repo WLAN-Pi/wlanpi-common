@@ -1,3 +1,9 @@
+wlanpi-common (1.0.40) unstable; urgency=medium
+
+  * wifichannel adds Lower 6 GHz or Upper 6 GHz to output
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 03 Mar 2022 18:24:00 +0000
+
 wlanpi-common (1.0.39) unstable; urgency=medium
 
   * Port Blinker now always sets eth0 to 1 Gbps before quitting, or when interrupted by the user

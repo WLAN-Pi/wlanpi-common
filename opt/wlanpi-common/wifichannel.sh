@@ -7,7 +7,7 @@
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.8"
+VERSION="1.0.9"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
@@ -100,19 +100,25 @@ show_all_5(){
 show_all_6(){
     BAND="6"
     for INPUT in {1..233}; do
-        # 6 GHz PSC channels
+        # Workout padding
         PAD=""
         if [ ${#INPUT} -eq 1 ]; then
             PAD="  "
         elif [ ${#INPUT} -eq 2 ]; then
             PAD=" "
         fi
+        # Indicate lower or upper 6 GHz to illustrate difference between countries using 500 MHz and 1200 MHz
+        if [ $INPUT -le 93 ]; then
+            LOWER_UPPER="Lower 6 GHz"
+        else
+            LOWER_UPPER="Upper 6 GHz"
+        fi
 
         if [ $(($INPUT%4)) -eq 1 ]; then
             if [ $(($INPUT%16)) -eq 5 ]; then
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER"
             else
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER"
             fi
         fi
     done
@@ -154,15 +160,23 @@ freq_to_channel(){
 
     # 6 GHz
     elif [ "$INPUT" -ge 5955 ] && [ "$INPUT" -le 7115 ]; then
-        channel_6="$(((($INPUT - 5955) / 5) + 1))"
+        CHANNEL_6="$(((($INPUT - 5955) / 5) + 1))"
+
+        # Indicate lower or upper 6 GHz to illustrate difference between countries using 500 MHz and 1200 MHz
+        if [ $CHANNEL_6 -le 93 ]; then
+            LOWER_UPPER="Lower 6 GHz"
+        else
+            LOWER_UPPER="Upper 6 GHz"
+        fi
+
         # Valid 6 GHz PSC channel
-        if [ $(($channel_6%4)) -eq 1 ] && [ $(($channel_6%16)) -eq 5 ]; then
+        if [ $(($CHANNEL_6%4)) -eq 1 ] && [ $(($CHANNEL_6%16)) -eq 5 ]; then
             BAND="6"
-            echo "Band:   $BAND GHz   Channel: $channel_6   PSC: Yes"
-        # Valid 6 GHz channel
-        elif [ $(($channel_6%4)) -eq 1 ]; then
+            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: Yes   $LOWER_UPPER"
+        # Valid 6 GHz non-PSC channel
+        elif [ $(($CHANNEL_6%4)) -eq 1 ]; then
             BAND="6"
-            echo "Band:   $BAND GHz   Channel: $channel_6   PSC: No"
+            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: No    $LOWER_UPPER"
         fi
     fi
 
@@ -201,16 +215,26 @@ channel_to_freq(){
         echo "$CTF_5_OUTPUT"
     fi
 
+    # 6 GHz
+
+    # Indicate lower or upper 6 GHz to illustrate difference between countries using 500 MHz and 1200 MHz
+    if [ "$INPUT" -le 93 ]; then
+        LOWER_UPPER="Lower 6 GHz"
+    else
+        LOWER_UPPER="Upper 6 GHz"
+    fi
+
     # 6 GHz PSC channel
     if [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ] && [ $(($INPUT%16)) -eq 5 ]; then
         BAND="6"
-        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes"
+        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER"
+
     # 6 GHz non-PSC channel
     elif [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ]; then
         BAND="6"
-        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No"
+        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER"
     fi
-    
+
     invalid_input
 }
 
