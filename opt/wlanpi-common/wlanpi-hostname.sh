@@ -175,12 +175,12 @@ help () {
 
 # usage output
 usage () {
-        echo "Usage: hostname.sh {-v | get | set | help}"
+        echo "Usage: wlanpi-hostname {-v | get | set | help}"
         echo ""
-        echo "  wlanpi-hostname.sh -v : show current script version"
-        echo "  wlanpi-hostname.sh get: show current hostname"
-        echo "  wlanpi-hostname.sh set [hostname_str]: set hostname"
-        echo "  wlanpi-hostname.sh : show usage info"
+        echo "  wlanpi-hostname -v : show current script version"
+        echo "  wlanpi-hostname get: show current hostname"
+        echo "  wlanpi-hostname set [hostname_str]: set hostname"
+        echo "  wlanpi-hostname : show usage info"
         echo ""
         exit 0
 
