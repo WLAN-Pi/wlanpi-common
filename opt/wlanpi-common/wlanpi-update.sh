@@ -13,7 +13,12 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 upgradable () {
-    timeout 60 apt update > /dev/null 2>&1 && apt list --upgradable 2>/dev/null | grep upgradable || exit 1
+    updates=`apt update 2>&1`
+    if echo $updates | grep --quiet -E "Err|Fail"; then
+        exit 1
+    else
+	apt list --upgradable 2>/dev/null | grep upgradable
+    fi
 }
 
 upgrade_all () {
