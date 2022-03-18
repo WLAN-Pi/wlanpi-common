@@ -1,3 +1,9 @@
+wlanpi-common (1.0.42) unstable; urgency=medium
+
+  * Installs spectools package as a dependency and adds sudoers
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 18 Mar 2022 12:13:00 +0000
+
 wlanpi-common (1.0.41) unstable; urgency=medium
 
   * Changes wlanpi-update so users can choose to upgrade wlanpi-* packages only
