@@ -1,3 +1,9 @@
+wlanpi-common (1.0.43) unstable; urgency=medium
+
+  * Fixes permissions on /etc/sudoers.d/spectools
+
+ -- Adrian Granados <adrian@intuitibits.com>  Fri, 18 Mar 2022 09:26:36 -0500
+
 wlanpi-common (1.0.42) unstable; urgency=medium
 
   * Installs spectools package as a dependency and adds sudoers
