@@ -4,7 +4,7 @@ Have you tried running "reachability"?
 Check current IP settings of eth0 interface, speed, duplex, DHCP server details, and MAC address using "ipconfig".
 Check your public IP address by executing "publicip". Connected to a dualstack network? Use "publicip6".
 Execute "wlanpi-stats" to see CPU, memory and disk utilization, temperature, uptime, mode, and more.
-To update your WLAN Pi, simply execute "sudo wlanpi-update".
+For checking and installing package updates, use "wlanpi-update".
 Convert Wi-Fi channel numbers to center frequencies and vice versa on your WLAN Pi. Try "wifichannel 6", "wifichannel 229", "wifichannel 5500".
 Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change by "sudo wlanpi-reg-domain set <country code>".
 Change your WLAN Pi hostname using "sudo wlanpi-hostname set <new-hostname>"
