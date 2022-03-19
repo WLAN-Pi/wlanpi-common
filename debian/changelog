@@ -1,3 +1,9 @@
+wlanpi-common (1.0.46) unstable; urgency=medium
+
+  * Delays isc-dhcp-server start by 5 seconds to make sure interface are ready first
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 18 Mar 2022 23:59:00 +0000
+
 wlanpi-common (1.0.45) unstable; urgency=medium
 
   * Updates MOTD tip for wlanpi-update
