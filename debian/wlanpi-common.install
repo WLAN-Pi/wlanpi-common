@@ -2,3 +2,4 @@ opt/wlanpi-common/* opt/wlanpi-common/
 etc/update-motd.d/* etc/update-motd.d/
 etc/sudoers.d/spectools etc/sudoers.d/
 etc/systemd/system/isc-dhcp-server.service.d/* etc/systemd/system/isc-dhcp-server.service.d/
+etc/systemd/system/hostapd.service.d/* etc/systemd/system/hostapd.service.d/
