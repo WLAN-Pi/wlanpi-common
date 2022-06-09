@@ -53,5 +53,11 @@ echo
 if [ -f /opt/wlanpi-common/motd-tips.txt ]; then
     echo " Tip " | toilet -f term --filter border:gay
     echo "$(shuf -n 1 /opt/wlanpi-common/motd-tips.txt)"
-    echo ""
+    echo
+fi
+
+if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo && grep -q "7612" /sys/bus/usb/devices/2-1/idProduct; then
+    echo " Error: Connect Wi-Fi adapter to different USB port " | toilet -f term --filter border:metal
+    echo "MediaTek 7612U Wi-Fi adapter is not supported in the top USB 3.0 port. Use the bottom USB 3.0 port or any USB 2.0 port instead."
+    echo
 fi
