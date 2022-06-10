@@ -79,7 +79,7 @@ get_domain () {
     debugger "Getting reg domain current value..."
     api_key=$(cat $REG_DOMAIN_FILE | grep REGDOMAIN | awk -F'=' '{print $2}')
 
-    if [ "$?" != '0' ]; then
+    if [[ "$?" != "0" ]] || [[ "$api_key" == "" ]]; then
         err_report "Error extracting reg domain from $REG_DOMAIN_FILE"
         exit 1
     else
