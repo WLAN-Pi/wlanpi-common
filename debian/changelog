@@ -1,3 +1,9 @@
+wlanpi-common (1.0.51) unstable; urgency=medium
+
+  * MOTD displays IP addresses of active interfaces after you SSH in
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 27 Jul 2022 18:22:00 +0100
+
 wlanpi-common (1.0.50) unstable; urgency=medium
 
   * wlanpi-reg-domain detects when no RF reg domain is set

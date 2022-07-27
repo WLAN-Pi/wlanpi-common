@@ -49,15 +49,29 @@ echo "CPU temp:    ${TEMP}°C"
 echo "CPU load:    ${LOAD} %"
 echo
 
-#Display WLAN Pi tips
+# Display network interfaces and IP addresses
+INTERFACES=('eth0' 'wlan0' 'pan0' 'usb0' 'eth1' 'wlan1')
+echo "Network interfaces:"
+for INT in ${INTERFACES[*]}; do
+    IP=$(ifconfig | grep -A1 $INT | grep inet | awk '{print $2}')
+    if [ ! -z ${IP} ]; then
+        echo "  $INT  $IP"
+    fi
+done
+echo
+
+# Display WLAN Pi tips
 if [ -f /opt/wlanpi-common/motd-tips.txt ]; then
     echo " Tip " | toilet -f term --filter border:gay
     echo "$(shuf -n 1 /opt/wlanpi-common/motd-tips.txt)"
     echo
 fi
 
-if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo && grep -q "7612" /sys/bus/usb/devices/2-1/idProduct; then
-    echo " Error: Connect Wi-Fi adapter to different USB port " | toilet -f term --filter border:metal
-    echo "MediaTek 7612U Wi-Fi adapter is not supported in the top USB 3.0 port. Use the bottom USB 3.0 port or any USB 2.0 port instead."
-    echo
+# MediaTek 7612U Wi-Fi adapter does not work in top USB 3.0 port on RPi4. Warn the user.
+if [ -f /sys/bus/usb/devices/2-1/idProduct ]; then
+    if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo && grep -q "7612" /sys/bus/usb/devices/2-1/idProduct; then
+        echo " Error: Connect Wi-Fi adapter to different USB port " | toilet -f term --filter border:metal
+        echo "MediaTek 7612U Wi-Fi adapter is not supported in the top USB 3.0 port. Use the bottom USB 3.0 port or any USB 2.0 port instead."
+        echo
+    fi
 fi
