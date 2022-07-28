@@ -1,4 +1,4 @@
-wlanpi-common (1.0.52) unstable; urgency=medium
+wlanpi-common (1.0.52-1) unstable; urgency=medium
 
   * Adds wlanpi-bluetooth command
   * It starts Bluetooth PAN pairing and allows a new mobile device to connect to WLAN Pi
