@@ -1,3 +1,10 @@
+wlanpi-common (1.0.52) unstable; urgency=medium
+
+  * Adds wlanpi-bluetooth command
+  * It starts Bluetooth PAN pairing and allows a new mobile device to connect to WLAN Pi
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 28 Jul 2022 16:27:00 +0100
+
 wlanpi-common (1.0.51) unstable; urgency=medium
 
   * MOTD displays IP addresses of active interfaces after you SSH in

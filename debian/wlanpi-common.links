@@ -20,4 +20,4 @@ opt/wlanpi-common/wlanpi-gh-ssh-key.sh usr/bin/wlanpi-gh-ssh-key
 opt/wlanpi-common/wlanpi-fan.sh usr/bin/wlanpi-fan
 opt/wlanpi-common/wlanpi-power.sh usr/bin/wlanpi-power
 opt/wlanpi-common/wlanpi-charger-boost.sh usr/bin/wlanpi-charger-boost
-
+opt/wlanpi-common/wlanpi-bluetooth.sh usr/bin/wlanpi-bluetooth
