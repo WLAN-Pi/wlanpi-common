@@ -1,3 +1,9 @@
+wlanpi-common (1.0.53) unstable; urgency=medium
+
+  * Adds working version of wlanpi-model command
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 29 Jul 2022 18:07:00 +0100
+
 wlanpi-common (1.0.52-1) unstable; urgency=medium
 
   * Adds wlanpi-bluetooth command
@@ -139,7 +145,7 @@ wlanpi-common (1.0.31) unstable; urgency=medium
 wlanpi-common (1.0.30) unstable; urgency=medium
 
   * networkinfo.sh: wait for /var/log/messages to be created before reading
-    from it 
+    from it
 
  -- Josh Schmelzle <josh@joshschmelzle.com>  Sun, 13 Feb 2022 20:16:09 -0500
 
@@ -158,14 +164,14 @@ wlanpi-common (1.0.28) unstable; urgency=medium
 wlanpi-common (1.0.27) unstable; urgency=medium
 
   * Change hostname before bt-agent service starts
-  
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 16:53:00 +0000 
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 16:53:00 +0000
 
 wlanpi-common (1.0.26) unstable; urgency=medium
 
   * Rename "stats" command to "wlanpi-stats"
-  
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 09:31:00 +0000 
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 02 Feb 2022 09:31:00 +0000
 
 wlanpi-common (1.0.25-2.1) unstable; urgency=medium
 
@@ -248,7 +254,7 @@ wlanpi-common (1.0.14) unstable; urgency=medium
 
 wlanpi-common (1.0.13) unstable; urgency=medium
 
-  * Fixes lldpcleanup.sh not found run when lldpneigh.sh is run by /usr/bin/lldpneigh 
+  * Fixes lldpcleanup.sh not found run when lldpneigh.sh is run by /usr/bin/lldpneigh
   * Fixes cdpcleanup.sh not found run when cdpneigh.sh is run by /usr/bin/cdpneigh
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 18 Jan 2022 20:22:04 +0000
@@ -262,10 +268,10 @@ wlanpi-common (1.0.12) unstable; urgency=medium
 wlanpi-common (1.0.11) unstable; urgency=medium
 
   * Fix chat bot config file path, now located in /etc/wlanpi-chat-bot/config.json
-  * Added detail to MOTD tips 
+  * Added detail to MOTD tips
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 14 Dec 2021 09:48:12 +0000
- 
+
 wlanpi-common (1.0.10) unstable; urgency=medium
 
   * Add check for hostname with "_" chars and test script for wlanpi-hostname.sh
@@ -295,7 +301,7 @@ wlanpi-common (1.0.6-3) unstable; urgency=medium
   * wifichannel enhancements
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 02 Dec 2021 18:28:12 +0000
- 
+
 wlanpi-common (1.0.5) unstable; urgency=medium
 
   * Tidied up help pages and added more emojis
@@ -307,13 +313,13 @@ wlanpi-common (1.0.4-5) unstable; urgency=medium
   * Added Timezone, Reg domain, Chat bot scripts
 
  -- Nigel Bowden <wifinigel@gmail.com>  Mon, 22 Nov 2021 20:21:45 +0000
- 
+
 wlanpi-common (1.0.3-5) unstable; urgency=medium
 
   * Added wifichannel tool
 
  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 19 Nov 2021 01:22:01 +0000
- 
+
 wlanpi-common (1.0.2-1) unstable; urgency=medium
 
   * Added MOTD tips
