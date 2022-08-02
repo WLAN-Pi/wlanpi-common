@@ -71,7 +71,7 @@ declare -a interfaces=(eth0 eth1 wlan0 wlan1 usb1)
 for i in "${interfaces[@]}"
 do
     echo "Creating networkd file for $i."
-    cat << EOF > /etc/systemd/network.classic/$i.network
+    cat << EOF > "/etc/systemd/network.classic/$i.network"
 [Match]
 Name=$i
 
@@ -98,12 +98,12 @@ PoolSize=10
 EOF
 
 # Create wpa_supplicant files for wlan0 & wlan1
-echo "Creating wpa supplicant config files for wlan0 & wlan1"
 declare -a wlan_interfaces=(wlan0 wlan1)
 
 for i in "${wlan_interfaces[@]}"
 do
-    cat << EOF > /etc/wpa_supplicant-$i.conf
+    echo "Creating wpa supplicant config file for $i"
+    cat << EOF > "/etc/wpa_supplicant/wpa_supplicant-$i.conf"
 ap_scan=1
 p2p_disabled=1
 
@@ -168,9 +168,16 @@ p2p_disabled=1
 #  ieee80211w=2
 #}
 EOF
+
 done
 
-# Enable wpa supplicabt services
+# Remove old wpa supplicant file
+if [ -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+    echo "Removing old wpa_supplicant.conf file"
+    sudo rm  /etc/wpa_supplicant/wpa_supplicant.conf 
+fi
+
+# Enable wpa supplicant services
 echo "Enabling wpa supplicant services for wlan0 & wlan1"
 sudo systemctl enable wpa_supplicant@wlan0.service
 sudo systemctl enable wpa_supplicant@wlan1.service
