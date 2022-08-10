@@ -86,7 +86,7 @@ get_domain () {
 
     if [ -z "$crda_domain" ]; then
         debugger "No reg domain configured yet."
-        echo "No reg domain configured yet. Configure one using \"sudo wlanpi-reg-domain set XX\", where XX represents the domain name."
+        echo "No reg domain configured yet. Configure one using \"sudo wlanpi-reg-domain set XX\", where XX represents the country code."
         exit 0
     else
         debugger "Got reg domain: $crda_domain"

@@ -1,3 +1,9 @@
+wlanpi-common (1.0.55) unstable; urgency=medium
+
+  * Further improve error message in wlanpi-reg-domain
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 10 Aug 2022 17:45:00 +0100
+
 wlanpi-common (1.0.54) unstable; urgency=medium
 
   * Improve error message in wlanpi-reg-domain
