@@ -77,14 +77,20 @@ get_domain () {
 
     # target field: REGDOMAIN=GB
     debugger "Getting reg domain current value..."
-    api_key=$(cat $REG_DOMAIN_FILE | grep REGDOMAIN | awk -F'=' '{print $2}')
+    crda_domain=$(cat $REG_DOMAIN_FILE | grep 'REGDOMAIN=' | awk -F'=' '{print $2}')
 
-    if [[ "$?" != "0" ]] || [[ "$api_key" == "" ]]; then
+    if [ "$?" != "0" ]; then
         err_report "Error extracting reg domain from $REG_DOMAIN_FILE"
         exit 1
+    fi
+
+    if [ -z "$crda_domain" ]; then
+        debugger "No reg domain configured yet."
+        echo "No reg domain configured yet. Configure one using \"sudo wlanpi-reg-domain set XX\", where XX represents the domain name."
+        exit 0
     else
-        debugger "Got reg domain: $api_key"
-        echo $api_key
+        debugger "Got reg domain: $crda_domain"
+        echo "$crda_domain"
         exit 0
     fi
 }

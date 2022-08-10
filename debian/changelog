@@ -1,3 +1,10 @@
+wlanpi-common (1.0.54) unstable; urgency=medium
+
+  * Improve error message in wlanpi-reg-domain
+  * Fix grep string in wlanpi-reg-domain so that it only returns a single line with REGDOMAIN
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 10 Aug 2022 17:40:00 +0100
+
 wlanpi-common (1.0.53) unstable; urgency=medium
 
   * Adds working version of wlanpi-model command
