@@ -7,8 +7,32 @@
 # Fail on script errors
 set -e
 
-# Set to 1 to enable debugging output
+SCRIPT_NAME="$(basename "$0")"
+
+# Shows help
+show_help(){
+    echo "Detects WLAN Pi model"
+    echo
+    echo "Usage:"
+    echo "  $SCRIPT_NAME"
+    echo
+    echo "Options:"
+    echo "  -d, --debug    Enable debugging output"
+    echo "  -h, --help     Show this screen"
+    echo
+    exit 0
+}
+
+# Pass --debug argument to the script to enable debugging output
 DEBUG=0
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -d|--debug) DEBUG=1 ;;
+        -h|--help) show_help ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
 
 # Displays debug output
 debugger() {
