@@ -24,8 +24,8 @@
 #       a. /etc/wpa_supplicant/wpa_supplicant-wlan0.conf
 #       b. /etc/wpa_supplicant/wpa_supplicant-wlan1.conf
 #   6. Enable wpa_supplicant services:
-#       a. systemctl enable wpa_supplicant@wlan0.service
-#       b. systemctl enable wpa_supplicant@wlan1.service
+#       a. systemctl enable wpa_supplicant@wlan0.service (if wlan0 exists)
+#       b. systemctl enable wpa_supplicant@wlan1.service (if wlan1 exists)
 #
 #
 # Logging:
@@ -178,9 +178,19 @@ if [ -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
 fi
 
 # Enable wpa supplicant services
-echo "Enabling wpa supplicant services for wlan0 & wlan1"
-sudo systemctl enable wpa_supplicant@wlan0.service
-sudo systemctl enable wpa_supplicant@wlan1.service
+echo "Enabling wpa supplicant services for wlan0 & wlan1 (if interfaces exist)"
+
+network_interfaces=`ls /sys/class/net`
+
+if echo $network_interfaces | grep "wlan0"; then
+    echo "Enabling wlan0 wpa service"
+    sudo systemctl enable wpa_supplicant@wlan0.service
+fi
+
+if echo $network_interfaces | grep "wlan1"; then
+    echo "Enabling wlan1 wpa service"
+    sudo systemctl enable wpa_supplicant@wlan1.service
+fi
 
 echo "Finished."
 
