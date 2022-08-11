@@ -56,6 +56,20 @@ echo "Stopping and disabling ifplugd service."
 sudo systemctl stop ifplugd
 sudo systemctl disable ifplugd
 
+# fix-up eth0 network file
+ echo "Fixing eth0 network file..."
+    cat << EOF > "/etc/systemd/network/eth0.network"
+[Match]
+Name=eth0
+
+[Network]
+DHCP=ipv4
+
+[DHCPv4]
+ClientIdentifier=mac
+
+EOF
+
 # Backup any existing of following files in /etc/systemd/network 
 # to /etc/systemd/network.classic
 #   a. *.network
