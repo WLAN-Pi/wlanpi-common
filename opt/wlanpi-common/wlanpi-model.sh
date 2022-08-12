@@ -23,7 +23,7 @@ show_help(){
     exit 0
 }
 
-# Pass --debug argument to the script to enable debugging output
+# Pass debug argument to the script to enable debugging output
 DEBUG=0
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -76,7 +76,7 @@ fi
 
 # List installed Wi-Fi adapters
 USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d " " -f 6-)
-M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d " " -f 6-)
+M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | xargs)
 
 IFS="
 "
@@ -90,7 +90,7 @@ fi
 
 if [ -n "$M2_WIFI_ADAPTER" ]; then
     debugger "Found M.2 Wi-Fi adapter"
-    for item in $USB_WIFI_ADAPTER
+    for item in $M2_WIFI_ADAPTER
     do
         echo "M.2 Wi-Fi adapter:    $item"
     done

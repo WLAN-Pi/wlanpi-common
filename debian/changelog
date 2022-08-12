@@ -1,3 +1,9 @@
+wlanpi-common (1.0.57) unstable; urgency=medium
+
+  * Fix M2 Wi-Fi adapter output in wlanpi-model
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 12 Aug 2022 09:55:00 +0100
+
 wlanpi-common (1.0.56) unstable; urgency=medium
 
   * wlanpi-model shows WLAN Pi and Wi-Fi adapter model
