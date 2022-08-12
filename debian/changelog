@@ -1,4 +1,4 @@
-wlanpi-common (1.0.57) unstable; urgency=medium
+wlanpi-common (1.0.57-1) unstable; urgency=medium
 
   * Fix M2 Wi-Fi adapter output in wlanpi-model
 

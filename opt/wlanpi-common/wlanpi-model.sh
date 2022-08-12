@@ -76,7 +76,7 @@ fi
 
 # List installed Wi-Fi adapters
 USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d " " -f 6-)
-M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | xargs)
+M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
 
 IFS="
 "
