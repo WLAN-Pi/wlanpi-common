@@ -11,7 +11,7 @@ SCRIPT_NAME="$(basename "$0")"
 
 # Shows help
 show_help(){
-    echo "Detects WLAN Pi model"
+    echo "Detects WLAN Pi and Wi-Fi adapter model"
     echo
     echo "Usage:"
     echo "  $SCRIPT_NAME"
@@ -43,7 +43,7 @@ debugger() {
 
 # Is it Raspberry Pi 4?
 if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
-    echo "Main board:          Raspberry Pi 4"
+    echo "Main board:           Raspberry Pi 4"
     debugger "End script now. Platform is Raspberry Pi 4."
 
 # Is it WLAN Pi Pro, MCUzone, or other platform?
@@ -58,7 +58,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         # Look for VIA USB hub in lsusb
         if lsusb | grep -q "VIA Labs, Inc. Hub"; then
             debugger "Found VIA Labs USB hub. Potentially WLAN Pi Pro."
-            echo "Main board:          WLAN Pi Pro"
+            echo "Main board:           WLAN Pi Pro"
             debugger "End script now. Platform is WLAN Pi Pro."
         fi
     fi
@@ -66,13 +66,12 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     LSPCI_LINES=$(lspci | wc -l)
     if [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
-        echo "Main board:          MCUzone"
+        echo "Main board:           MCUzone"
         debugger "End script now. Platform is MCUzone."
     fi
 else
     # Not CM4 nor RPi4 -> Unknown platform
     echo "Unknown platform"
-    exit 0
 fi
 
 # List installed Wi-Fi adapters
@@ -85,7 +84,7 @@ if [ -n "$USB_WIFI_ADAPTER" ]; then
     debugger "Found USB Wi-Fi adapter"
     for item in $USB_WIFI_ADAPTER
     do
-        echo "USB Wi-Fi adapter:   $item"
+        echo "USB Wi-Fi adapter:    $item"
     done
 fi
 
@@ -93,6 +92,10 @@ if [ -n "$M2_WIFI_ADAPTER" ]; then
     debugger "Found M.2 Wi-Fi adapter"
     for item in $USB_WIFI_ADAPTER
     do
-        echo "M.2 Wi-Fi adapter:   $item"
+        echo "M.2 Wi-Fi adapter:    $item"
     done
+fi
+
+if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ]; then
+    echo "No Wi-Fi adapter"
 fi

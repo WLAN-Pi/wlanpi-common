@@ -1,3 +1,9 @@
+wlanpi-common (1.0.56) unstable; urgency=medium
+
+  * wlanpi-model shows WLAN Pi and Wi-Fi adapter model
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 12 Aug 2022 09:05:00 +0100
+
 wlanpi-common (1.0.55) unstable; urgency=medium
 
   * Further improve error message in wlanpi-reg-domain
