@@ -1,4 +1,4 @@
-wlanpi-common (1.0.58) unstable; urgency=medium
+wlanpi-common (1.0.58-1) unstable; urgency=medium
 
   * Adds wlanpi-config-at-startup service
 

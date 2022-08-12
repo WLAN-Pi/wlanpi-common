@@ -46,14 +46,17 @@ MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 # Apply MCUzone platform specific settings
 if [[ "$MODEL" == "MCUzone" ]]; then
     debugger "Applying MCUzone settings"
+    touch /tmp/MCUzone
 fi
 
 # Apply WLAN Pi Pro platform specific settings
 if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     debugger "Applying WLAN Pi Pro settings"
+    touch /tmp/Pro
 fi
 
 # Apply RPi4 platform specific settings
 if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
     debugger "Applying RPi4 settings"
+    touch /tmp/RPi4
 fi
