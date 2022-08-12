@@ -1,3 +1,9 @@
+wlanpi-common (1.0.58) unstable; urgency=medium
+
+  * Adds wlanpi-config-at-startup service
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 12 Aug 2022 16:23:00 +0100
+
 wlanpi-common (1.0.57-1) unstable; urgency=medium
 
   * Fix M2 Wi-Fi adapter output in wlanpi-model
