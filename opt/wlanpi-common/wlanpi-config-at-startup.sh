@@ -8,6 +8,7 @@
 set -e
 
 SCRIPT_NAME="$(basename "$0")"
+WAVESHARE_FILE="/boot/waveshare"
 
 # Shows help
 show_help(){
@@ -43,20 +44,57 @@ debugger() {
 
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 
+
+########## MCUzone ##########
+
 # Apply MCUzone platform specific settings
 if [[ "$MODEL" == "MCUzone" ]]; then
     debugger "Applying MCUzone settings"
-    touch /tmp/MCUzone
+
+    # Enable Waveshare display
+    debugger "Creating Waveshare file to enable display and buttons"
+    touch "$WAVESHARE_FILE"
+
+    # If WLAN Pi Pro fan controller is enabled, disable the controller
+    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
+        debugger "Fan controller was enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+    fi
 fi
+
+########## Pro ##########
 
 # Apply WLAN Pi Pro platform specific settings
 if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     debugger "Applying WLAN Pi Pro settings"
-    touch /tmp/Pro
+
+    # Disable Waveshare display
+    if [ -f "$WAVESHARE_FILE" ]; then
+        debugger "Waveshare file found, but not needed, removing it now"
+        rm "$WAVESHARE_FILE"
+    fi
+
+    # Enable WLAN Pi Pro fan controller if disabled
+    if grep -q -E "\s*#\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
+        sed -i "s/\s*#\s*dtoverlay=gpio-fan,gpiopin=26/dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+    fi
 fi
+
+########## RPi4 ##########
 
 # Apply RPi4 platform specific settings
 if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
     debugger "Applying RPi4 settings"
-    touch /tmp/RPi4
+
+    # Waveshare file is not needed on RPi4 - FPMS recognises RPi4
+    if [ -f "$WAVESHARE_FILE" ]; then
+        debugger "Waveshare file found, but not needed, removing it now"
+        rm "$WAVESHARE_FILE"
+    fi
+
+    # If WLAN Pi Pro fan controller is enabled, disable the controller
+    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
+        debugger "Fan controller was enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+    fi
 fi
