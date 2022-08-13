@@ -1,9 +1,16 @@
+wlanpi-common (1.0.60) unstable; urgency=medium
+
+  * wlanpi-config-at-startup automatically restarts the unit when required
+  * USB configuration to be done in the next release, not ready yet
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Sat, 13 Aug 2022 23:14:00 +0100
+
 wlanpi-common (1.0.59) unstable; urgency=medium
 
   * wlanpi-config-at-startup now enables and disables fan controller and display
   * USB configuration to be done in the next release, not ready yet
 
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 12 Aug 2022 16:23:00 +0100
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Sat, 13 Aug 2022 16:23:00 +0100
 
 wlanpi-common (1.0.58-1) unstable; urgency=medium
 

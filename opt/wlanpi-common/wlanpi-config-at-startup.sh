@@ -9,6 +9,7 @@ set -e
 
 SCRIPT_NAME="$(basename "$0")"
 WAVESHARE_FILE="/boot/waveshare"
+REQUIRES_REBOOT=0
 
 # Shows help
 show_help(){
@@ -52,13 +53,21 @@ if [[ "$MODEL" == "MCUzone" ]]; then
     debugger "Applying MCUzone settings"
 
     # Enable Waveshare display
-    debugger "Creating Waveshare file to enable display and buttons"
-    touch "$WAVESHARE_FILE"
+    if [ ! -f "$WAVESHARE_FILE" ]; then
+        debugger "Creating Waveshare file to enable display and buttons"
+        touch "$WAVESHARE_FILE"
+        systemctl restart wlanpi-fpms.service
+    else
+        debugger "Waveshare file already exists, no action needed"
+    fi
 
     # If WLAN Pi Pro fan controller is enabled, disable the controller
     if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
-        debugger "Fan controller was enabled, disabling it now"
+        debugger "Fan controller is enabled, disabling it now"
         sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "Fan controller is already disabled, no action needed"
     fi
 fi
 
@@ -70,13 +79,17 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
 
     # Disable Waveshare display
     if [ -f "$WAVESHARE_FILE" ]; then
-        debugger "Waveshare file found, but not needed, removing it now"
+        debugger "Waveshare file found, removing it now"
         rm "$WAVESHARE_FILE"
     fi
 
     # Enable WLAN Pi Pro fan controller if disabled
     if grep -q -E "\s*#\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
         sed -i "s/\s*#\s*dtoverlay=gpio-fan,gpiopin=26/dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+        debugger "Fan controller is disabled, enabling it now"
+        REQUIRES_REBOOT=1
+    else
+        debugger "Fan controller is already enabled, no action needed"
     fi
 fi
 
@@ -88,13 +101,22 @@ if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
 
     # Waveshare file is not needed on RPi4 - FPMS recognises RPi4
     if [ -f "$WAVESHARE_FILE" ]; then
-        debugger "Waveshare file found, but not needed, removing it now"
+        debugger "Waveshare file found, removing it now"
         rm "$WAVESHARE_FILE"
     fi
 
     # If WLAN Pi Pro fan controller is enabled, disable the controller
     if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
-        debugger "Fan controller was enabled, disabling it now"
+        debugger "Fan controller is enabled, disabling it now"
         sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "Fan controller is already disabled, no action needed"
     fi
+fi
+
+# Reboot if required
+if [ "$REQUIRES_REBOOT" -gt 0 ]; then
+    debugger "Reboot required, rebooting now"
+    reboot
 fi
