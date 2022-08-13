@@ -41,6 +41,27 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
+# Warning message
+cat <<EOF 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+              ---- WARNING ----
+This script changes the networking stack used
+by your WLAN Pi. This is an untested process.
+DO NOT PROCEED unless you are part of the 
+WLAN Pi dev team.
+
+You have been warned. There is no recovery
+path once this script is executed.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EOF
+
+read -p "Do you wish to continue? (y/n) : " yn
+
+if [[ ! $yn =~ [yY] ]]; then
+    echo "OK, exiting."
+    exit 1
+fi
+
 # Decommission dhclient service (remove files definitions - take effect after network reboot)
 echo "Removing dhclient config files."
 sudo echo "source /etc/network/interfaces.d/*" > /etc/network/interfaces
