@@ -91,7 +91,7 @@ if [[ "$MODEL" == "MCUzone" ]]; then
     # Set USB ports to host mode
     CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
     LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=otg" | cut -d ":" -f1)
-    if [ "$CM4_LINE_NUMBER" -gt 0 ] && [ "$LINES_BELOW_CM4" -gt 0 ]; then
+    if [ $CM4_LINE_NUMBER -gt 0 ] && [ $LINES_BELOW_CM4 -gt 0 ]; then
         DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
         debugger "Found \"dtoverlay=dwc2,dr_mode=otg\" CM4 config on line $DR_MODE_LINE_NUMBER"
         debugger "Setting CM4 USB to host mode"
