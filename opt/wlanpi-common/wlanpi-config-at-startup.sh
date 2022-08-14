@@ -4,6 +4,11 @@
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
+# TODO:
+# - Investigate reboot loop around: if [ "$CM4_LINE_NUMBER" -gt 0 ] && [ "$LINES_BELOW_CM4" -gt 0 ]; then
+# - Uncomment reboot
+# - Service should not start after apt install, double-check
+
 # Fail on script errors
 set -e
 
@@ -50,7 +55,7 @@ MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 
 # Apply MCUzone platform specific settings
 if [[ "$MODEL" == "MCUzone" ]]; then
-    debugger "Applying MCUzone settings"
+    echo "Applying MCUzone settings"
 
     # Enable Waveshare display
     if [ ! -f "$WAVESHARE_FILE" ]; then
@@ -69,13 +74,41 @@ if [[ "$MODEL" == "MCUzone" ]]; then
     else
         debugger "Fan controller is already disabled, no action needed"
     fi
+
+    # Set USB OTG mode to 1
+    if grep -q -E "^\s*#\s*otg_mode=1" /boot/config.txt; then
+        debugger "Setting otg_mode to 1 by uncommenting the config line"
+        sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+        debugger "otg_mode is already set to 1, no action needed"
+    else
+        debugger "otg_mode line not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\notg_mode=1/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
+    # Set USB ports to host mode
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=otg" | cut -d ":" -f1)
+    if [ "$CM4_LINE_NUMBER" -gt 0 ] && [ "$LINES_BELOW_CM4" -gt 0 ]; then
+        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
+        debugger "Found \"dtoverlay=dwc2,dr_mode=otg\" CM4 config on line $DR_MODE_LINE_NUMBER"
+        debugger "Setting CM4 USB to host mode"
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=host/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q -v "^\s*dtoverlay=dwc2,dr_mode=host"; then
+        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
 fi
 
 ########## Pro ##########
 
 # Apply WLAN Pi Pro platform specific settings
 if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
-    debugger "Applying WLAN Pi Pro settings"
+    echo "Applying WLAN Pi Pro settings"
 
     # Disable Waveshare display
     if [ -f "$WAVESHARE_FILE" ]; then
@@ -97,7 +130,7 @@ fi
 
 # Apply RPi4 platform specific settings
 if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
-    debugger "Applying RPi4 settings"
+    echo "Applying RPi4 settings"
 
     # Waveshare file is not needed on RPi4 - FPMS recognises RPi4
     if [ -f "$WAVESHARE_FILE" ]; then
@@ -117,6 +150,6 @@ fi
 
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
-    debugger "Reboot required, rebooting now"
-    reboot
+    echo "Reboot required, rebooting now"
+    #reboot
 fi
