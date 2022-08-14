@@ -8,6 +8,9 @@
 %:
 	dh $@ --with systemd
 
+override_dh_installsystemd:
+	dh_installsystemd --no-start
+
 override_dh_auto_install:
 	dh_auto_install -- prefix=/usr
 
