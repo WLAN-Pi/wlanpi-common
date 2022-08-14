@@ -1,9 +1,10 @@
-wlanpi-common (1.0.61-2) unstable; urgency=medium
+wlanpi-common (1.0.62) unstable; urgency=medium
 
   * wlanpi-config-at-startup should now fully configure MCUzone
   * Few to do items, check wlanpi-config-at-startup comments
+  * Fixes wlanpi-config-at-startup reboot loop
 
- -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 14 Aug 2022 23:24:00 +0100
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 14 Aug 2022 23:59:00 +0100
 
 wlanpi-common (1.0.60) unstable; urgency=medium
 

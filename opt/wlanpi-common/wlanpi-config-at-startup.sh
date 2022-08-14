@@ -5,8 +5,6 @@
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
 # TODO:
-# - Investigate reboot loop around: if [ "$CM4_LINE_NUMBER" -gt 0 ] && [ "$LINES_BELOW_CM4" -gt 0 ]; then
-# - Uncomment reboot
 # - Service should not start after apt install, double-check
 
 # Fail on script errors
@@ -91,16 +89,18 @@ if [[ "$MODEL" == "MCUzone" ]]; then
     # Set USB ports to host mode
     CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
     LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=otg" | cut -d ":" -f1)
-    if [ $CM4_LINE_NUMBER -gt 0 ] && [ $LINES_BELOW_CM4 -gt 0 ]; then
+    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
         DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
         debugger "Found \"dtoverlay=dwc2,dr_mode=otg\" CM4 config on line $DR_MODE_LINE_NUMBER"
         debugger "Setting CM4 USB to host mode"
         sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=host/" /boot/config.txt
         REQUIRES_REBOOT=1
-    elif sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q -v "^\s*dtoverlay=dwc2,dr_mode=host"; then
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=host"; then
         debugger "USB mode setting not found in config file, creating a new line in CM4 section"
         sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host/" /boot/config.txt
         REQUIRES_REBOOT=1
+    else
+        debugger "USB mode is already set to host mode, no action needed"
     fi
 fi
 
@@ -151,5 +151,5 @@ fi
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
     echo "Reboot required, rebooting now"
-    #reboot
+    reboot
 fi
