@@ -4,9 +4,6 @@
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
-# TODO:
-# - Service should not start after apt install, double-check
-
 # Fail on script errors
 set -e
 

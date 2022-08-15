@@ -1,3 +1,10 @@
+wlanpi-common (1.0.63) unstable; urgency=medium
+
+  * wlanpi-config-at-startup fully configures MCUzone CM4 CE out of the box
+  * SD card swapping between CE and Pro models is not supported
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 14 Aug 2022 23:59:00 +0100
+
 wlanpi-common (1.0.62-1) unstable; urgency=medium
 
   * wlanpi-config-at-startup should now fully configure MCUzone
