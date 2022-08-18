@@ -1,3 +1,9 @@
+wlanpi-common (1.0.64) unstable; urgency=medium
+
+  * MOTD WLAN Pi model now correctly shows WLAN Pi CE for all non-Pro models
+
+ -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 18 Aug 2022 14:59:00 +0100
+
 wlanpi-common (1.0.63) unstable; urgency=medium
 
   * wlanpi-config-at-startup fully configures MCUzone CM4 CE out of the box

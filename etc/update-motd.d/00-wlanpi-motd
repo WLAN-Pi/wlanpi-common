@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# WLAN Pi login banner
-WLAN_PI_MODEL="WLAN Pi Community Edition"
-if grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo ; then
+# WLAN Pi model
+MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
+if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     WLAN_PI_MODEL="WLAN Pi Pro"
+else
+    WLAN_PI_MODEL="WLAN Pi Community Edition"
 fi
+
+# Release
 WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '=' -f 2 2>/dev/null)
 echo
 toilet -f term --filter border:gay " $WLAN_PI_MODEL "
