@@ -94,13 +94,34 @@ if [[ "$MODEL" == "MCUzone" ]]; then
         REQUIRES_REBOOT=1
     elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=host"; then
         debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host\n/" /boot/config.txt
         REQUIRES_REBOOT=1
     else
         debugger "USB mode is already set to host mode, no action needed"
     fi
+
+    # Enable pcie-32bit-dma overlay for MediaTek Wi-Fi 6E adapters to work
+    if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
+        sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
 fi
 
+# Reboot if required
+if [ "$REQUIRES_REBOOT" -gt 0 ]; then
+    echo "Reboot required, rebooting now"
+    reboot
+fi
+
+
+
+
+
+# The rest of this script is commented out
+# We have no plans to support SD card swapping between Pro and CE platforms
+: '
 ########## Pro ##########
 
 # Apply WLAN Pi Pro platform specific settings
@@ -144,9 +165,4 @@ if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
         debugger "Fan controller is already disabled, no action needed"
     fi
 fi
-
-# Reboot if required
-if [ "$REQUIRES_REBOOT" -gt 0 ]; then
-    echo "Reboot required, rebooting now"
-    reboot
-fi
+'

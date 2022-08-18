@@ -14,3 +14,4 @@ Have you tried "wifichannel -6"? It shows all 6 GHz channels, and highlights all
 SSH to your WLAN Pi, or access the web UI, via Bluetooth from your tablet or phone: Menu > Bluetooth > Pair Device
 Start Profiler on a custom channel by "sudo profiler -c1" or "sudo profiler -c40".
 Connect your phone or tablet to WLAN Pi by scanning a QR code. Switch to Hotspot, Wi-Fi Console, or Server mode, and press the center button to display the QR code.
+Use "wlanpi-model" to see your WLAN Pi model and installed Wi-Fi adapter.

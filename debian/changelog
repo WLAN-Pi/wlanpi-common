@@ -1,3 +1,12 @@
+wlanpi-common (1.0.65) unstable; urgency=medium
+
+  * Report Unsupported hardware platform in MOTD if not Pro, MCUzone or RPi4
+  * wlanpi-config-at-startup enables pcie-32bit-dma overlay for MT7921K to work on MCUzone
+  * Comment out Pro and RPi4 sections in wlanpi-config-at-startup, SD card swapping between different WLAN Pi models is not supported
+  * Add new MOTD tip
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 18 Aug 2022 14:59:00 +0100
+
 wlanpi-common (1.0.64) unstable; urgency=medium
 
   * MOTD WLAN Pi model now correctly shows WLAN Pi CE for all non-Pro models

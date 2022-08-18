@@ -4,8 +4,10 @@
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     WLAN_PI_MODEL="WLAN Pi Pro"
-else
+elif [[ "$MODEL" == "Raspberry Pi 4" ]] || [[ "$MODEL" == "MCUzone" ]]; then
     WLAN_PI_MODEL="WLAN Pi Community Edition"
+else
+    WLAN_PI_MODEL="Unsupported hardware platform"
 fi
 
 # Release
