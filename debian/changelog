@@ -1,3 +1,9 @@
+wlanpi-common (1.0.66) unstable; urgency=medium
+
+  * MOTD now reports Mcuzone as M4 and RPi4 as R4
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Mon, 22 Aug 2022 22:43:00 +0100
+
 wlanpi-common (1.0.65) unstable; urgency=medium
 
   * Report Unsupported hardware platform in MOTD if not Pro, MCUzone or RPi4
