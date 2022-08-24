@@ -1,6 +1,12 @@
+wlanpi-common (1.0.69) unstable; urgency=medium
+
+  * Add MOTD warning: No RF regulatory domain has been configured
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 24 Aug 2022 12:05:00 +0100
+
 wlanpi-common (1.0.68) unstable; urgency=medium
 
-  * Improve debug outout of wlanpi-config-at-startup.sh
+  * Improve debug output of wlanpi-config-at-startup.sh
  
   -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 24 Aug 2022 12:03:00 +0100
 
