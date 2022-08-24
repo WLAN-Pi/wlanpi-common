@@ -105,6 +105,8 @@ if [[ "$MODEL" == "MCUzone" ]]; then
         debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
         sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
         REQUIRES_REBOOT=1
+    else
+        debugger "pcie-32bit-dma overlay is already enabled, no action needed"
     fi
 
     # Disable RTC
@@ -112,6 +114,8 @@ if [[ "$MODEL" == "MCUzone" ]]; then
         debugger "RTC is enabled, disabling it now"
         sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
         REQUIRES_REBOOT=1
+    else
+        debugger "RTC is already disabled, no action needed"
     fi
 
     # Disable battery gauge
@@ -119,6 +123,8 @@ if [[ "$MODEL" == "MCUzone" ]]; then
         debugger "Battery gauge is enabled, disabling it now"
         sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
         REQUIRES_REBOOT=1
+    else
+        debugger "Battery gauge is already disabled, no action needed"
     fi
 
 fi
@@ -135,6 +141,7 @@ fi
 
 # The rest of this script is commented out
 # We have no plans to support SD card swapping between Pro and CE platforms
+
 : '
 ########## Pro ##########
 

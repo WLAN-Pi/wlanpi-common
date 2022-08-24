@@ -1,3 +1,9 @@
+wlanpi-common (1.0.68) unstable; urgency=medium
+
+  * Improve debug outout of wlanpi-config-at-startup.sh
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 24 Aug 2022 12:03:00 +0100
+
 wlanpi-common (1.0.67) unstable; urgency=medium
 
   * Disable Battery gauge and RTC on WLAN Pi M4
