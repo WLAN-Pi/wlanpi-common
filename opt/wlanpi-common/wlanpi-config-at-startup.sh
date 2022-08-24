@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Applies platform specific settings to WLAN Pi Pro and CE at startup
+# Applies platform specific settings to WLAN Pi M4 at startup time
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
@@ -13,7 +13,7 @@ REQUIRES_REBOOT=0
 
 # Shows help
 show_help(){
-    echo "Applies platform specific settings to WLAN Pi Pro and CE at startup time"
+    echo "Applies platform specific settings to WLAN Pi M4 at startup time"
     echo
     echo "Usage:"
     echo "  $SCRIPT_NAME"
@@ -104,6 +104,20 @@ if [[ "$MODEL" == "MCUzone" ]]; then
     if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
         debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
         sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
+    # Disable RTC
+    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" /boot/config.txt; then
+        debugger "RTC is enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
+    # Disable battery gauge
+    if grep -q -E "^\s*dtoverlay=battery_gauge" /boot/config.txt; then
+        debugger "Battery gauge is enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
         REQUIRES_REBOOT=1
     fi
 

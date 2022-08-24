@@ -1,3 +1,9 @@
+wlanpi-common (1.0.67) unstable; urgency=medium
+
+  * Disable Battery gauge and RTC on WLAN Pi M4
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 24 Aug 2022 12:02:00 +0100
+
 wlanpi-common (1.0.66) unstable; urgency=medium
 
   * MOTD now reports Mcuzone as M4 and RPi4 as R4
