@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Applies platform specific settings to WLAN Pi M4 at startup time
+# Applies platform specific settings to WLAN Pi R4 and M4 at startup time
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
@@ -9,11 +9,12 @@ set -e
 
 SCRIPT_NAME="$(basename "$0")"
 WAVESHARE_FILE="/boot/waveshare"
+EEPROM_FILE="/opt/wlanpi-common/r4-eeprom-boot.conf"
 REQUIRES_REBOOT=0
 
 # Shows help
 show_help(){
-    echo "Applies platform specific settings to WLAN Pi M4 at startup time"
+    echo "Applies platform specific settings to WLAN Pi R4 and M4 at startup time"
     echo
     echo "Usage:"
     echo "  $SCRIPT_NAME"
@@ -45,8 +46,26 @@ debugger() {
 
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 
+########## R4 ##########
 
-########## MCUzone ##########
+# Apply RPi4 platform specific settings
+if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
+    echo "Applying RPi4 settings"
+
+    # Update EEPROM so that RPi4 powers down after shutdown
+    if [ -f "$EEPROM_FILE" ]; then
+        debugger "EEPROM file found, continuing"
+        if rpi-eeprom-config | grep -q "POWER_OFF_ON_HALT=1" && rpi-eeprom-config | grep -q "WAKE_ON_GPIO=0" ; then
+            debugger "EEPROM is already correctly configured, no action needed"
+        else
+            debugger "EEPROM needs to be updated, configuring it now"
+            rpi-eeprom-config --apply "$EEPROM_FILE"
+            REQUIRES_REBOOT=1
+        fi
+    fi
+fi
+
+########## M4 ##########
 
 # Apply MCUzone platform specific settings
 if [[ "$MODEL" == "MCUzone" ]]; then

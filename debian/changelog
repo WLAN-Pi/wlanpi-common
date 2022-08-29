@@ -1,3 +1,9 @@
+wlanpi-common (1.0.71) unstable; urgency=medium
+
+  * Program R4 EEPROM so that it powers off R4 after shutdown
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Mon, 29 Aug 2022 16:54:00 -0700
+
 wlanpi-common (1.0.70) unstable; urgency=medium
 
   * "wlanpi-model -b" only shows the short model name (R4, M4, Pro)
