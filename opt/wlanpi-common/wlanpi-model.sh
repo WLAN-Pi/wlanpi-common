@@ -9,6 +9,17 @@ set -e
 
 SCRIPT_NAME="$(basename "$0")"
 
+# Pass debug argument to the script to enable debugging output
+DEBUG=0
+
+# Show full output by default
+BRIEF_OUTPUT=0
+
+# Brief output mode only returns the WLAN Pi mode (R4, M4, Pro)
+brief_output(){
+    BRIEF_OUTPUT=1
+}
+
 # Shows help
 show_help(){
     echo "Detects WLAN Pi and Wi-Fi adapter model"
@@ -18,17 +29,17 @@ show_help(){
     echo
     echo "Options:"
     echo "  -d, --debug    Enable debugging output"
+    echo "  -b, --brief    Show only short model name"
     echo "  -h, --help     Show this screen"
     echo
     exit 0
 }
 
-# Pass debug argument to the script to enable debugging output
-DEBUG=0
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -d|--debug) DEBUG=1 ;;
         -h|--help) show_help ;;
+        -b|--brief) brief_output ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -41,9 +52,18 @@ debugger() {
     fi
 }
 
+# Brief output mode only returns the WLAN Pi mode (R4, M4, Pro)
+brief_output(){
+    BRIEF_OUTPUT=1
+}
+
 # Is it Raspberry Pi 4?
 if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
-    echo "Main board:           Raspberry Pi 4"
+    if [ "$BRIEF_OUTPUT" -ne 0 ];then
+        echo "R4"
+    else
+        echo "Main board:           Raspberry Pi 4"
+    fi
     debugger "End script now. Platform is Raspberry Pi 4."
 
 # Is it WLAN Pi Pro, MCUzone, or other platform?
@@ -58,7 +78,11 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         # Look for VIA USB hub in lsusb
         if lsusb | grep -q "VIA Labs, Inc. Hub"; then
             debugger "Found VIA Labs USB hub. Potentially WLAN Pi Pro."
-            echo "Main board:           WLAN Pi Pro"
+            if [ "$BRIEF_OUTPUT" -ne 0 ];then
+                echo "Pro"
+            else
+                echo "Main board:           WLAN Pi Pro"
+            fi
             debugger "End script now. Platform is WLAN Pi Pro."
         fi
     fi
@@ -66,12 +90,20 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     LSPCI_LINES=$(lspci | wc -l)
     if [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
-        echo "Main board:           MCUzone"
+        if [ "$BRIEF_OUTPUT" -ne 0 ];then
+            echo "M4"
+        else
+            echo "Main board:           MCUzone"
+        fi
         debugger "End script now. Platform is MCUzone."
     fi
 else
     # Not CM4 nor RPi4 -> Unknown platform
-    echo "Unknown platform"
+    if [ "$BRIEF_OUTPUT" -ne 0 ];then
+        echo "?"
+    else
+        echo "Unknown platform"
+    fi
 fi
 
 # List installed Wi-Fi adapters
@@ -80,7 +112,7 @@ M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f
 
 IFS="
 "
-if [ -n "$USB_WIFI_ADAPTER" ]; then
+if [ -n "$USB_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
     debugger "Found USB Wi-Fi adapter"
     for item in $USB_WIFI_ADAPTER
     do
@@ -88,7 +120,7 @@ if [ -n "$USB_WIFI_ADAPTER" ]; then
     done
 fi
 
-if [ -n "$M2_WIFI_ADAPTER" ]; then
+if [ -n "$M2_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
     debugger "Found M.2 Wi-Fi adapter"
     for item in $M2_WIFI_ADAPTER
     do
@@ -96,6 +128,6 @@ if [ -n "$M2_WIFI_ADAPTER" ]; then
     done
 fi
 
-if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ]; then
+if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
     echo "No Wi-Fi adapter"
 fi
