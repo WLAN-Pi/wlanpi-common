@@ -1,3 +1,9 @@
+wlanpi-common (1.0.73) unstable; urgency=medium
+
+  * [wlanpi-model] Ignore PCIe ID 0608 for MT7921K from lsusb output
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 20 Sep 2022 18:42:13 -0400
+
 wlanpi-common (1.0.72) unstable; urgency=medium
 
   * Tell user to reboot after setting RF regulatory domain
