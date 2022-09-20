@@ -1,3 +1,9 @@
+wlanpi-common (1.0.72) unstable; urgency=medium
+
+  * Tell user to reboot after setting RF regulatory domain
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 20 Sep 2022 17:04:00 +0100
+
 wlanpi-common (1.0.71) unstable; urgency=medium
 
   * Program R4 EEPROM so that it powers off R4 after shutdown

@@ -6,7 +6,7 @@ Check your public IP address by executing "publicip". Connected to a dualstack n
 Execute "wlanpi-stats" to see CPU, memory and disk utilization, temperature, uptime, mode, and more.
 For checking and installing package updates, use "wlanpi-update".
 Convert Wi-Fi channel numbers to center frequencies and vice versa on your WLAN Pi. Try "wifichannel 6", "wifichannel 229", "wifichannel 5500".
-Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change by "sudo wlanpi-reg-domain set <country code>".
+Are you using the right RF regulatory domain? Check by "sudo wlanpi-reg-domain get". Change domain by "sudo wlanpi-reg-domain set <country code>", followed by "sudo reboot".
 Change your WLAN Pi hostname using "sudo wlanpi-hostname set <new-hostname>"
 Check if you are using the right time zone using "sudo wlanpi-timezone get". Change it using "sudo "wlanpi-timezone set Europe/London".
 Let us know if you have any ideas or suggestions about how to improve WLAN Pi https://github.com/wlan-pi/feedback

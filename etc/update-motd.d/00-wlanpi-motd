@@ -92,6 +92,6 @@ fi
 # No RF regulatory domain configured
 if sudo wlanpi-reg-domain get | grep -q "No reg domain configured"; then
     echo " Warning: No RF regulatory domain has been configured " | toilet -f term --filter border:metal
-    echo "Configure one using \"sudo wlanpi-reg-domain set XX\", where XX represents the country code."
+    echo "Configure one using \"sudo wlanpi-reg-domain set XX\", followed by \"sudo reboot\". XX represents the country code."
     echo
 fi
