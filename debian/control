@@ -11,5 +11,5 @@ Package: wlanpi-common
 Architecture: any
 Multi-Arch: foreign
 Depends: ${misc:Depends}, ${shlibs:Depends}, tcpdump, dnsutils, iputils-arping, jq, toilet, ssh, spectools
-Description: Common WLAN Pi scripts and files
- Common WLAN Pi scripts and files.
+Description: WLAN Pi - common scripts and files
+ Shared common scripts and files for various WLAN Pi applications.
