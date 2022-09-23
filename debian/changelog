@@ -2,7 +2,7 @@ wlanpi-common (1.0.74) unstable; urgency=medium
 
   * [wlanpi-model] RBPi 3 B Rev 1.2 Easter egg 
 
- -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 23 Sep 2022 16:15:13 -0400
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 23 Sep 2022 18:15:13 -0400
 
 wlanpi-common (1.0.73) unstable; urgency=medium
 

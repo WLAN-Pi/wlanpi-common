@@ -57,7 +57,7 @@ brief_output(){
     BRIEF_OUTPUT=1
 }
 
-# Is it an easter egg?
+# Is it an easter egg? Unofficial support to just "turn the lights on"
 if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R4"
@@ -65,6 +65,7 @@ if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
         echo "Main board:           Raspberry Pi 4"
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
+fi
 
 # Is it Raspberry Pi 4?
 if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
