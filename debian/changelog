@@ -1,3 +1,9 @@
+wlanpi-common (1.0.75) unstable; urgency=medium
+
+  * Hack for UTC/UTC format for FPMS
+
+ -- Nigel Bowden <wifinigel@gmail.com>  Fri, 30 Sep 2022 21:47:51 +0000
+
 wlanpi-common (1.0.74-1) unstable; urgency=medium
 
   * [wlanpi-model] RBPi 3 B Rev 1.2 Easter egg 
