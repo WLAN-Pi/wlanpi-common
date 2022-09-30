@@ -95,20 +95,23 @@ set_tz() {
        err_report "No timezone passed to : set_timezone()"
        exit 1
     fi
+
+    # hack for UTC/UTC entry in FPMS
+    TZ=$(echo $TZ | sed "s/UTC\/UTC/UTC/")
     
     # set the timezone
-   cmd="$TIMEDATECTL set-timezone $TZ"
-   debugger "Set cmd: $cmd"
-   err_msg=$($cmd)
+    cmd="$TIMEDATECTL set-timezone $TZ"
+    debugger "Set cmd: $cmd"
+    err_msg=$($cmd)
 
-   if [ "$?" != '0' ]; then
+    if [ "$?" != '0' ]; then
        err_report "Error setting timezone"
        exit 1
-   else
+    else
        debugger "Updated TZ"
        echo "Updated TZ"
        exit 0
-   fi
+    fi
 }
 
 # list timezones available
@@ -125,7 +128,7 @@ list() {
         exit 1
     else
         debugger "Got TZ List: $tz"
-        echo "$tz_list"
+        echo "$tz_list" | sed "s/UTC/UTC\/UTC/"
         exit 0
     fi
 }
