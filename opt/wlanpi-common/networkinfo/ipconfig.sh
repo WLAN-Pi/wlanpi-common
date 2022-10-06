@@ -18,6 +18,7 @@ SPEED=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 
 DUPLEX=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 2>/dev/null | grep "Duplex" | cut -d ' ' -f 2 || echo "Disconnected")
 MACADDRESS=$(sed 's/://g' /sys/class/net/eth0/address)
 DNSSERVERS=$(grep "nameserver" /etc/resolv.conf | sed 's/nameserver/DNS:/g')
+MTU=$(cat /sys/class/net/eth0/mtu)
 
 if [ "$ETH0ISUP" ]; then
     #IP address
@@ -56,6 +57,8 @@ if [ "$ETH0ISUP" ]; then
     #eth0 MAC address
     echo "MAC: $MACADDRESS"
 
+    #eth0 MTU
+    echo "MTU: $MTU"
 else
     echo "eth0 is down"
 fi

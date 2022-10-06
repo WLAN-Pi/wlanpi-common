@@ -1,3 +1,9 @@
+wlanpi-common (1.0.76) UNRELEASED; urgency=medium
+
+  * Add output for eth0 MTU in ipconfig.sh
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 06 Oct 2022 17:30:58 -0400
+
 wlanpi-common (1.0.75) unstable; urgency=medium
 
   * Hack for UTC/UTC format for FPMS
