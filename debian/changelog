@@ -1,3 +1,9 @@
+wlanpi-common (1.0.77) unstable; urgency=medium
+
+  * Fix for when no CDP neighbour is detected in some cases
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 22 Jan 2023 21:18:00 +0000
+
 wlanpi-common (1.0.76) UNRELEASED; urgency=medium
 
   * Add output for eth0 MTU in ipconfig.sh

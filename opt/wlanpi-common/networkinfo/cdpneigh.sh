@@ -27,7 +27,7 @@ logger "networkinfo script: looking for a CDP neighbour"
 #Run packet capture for up to 61 seconds or stop after we have got the right packets
 TIMETOSTOP=0
 while [ "$TIMETOSTOP" == 0 ]; do
-    timeout 61 sudo tcpdump -v -s 1500 -c 1 'ether[20:2] == 0x2000' -i eth0 -Q in > "$CAPTUREFILE"
+    timeout 61 sudo tcpdump -nv -s 1500 -c 1 -i eth0 -Q in 'ether[20:2] == 0x2000' and ether dst 01:00:0c:cc:cc:cc > "$CAPTUREFILE"
     TIMETOSTOP=$(grep "CDP" "$CAPTUREFILE")
 done
 
