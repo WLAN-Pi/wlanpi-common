@@ -11,7 +11,7 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     WLAN_PI_MODEL="WLAN Pi Pro"
 elif [[ "$MODEL" == "Raspberry Pi 4" ]]; then
     WLAN_PI_MODEL="WLAN Pi R4"
-elif [[ "$MODEL" == "MCUzone" ]]; then
+elif [[ "$MODEL" == "Mcuzone" ]]; then
     WLAN_PI_MODEL="WLAN Pi M4"
 else
     WLAN_PI_MODEL="Unsupported hardware platform"
