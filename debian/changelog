@@ -1,3 +1,10 @@
+wlanpi-common (1.0.78) unstable; urgency=medium
+
+  * Fix WLAN Pi model detection - Pro was identified as M4 due to disabled PCIe bus
+  * Replace MCUzone with Mcuzone
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 22 Jan 2023 21:18:00 +0000
+
 wlanpi-common (1.0.77) unstable; urgency=medium
 
   * Fix for when no CDP neighbour is detected in some cases

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Applies platform specific settings to WLAN Pi R4 and M4 at startup time
+# Applies platform specific settings to WLAN Pi R4, M4, Pro at startup time
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
@@ -44,7 +44,13 @@ debugger() {
     fi
 }
 
+# Get WLAN Pi model
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
+if [ -z "$MODEL" ]; then
+    # Wait for PCIe devices to come up (workaround for M4) and WLAN Pi model to be detected
+    sleep 1
+    MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
+fi
 
 ########## R4 ##########
 
@@ -67,9 +73,9 @@ fi
 
 ########## M4 ##########
 
-# Apply MCUzone platform specific settings
-if [[ "$MODEL" == "MCUzone" ]]; then
-    echo "Applying MCUzone settings"
+# Apply Mcuzone platform specific settings
+if [[ "$MODEL" == "Mcuzone" ]]; then
+    echo "Applying Mcuzone settings"
 
     # Enable Waveshare display
     if [ ! -f "$WAVESHARE_FILE" ]; then
@@ -146,6 +152,22 @@ if [[ "$MODEL" == "MCUzone" ]]; then
         debugger "Battery gauge is already disabled, no action needed"
     fi
 
+fi
+
+########## Pro ##########
+
+# Apply WLAN Pi Pro platform specific settings
+if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
+    echo "Applying WLAN Pi Pro settings"
+
+    # Enable PCIe on WLAN Pi Pro if disabled. We disabled PCIe at boot by default as a workaround for M4.
+    if grep -q -E "\s*dtparam=pcie=off" /boot/config.txt; then
+        sed -i "s/\s*dtparam=pcie=off/dtparam=pcie=on/" /boot/config.txt
+        debugger "PCIe is disabled, enabling it now"
+        REQUIRES_REBOOT=1
+    else
+        debugger "PCIe is already enabled, no action needed"
+    fi
 fi
 
 # Reboot if required

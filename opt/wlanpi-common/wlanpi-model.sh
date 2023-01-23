@@ -76,7 +76,7 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
 
-# Is it WLAN Pi Pro, MCUzone, or other platform?
+# Is it WLAN Pi Pro, Mcuzone, or other platform?
 # Powered by CM4?
 elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     debugger "Powered by CM4"
@@ -96,16 +96,16 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             debugger "End script now. Platform is WLAN Pi Pro."
         fi
     fi
-    # Powered by CM4 and no Pro hardware found -> MCUzone
+    # Powered by CM4 and no Pro hardware found -> Mcuzone
     LSPCI_LINES=$(lspci | wc -l)
     if [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
         if [ "$BRIEF_OUTPUT" -ne 0 ];then
             echo "M4"
         else
-            echo "Main board:           MCUzone"
+            echo "Main board:           Mcuzone"
         fi
-        debugger "End script now. Platform is MCUzone."
+        debugger "End script now. Platform is Mcuzone."
     fi
 else
     # Not CM4 nor RPi4 -> Unknown platform
