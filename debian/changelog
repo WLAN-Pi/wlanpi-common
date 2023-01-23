@@ -1,3 +1,9 @@
+wlanpi-common (1.0.79) unstable; urgency=medium
+
+  * Replace MCUzone with Mcuzone in 00-wlanpi-motd
+ 
+  -- Jerry Olla <jerryolla@gmail.com>  Mon, 23 Jan 2023 10:15:00 +0000
+  
 wlanpi-common (1.0.78) unstable; urgency=medium
 
   * Fix WLAN Pi model detection - Pro was identified as M4 due to disabled PCIe bus
