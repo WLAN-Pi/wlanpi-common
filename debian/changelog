@@ -1,8 +1,8 @@
-wlanpi-common (1.0.78) unstable; urgency=medium
+wlanpi-common (1.0.80) unstable; urgency=medium
 
   * Delay model detection service by 5s
  
-  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 26 Jan 2023 02:09:00 +0000
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 26 Jan 2023 02:21:00 +0000
 
 wlanpi-common (1.0.79) unstable; urgency=medium
 
