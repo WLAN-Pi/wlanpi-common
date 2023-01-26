@@ -20,8 +20,11 @@ brief_output(){
     BRIEF_OUTPUT=1
 }
 
-# Sleep required for PCIe devices and charging/battery i2c controller at boot
-sleep 1
+# Sleep is only required at boot time for PCIe and i2c battery fuel gauge to initialise
+UPTIME="$(cut -f1 -d '.' /proc/uptime)"
+if [[ "$UPTIME" -lt 60 ]]; then
+    sleep 1
+fi
 
 # Shows help
 show_help(){
