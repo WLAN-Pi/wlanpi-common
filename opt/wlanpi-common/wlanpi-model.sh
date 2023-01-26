@@ -20,6 +20,9 @@ brief_output(){
     BRIEF_OUTPUT=1
 }
 
+# Sleep required for PCIe devices and charging/battery i2c controller at boot
+sleep 1
+
 # Shows help
 show_help(){
     echo "Detects WLAN Pi and Wi-Fi adapter model"
@@ -81,20 +84,15 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
 elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     debugger "Powered by CM4"
 
-    # Look for Pericom 4-port PCI packet switch in lspci
-    if lspci | grep -q "PCI bridge: Pericom Semiconductor PI7C9X2G404 EL/SL PCIe2 4-Port/4-Lane Packet Switch"; then
-        debugger "Found Pericom packet switch. Potentially WLAN Pi Pro."
-
-        # Look for VIA USB hub in lsusb
-        if lsusb | grep -q "VIA Labs, Inc. Hub"; then
-            debugger "Found VIA Labs USB hub. Potentially WLAN Pi Pro."
-            if [ "$BRIEF_OUTPUT" -ne 0 ];then
-                echo "Pro"
-            else
-                echo "Main board:           WLAN Pi Pro"
-            fi
-            debugger "End script now. Platform is WLAN Pi Pro."
+    # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
+    if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present; then
+        debugger "Found WLAN Pi Pro i2c Texas Instruments battery fuel gauge"
+        if [ "$BRIEF_OUTPUT" -ne 0 ];then
+           echo "Pro"
+        else
+            echo "Main board:           WLAN Pi Pro"
         fi
+            debugger "End script now. Platform is WLAN Pi Pro."
     fi
     # Powered by CM4 and no Pro hardware found -> Mcuzone
     LSPCI_LINES=$(lspci | wc -l)

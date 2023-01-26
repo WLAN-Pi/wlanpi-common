@@ -46,11 +46,7 @@ debugger() {
 
 # Get WLAN Pi model
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
-if [ -z "$MODEL" ]; then
-    # Wait for PCIe devices to come up (workaround for M4) and WLAN Pi model to be detected
-    sleep 1
-    MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
-fi
+debugger "Detected WLAN Pi model: $MODEL"
 
 ########## R4 ##########
 
