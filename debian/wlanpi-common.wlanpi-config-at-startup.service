@@ -3,6 +3,7 @@ Description=Applies platform specific settings at startup to WLAN Pi
 After=pcie.service
 
 [Service]
+ExecStartPre=/bin/sleep 5
 ExecStart=/opt/wlanpi-common/wlanpi-config-at-startup.sh
 WorkingDirectory=/opt/wlanpi-common/
 Type=oneshot

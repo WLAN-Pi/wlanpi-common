@@ -1,3 +1,9 @@
+wlanpi-common (1.0.78) unstable; urgency=medium
+
+  * Delay model detection service by 5s
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 26 Jan 2023 02:09:00 +0000
+
 wlanpi-common (1.0.79) unstable; urgency=medium
 
   * Replace MCUzone with Mcuzone in 00-wlanpi-motd
