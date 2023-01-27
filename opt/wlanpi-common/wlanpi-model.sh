@@ -47,7 +47,7 @@ done
 
 # Displays debug output
 debugger() {
-    if [ "$DEBUG" -ne 0 ];then
+    if [ "$DEBUG" -ne 0 ]; then
       echo "Debugger: $1"
     fi
 }
@@ -88,9 +88,9 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     fi
 
     # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
-    if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present; then
+    if [[ -f /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present ]]; then
         debugger "Found WLAN Pi Pro i2c Texas Instruments battery fuel gauge"
-        if [ "$BRIEF_OUTPUT" -ne 0 ];then
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
            echo "Pro"
         else
             echo "Main board:           WLAN Pi Pro"
@@ -101,7 +101,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     LSPCI_LINES=$(lspci | wc -l)
     if [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
-        if [ "$BRIEF_OUTPUT" -ne 0 ];then
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4"
         else
             echo "Main board:           Mcuzone"
@@ -110,7 +110,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     fi
 else
     # Not CM4 nor RPi4 -> Unknown platform
-    if [ "$BRIEF_OUTPUT" -ne 0 ];then
+    if [ "$BRIEF_OUTPUT" -ne 0 ]; then
         echo "?"
     else
         echo "Unknown platform"
