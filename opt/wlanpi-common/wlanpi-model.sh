@@ -20,12 +20,6 @@ brief_output(){
     BRIEF_OUTPUT=1
 }
 
-# Sleep is only required at boot time for PCIe and i2c battery fuel gauge to initialise
-UPTIME="$(cut -f1 -d '.' /proc/uptime)"
-if [[ "$UPTIME" -lt 60 ]]; then
-    sleep 1
-fi
-
 # Shows help
 show_help(){
     echo "Detects WLAN Pi and Wi-Fi adapter model"
@@ -86,6 +80,12 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
 # Powered by CM4?
 elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     debugger "Powered by CM4"
+
+    # Sleep is only required at boot time for PCIe and i2c battery fuel gauge to initialise
+    UPTIME="$(cut -f1 -d '.' /proc/uptime)"
+    if [[ "$UPTIME" -lt 60 ]]; then
+        sleep 1
+    fi
 
     # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
     if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present; then
