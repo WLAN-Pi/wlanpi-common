@@ -1,3 +1,9 @@
+wlanpi-common (1.0.86) unstable; urgency=medium
+
+  * Fixes model detection for Pro and M4 cases
+ 
+  -- Adrian Granados <adrian@intuitibits.com>  Fri, 27 Jan 2023 19:00:00 +0000
+  
 wlanpi-common (1.0.85) unstable; urgency=medium
 
   * wlanpi-model on M4 does no longer spam output with file does not exist error message
