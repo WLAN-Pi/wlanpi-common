@@ -1,4 +1,4 @@
-wlanpi-common (1.0.86) unstable; urgency=medium
+wlanpi-common (1.0.87) unstable; urgency=medium
 
   * Add checks for USB settings for Pro and R4
  
