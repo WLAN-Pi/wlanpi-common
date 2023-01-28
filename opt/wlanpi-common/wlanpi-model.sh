@@ -87,19 +87,19 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         sleep 1
     fi
 
+    LSPCI_LINES=$(lspci | wc -l)
+
     # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
-    if [[ -f /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present ]]; then
+    if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present > /dev/null 2>&1; then
         debugger "Found WLAN Pi Pro i2c Texas Instruments battery fuel gauge"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-           echo "Pro"
+            echo "Pro"
         else
             echo "Main board:           WLAN Pi Pro"
         fi
-            debugger "End script now. Platform is WLAN Pi Pro."
-    fi
+        debugger "End script now. Platform is WLAN Pi Pro."
     # Powered by CM4 and no Pro hardware found -> Mcuzone
-    LSPCI_LINES=$(lspci | wc -l)
-    if [ $LSPCI_LINES -le 2 ]; then
+    elif [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4"
@@ -107,7 +107,13 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Main board:           Mcuzone"
         fi
         debugger "End script now. Platform is Mcuzone."
-    fi
+    else
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+            echo "?"
+        else
+            echo "Unknown platform"
+        fi
+    fi  
 else
     # Not CM4 nor RPi4 -> Unknown platform
     if [ "$BRIEF_OUTPUT" -ne 0 ]; then
