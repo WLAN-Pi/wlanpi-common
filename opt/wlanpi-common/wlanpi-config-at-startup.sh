@@ -65,6 +65,37 @@ if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
             REQUIRES_REBOOT=1
         fi
     fi
+
+    # Set USB 2.0 controller OTG mode to 0
+    if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+        debugger "Setting otg_mode to 0"
+        sed -i "s/^\s*otg_mode=1/otg_mode=0/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif grep -q -E "^\s*otg_mode=0" /boot/config.txt; then
+        debugger "otg_mode is already set to 0, no action needed"
+    else
+        debugger "otg_mode line not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\notg_mode=0/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
+    # Set USB mode to otg mode
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
+    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
+        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
+        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
+        debugger "Setting CM4 USB to otg mode"
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
+        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "USB mode is already set to otg mode, no action needed"
+    fi
+
 fi
 
 ########## M4 ##########
@@ -91,7 +122,7 @@ if [[ "$MODEL" == "Mcuzone" ]]; then
         debugger "Fan controller is already disabled, no action needed"
     fi
 
-    # Set USB OTG mode to 1
+    # Set USB 2.0 controller OTG mode to 1
     if grep -q -E "^\s*#\s*otg_mode=1" /boot/config.txt; then
         debugger "Setting otg_mode to 1 by uncommenting the config line"
         sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" /boot/config.txt
@@ -164,8 +195,37 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
     else
         debugger "PCIe is already enabled, no action needed"
     fi
-fi
 
+    # Set USB 2.0 controller OTG mode to 0
+    if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+        debugger "Setting otg_mode to 0"
+        sed -i "s/^\s*otg_mode=1/otg_mode=0/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif grep -q -E "^\s*otg_mode=0" /boot/config.txt; then
+        debugger "otg_mode is already set to 0, no action needed"
+    else
+        debugger "otg_mode line not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\notg_mode=0/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    fi
+
+    # Set USB ports to otg mode
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
+    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
+        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
+        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
+        debugger "Setting CM4 USB to otg mode"
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
+        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "USB mode is already set to otg mode, no action needed"
+    fi
+fi
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
     echo "Reboot required, rebooting now"
