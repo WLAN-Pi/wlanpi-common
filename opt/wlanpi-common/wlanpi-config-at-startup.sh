@@ -54,6 +54,12 @@ debugger "Detected WLAN Pi model: $MODEL"
 if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
     echo "Applying RPi4 settings"
 
+    # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
+    if [ ! -f "/etc/modprobe.d/blacklist-btusb.conf" ]; then
+        echo "blacklist btusb" > /etc/modprobe.d/blacklist-btusb.conf
+        REQUIRES_REBOOT=1
+    fi
+
     # Update EEPROM so that RPi4 powers down after shutdown
     if [ -f "$EEPROM_FILE" ]; then
         debugger "EEPROM file found, continuing"

@@ -1,3 +1,9 @@
+wlanpi-common (1.0.88) unstable; urgency=medium
+
+  * Disables Bluetooth on USB adapters connected to WLAN Pi R4
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Wed, 22 Feb 2023 7:31:00 +0000
+
 wlanpi-common (1.0.87) unstable; urgency=medium
 
   * Add checks for USB settings for Pro and R4
