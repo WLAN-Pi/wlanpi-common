@@ -1,3 +1,9 @@
+wlanpi-common (1.0.89) unstable; urgency=medium
+
+  * Adds Grafana repository
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 11 May 2023 7:31:00 +0100
+
 wlanpi-common (1.0.88) unstable; urgency=medium
 
   * Disables Bluetooth on USB adapters connected to WLAN Pi R4
