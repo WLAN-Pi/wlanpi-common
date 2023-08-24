@@ -1,3 +1,9 @@
+wlanpi-common (1.0.91) unstable; urgency=medium
+
+  * Don't rely on lsb_release command for OS codename detection
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 24 Aug 2023 13:35:00 +0100
+
 wlanpi-common (1.0.90) unstable; urgency=medium
 
   * Add InfluxData repository
