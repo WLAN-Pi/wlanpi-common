@@ -1,3 +1,9 @@
+wlanpi-common (1.0.90) unstable; urgency=medium
+
+  * Add InfluxData repository
+ 
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 24 Aug 2023 11:11:00 +0100
+
 wlanpi-common (1.0.89) unstable; urgency=medium
 
   * Adds Grafana repository
