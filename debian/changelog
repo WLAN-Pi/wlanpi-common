@@ -1,4 +1,4 @@
-wlanpi-common (1.0.92) unstable; urgency=medium
+wlanpi-common (1.0.92-1) unstable; urgency=medium
 
   * Adds new Grafana repository GPG key after they have rekeyed
  
