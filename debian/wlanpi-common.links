@@ -22,3 +22,4 @@ opt/wlanpi-common/wlanpi-power.sh usr/bin/wlanpi-power
 opt/wlanpi-common/wlanpi-charger-boost.sh usr/bin/wlanpi-charger-boost
 opt/wlanpi-common/wlanpi-bluetooth.sh usr/bin/wlanpi-bluetooth
 opt/wlanpi-common/wlanpi-model.sh usr/bin/wlanpi-model
+opt/wlanpi-common/wpdev.sh usr/bin/wpdev
