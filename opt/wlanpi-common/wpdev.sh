@@ -16,14 +16,37 @@ usage() {
     echo "  -a           Performs apt update and apt upgrade of all packages"
     echo "  -d           Adds WLAN Pi packagecloud/dev repository"
     echo "  -l           Lists all installed WLAN Pi packages and their versions"
-    echo "  -u PARAM     Uninstalls completely a specified package and all files (more than apt purge)"
-    echo "  -f PARAM     Watch live contents changes of a file"
-    echo "  -s PARAM     Watch live service log"
+    echo "  -u PACKAGE   Completely uninstalls specified package and all its files (more than apt purge)"
+    echo "  -f FILE      Watch live contents changes of a file"
+    echo "  -s SERVICE   Watch live service log"
     echo "  -h           Display this help message"
     echo
     echo -e "${RED}Warning: This script is only used by WLAN Pi development team!${NO_COLOUR}"
     echo
   exit 1
+}
+
+uninstall_completely(){
+    package_to_uninstall="$1"
+    case $package_to_uninstall in
+        grafana | wlanpi-grafana)
+          # Uninstall commands
+          echo "Completely uninstalling Grafana, all config files, token ..."
+          sudo service grafana-server.service stop
+          sudo apt purge -y wlanpi-grafana
+          sudo apt purge -y grafana
+          sudo rm -r /opt/wlanpi-grafana/
+          sudo rm -r /etc/wlanpi-grafana/
+          sudo rm -r /var/lib/grafana/
+          sudo rm -r /etc/grafana
+          sudo sed -i '/GRAFANA_TOKEN=/d' /etc/environment
+          ;;
+        *)
+          # Handle unsupported package names
+          echo "Unsupported package name passed to uninstall_completely: $OPTARG"
+          exit 1
+          ;;
+    esac
 }
 
 add_packagecloud_dev(){
@@ -74,7 +97,7 @@ build_package(){
 }
 
 # Parse command line arguments
-while getopts ":ab:s:f:dluh" opt; do
+while getopts "abdlhs:u:f:" opt; do
   case $opt in
     a)
       # Handle option -a
@@ -100,19 +123,13 @@ while getopts ":ab:s:f:dluh" opt; do
       # Watch service log
       watch_service_log "$OPTARG"
       ;;
+    u)
+      # Completely uninstalls specified package and all its files (more than apt purge)
+      uninstall_completely "$OPTARG"
+      ;;
     f)
       # Watch file contents
       watch_file_contents "$OPTARG"
-      ;;
-    \?)
-      # Handle invalid options
-      echo "Invalid option: -$OPTARG"
-      exit 1
-      ;;
-    :)
-      # Handle options that require parameters
-      echo "Option -$OPTARG requires a parameter."
-      exit 1
       ;;
   esac
 done
