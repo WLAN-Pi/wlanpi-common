@@ -40,13 +40,8 @@ MEM_UTIL=$(free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$
 DISK_UTIL=$(df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }')
 
 # System load
-LOAD=$(LC_ALL=C uptime)
-LOAD=${LOAD#*'load average: '}
-LOAD=${LOAD//','}
-LOAD=$(echo $LOAD | cut -d " " -f 1)
-[[ $LOAD == 0.0* ]] && LOAD=0.10
-CPU_COUNT=$(grep -c processor /proc/cpuinfo)
-LOAD=$(awk '{printf("%.0f",($1/$2) * 100)}' <<< "$LOAD $CPU_COUNT")
+LOAD=$(mpstat -o JSON | jq '(100-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))')
+LOAD=$(echo "($LOAD+0.5)/1" | bc)
 
 # WLAN Pi Mode
 WLAN_PI_MODE=$(cat /etc/wlanpi-state)
