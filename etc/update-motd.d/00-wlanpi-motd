@@ -46,6 +46,12 @@ LOAD=$(echo "($LOAD+0.5)/1" | bc)
 # WLAN Pi Mode
 WLAN_PI_MODE=$(cat /etc/wlanpi-state)
 
+#Internet connectivity check
+INTERNET="Unreachable"
+if timeout 2 curl -s -L www.google.com | grep "google.com" &>/dev/null; then
+    INTERNET="Reachable"
+fi
+
 # Display output
 echo "Mode:        ${WLAN_PI_MODE}"
 echo "Release:     ${WLAN_PI_RELEASE}"
@@ -55,6 +61,7 @@ echo "Memory:      ${MEM_UTIL}"
 echo "Disk:        ${DISK_UTIL}"
 echo "CPU temp:    ${TEMP}°C"
 echo "CPU load:    ${LOAD} %"
+echo "Internet:    ${INTERNET}"
 echo
 
 # Display network interfaces and IP addresses
