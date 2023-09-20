@@ -10,6 +10,6 @@ Homepage: https://github.com/WLAN-Pi/wlanpi-common
 Package: wlanpi-common
 Architecture: any
 Multi-Arch: foreign
-Depends: ${misc:Depends}, ${shlibs:Depends}, tcpdump, dnsutils, iputils-arping, jq, toilet, ssh, spectools, sysstat
+Depends: ${misc:Depends}, ${shlibs:Depends}, tcpdump, dnsutils, iputils-arping, jq, toilet, ssh, spectools, sysstat, bc
 Description: WLAN Pi - common scripts and files
  Shared common scripts and files for various WLAN Pi applications.
