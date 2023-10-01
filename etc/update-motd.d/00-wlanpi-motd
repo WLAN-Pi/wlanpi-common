@@ -39,9 +39,11 @@ MEM_UTIL=$(free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$
 # Disk utilisation
 DISK_UTIL=$(df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }')
 
-# System load
-LOAD=$(mpstat -o JSON | jq '(100-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))')
-LOAD=$(echo "($LOAD+0.5)/1" | bc)
+# CPU utilisation
+# Get CPU utilisation and convert it from float to int by adding 0.5 and dropping everything after the dot
+CPU_UTIL=$(mpstat 1 1 -o JSON | jq '(100.5-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))' | cut -d"." -f1)
+# Previous method of converting float to int using bc
+#CPU_UTIL=$(echo "($CPU_UTIL+0.5)/1" | bc)
 
 # WLAN Pi Mode
 WLAN_PI_MODE=$(cat /etc/wlanpi-state)
@@ -60,7 +62,7 @@ echo "Date:        $(date)"
 echo "Memory:      ${MEM_UTIL}"
 echo "Disk:        ${DISK_UTIL}"
 echo "CPU temp:    ${TEMP}°C"
-echo "CPU load:    ${LOAD} %"
+echo "CPU util:    ${CPU_UTIL} %"
 echo "Internet:    ${INTERNET}"
 echo
 
