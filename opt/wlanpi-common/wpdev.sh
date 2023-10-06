@@ -93,6 +93,7 @@ purge_grafana(){
 }
 
 build_package(){
+    sudo apt update && sudo apt install -y debhelper dh-python dh-virtualenv
     sudo dpkg-buildpackage -us -uc
 }
 

@@ -1,3 +1,10 @@
+wlanpi-common (1.0.95) unstable; urgency=medium
+
+  * wlanpi-update is now interactive and not longer used by FPMS
+  * wpdev features - this command is only for WLAN Pi developers, you have been warned
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 06 Oct 2023 07:37:00 +0100
+
 wlanpi-common (1.0.94-2) unstable; urgency=medium
 
   * MOTD updates

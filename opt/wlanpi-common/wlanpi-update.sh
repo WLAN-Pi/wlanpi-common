@@ -6,53 +6,66 @@
 #          Adrian Granados, adrian@intuitibits.com, @adriangranados
 #
 
-# Check if the script is running as root
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must run as root. Add \"sudo\" please".
-   exit 1
-fi
-
-upgradable () {
-    updates=`apt update 2>&1`
+upgradable_wlanpi () {
+    echo "Checking for updates ..."
+    updates=`sudo apt update 2>&1`
     if echo $updates | grep --quiet -E "Err|Fail"; then
+        error "Error: Failed to check for available updates"
         exit 1
     else
-	apt list --upgradable 2>/dev/null | grep upgradable
+        sudo apt list --upgradable 2>/dev/null | grep upgradable | grep "wlanpi-" || { echo "All WLAN Pi packages are up-to-date"; exit 0; }
+
+        while true; do
+            read -p "Do you want to upgrade all of the above WLAN Pi packages? (y/n) " yn
+            case $yn in
+	        [yY] ) upgrade_wlanpi;
+                    break;;
+                [nN] ) echo "Exiting ...";
+                    exit 0;;
+                * ) echo "Error: Invalid response";;
+            esac
+         done
+
     fi
 }
 
 upgrade_all () {
-    apt -y upgrade
+    echo "Checking for updates ..."
+    sudo apt update
+    echo "Upgrading all packages ..."
+    sudo apt -y upgrade
 }
 
-upgrade () {
-    apt -y --only-upgrade install wlanpi-*
+upgrade_wlanpi () {
+    sudo apt -y --only-upgrade install wlanpi-*
 }
 
 usage () {
-  echo "Usage: wlanpi-update {-a | -h | -u}"
-  echo ""
-  echo "  wlanpi-update -a : upgrades all packages"
-  echo "  wlanpi-update -h : show usage info"
-  echo "  wlanpi-update -u : upgrades wlanpi-* packages"
-  echo "  wlanpi-update : shows upgradable packages"
-  echo ""
-  exit 0
+    echo "Usage: wlanpi-update {-a | -h | -u | no option}"
+    echo ""
+    echo "Options:"
+    echo "  -a            Upgrades all packages including WLAN Pi and non-WLAN Pi ones"
+    echo "  -h or --help  Shows this usage info"
+    echo "  -u            Upgrades WLAN Pi only packages"
+    echo "  no option     Upgrades WLAN Pi only packages"
+    echo ""
+    exit 0
 }
 
 case "$1" in
-  -a)
-      upgrade_all
-      ;;
-  -u)
-      upgrade
-      ;;
-  -h)
-      usage
-      ;;
-  *)
-      upgradable
-      ;;
+    ""|-u)
+        upgradable_wlanpi
+        ;;
+    -a)
+        upgrade_all
+        ;;
+    -h|--help)
+        usage
+        ;;
+    *)
+        echo "Error: Invalid option"
+        exit 1
+        ;;
 esac
 
 exit 0
