@@ -27,6 +27,7 @@ stopInterfaces() {
   for wlaniface in ${iface_list}
   do
     sh -c "airmon-ng stop ${wlaniface}"
+    sh -c "ifconfig ${wlaniface} up"
   done
 }
 
