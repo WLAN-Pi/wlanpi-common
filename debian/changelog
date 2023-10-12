@@ -1,7 +1,8 @@
-wlanpi-common (1.0.95) unstable; urgency=medium
+wlanpi-common (1.0.96) unstable; urgency=medium
 
   * wlanpi-update is now interactive and not longer used by FPMS
   * wpdev features - this command is only for WLAN Pi developers, you have been warned
+  * Add script to force adapter to return to managed mode after kismet service stops
 
   -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 06 Oct 2023 07:37:00 +0100
 
