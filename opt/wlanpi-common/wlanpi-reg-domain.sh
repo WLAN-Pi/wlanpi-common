@@ -3,8 +3,7 @@
 # Script to get/set reg domain and country code on WLAN Pi Pro
 # Author : Nigel Bowden
 #
-# This script manipulates the REGDOMAIN field in the 
-# REGDOMAIN file.
+# This script manipulates the REGDOMAIN field in the REGDOMAIN file
 #
 # Return values:
 #
@@ -17,6 +16,12 @@
 
 # fail on script errors
 set -e
+
+# Define ANSI colour codes
+ORANGE='\033[0;33m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOUR='\033[0m'
 
 REG_DOMAIN_FILE="/etc/default/crda"
 HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
@@ -154,24 +159,31 @@ set_domain () {
        echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
    fi
 
-}
-
-# return help string that provides short-form overview of this command
-help () {
-    echo "Get or set the Wi-Fi RF regulatory domain"
+    while true; do
+        read -p "A reboot is required. Reboot now? (y/n) " yn
+        case $yn in
+            [yY] ) reboot;
+                break;;
+            [nN] ) echo -e "${RED}Warning: Wi-Fi will not work until you reboot!${NO_COLOUR}";
+                   exit 0;;
+            * ) echo "Error: Invalid response";;
+        esac
+        done
 }
 
 # usage output
 usage () {
-        echo "Usage: reg-domain {-v | get | set | help}"
+        echo "Gets or sets the Wi-Fi RF regulatory domain"
         echo ""
-        echo "  wlanpi-reg-domain.sh -v : show script version"
-        echo "  wlanpi-reg-domain.sh get: show current reg domain"
-        echo "  wlanpi-reg-domain.sh set [domain str]: set reg domain"
-        echo "  wlanpi-reg-domain.sh : show usage info"
+        echo "Usage: wlanpi-reg-domain {-v | get | set | -h | --help}"
+        echo ""
+        echo "Options:"
+        echo "  -v            Shows script version"
+        echo "  get           Shows current reg domain"
+        echo "  set DOMAIN    Sets RF regulatory domain"
+        echo "  no option     Shows usage info"
         echo ""
         exit 0
-
 }
 
 debugger "--- Debug on ---"
@@ -187,11 +199,12 @@ case "$1" in
   set)
         set_domain
         ;;
-  help)
-        help
+  -h|--help|help|"")
+        usage
         ;;
   *)
-        usage
+        echo "Error: Invalid option"
+        exit 1
         ;;
 esac
 
