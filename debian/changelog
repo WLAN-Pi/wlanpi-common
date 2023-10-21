@@ -1,6 +1,7 @@
-wlanpi-common (1.1.0) unstable; urgency=medium
+wlanpi-common (1.1.1) unstable; urgency=medium
 
   * wlanpi-reg-domain set command now suggests a reboot to user
+  * wlanpi-reg-domain and wlanpi-update now use (Y/n) in prompts
 
   -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 20 Oct 2023 21:13:00 +0100
 

@@ -16,9 +16,9 @@ upgradable_wlanpi () {
         sudo apt list --upgradable 2>/dev/null | grep upgradable | grep "wlanpi-" || { echo "All WLAN Pi packages are up-to-date"; exit 0; }
 
         while true; do
-            read -p "Do you want to upgrade all of the above WLAN Pi packages? (y/n) " yn
+            read -p "Do you want to upgrade all of the above WLAN Pi packages? (Y/n) " yn
             case $yn in
-	        [yY] ) upgrade_wlanpi;
+	        [yY] | "" ) upgrade_wlanpi;
                     break;;
                 [nN] ) echo "Exiting ...";
                     exit 0;;
@@ -37,7 +37,7 @@ upgrade_all () {
 }
 
 upgrade_wlanpi () {
-    sudo apt -y --only-upgrade install wlanpi-*
+    sudo apt -y --only-upgrade install "wlanpi-*"
 }
 
 usage () {

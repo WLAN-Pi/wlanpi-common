@@ -48,7 +48,7 @@ debugger() {
 err_report() {
     err_str="$1"
 
-    echo "$err_str"
+    echo "Error: $err_str"
     logger "($SCRIPT_NAME) $err_str - Error!"
     debugger "($SCRIPT_NAME) $err_str - Error!"
 
@@ -108,7 +108,7 @@ set_domain () {
     debugger "Setting domain: $REG_DOMAIN_FILE"
 
     if [ -z "$DOMAIN" ]; then
-       err_report "No domain passed to : set_domain()"
+       err_report "No country code provided"
        exit 1
     fi
 
@@ -160,11 +160,11 @@ set_domain () {
    fi
 
     while true; do
-        read -p "A reboot is required. Reboot now? (y/n) " yn
+        read -p "A reboot is required. Reboot now? (Y/n) " yn
         case $yn in
-            [yY] ) reboot;
+            [yY]|"" ) reboot;
                 break;;
-            [nN] ) echo -e "${RED}Warning: Wi-Fi will not work until you reboot!${NO_COLOUR}";
+            [nN] ) echo -e "${RED}Warning: Wi-Fi might not work fully until you reboot!${NO_COLOUR}";
                    exit 0;;
             * ) echo "Error: Invalid response";;
         esac
@@ -175,13 +175,14 @@ set_domain () {
 usage () {
         echo "Gets or sets the Wi-Fi RF regulatory domain"
         echo ""
-        echo "Usage: wlanpi-reg-domain {-v | get | set | -h | --help}"
+        echo "Usage: wlanpi-reg-domain {get | set | -h | --help | -v}"
         echo ""
         echo "Options:"
-        echo "  -v            Shows script version"
         echo "  get           Shows current reg domain"
         echo "  set DOMAIN    Sets RF regulatory domain"
-        echo "  no option     Shows usage info"
+        echo "  -h            Shows usage info"
+        echo "  --help        Shows usage info"
+        echo "  -v            Shows script version"
         echo ""
         exit 0
 }
