@@ -160,9 +160,8 @@ set_domain () {
         echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
     fi
 
-    if [ "$NO_PROMPT" == "--no-prompt" ]; then
-        reboot
-    else
+    # only show reboot prompt in interactive mode (when --no-prompt was not used)
+    if [ "$NO_PROMPT" != "--no-prompt" ]; then
         while true; do
             read -p "A reboot is required. Reboot now? (Y/n) " yn
             case $yn in

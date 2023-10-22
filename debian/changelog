@@ -1,4 +1,4 @@
-wlanpi-common (1.1.2) unstable; urgency=medium
+wlanpi-common (1.1.3) unstable; urgency=medium
 
   * Adds non-interactive wlanpi-reg-domain option --no-prompt, mainly to be used by FPMS
 
