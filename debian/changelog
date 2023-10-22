@@ -1,3 +1,9 @@
+wlanpi-common (1.1.2) unstable; urgency=medium
+
+  * Adds non-interactive wlanpi-reg-domain option --no-prompt, mainly to be used by FPMS
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 22 Oct 2023 18:14:00 +0100
+
 wlanpi-common (1.1.1) unstable; urgency=medium
 
   * wlanpi-reg-domain set command now suggests a reboot to user

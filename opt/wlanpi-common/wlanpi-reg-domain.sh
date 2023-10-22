@@ -29,6 +29,7 @@ WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
 SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
 VERSION=0.1.2
 DOMAIN=$2
+NO_PROMPT=$3
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
@@ -155,20 +156,24 @@ set_domain () {
         debugger "Added country code $DOMAIN to $SERVER_FILE"
     fi
 
-   if ! grep -q "classic" /etc/wlanpi-state; then
-       echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
-   fi
+    if ! grep -q "classic" /etc/wlanpi-state; then
+        echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
+    fi
 
-    while true; do
-        read -p "A reboot is required. Reboot now? (Y/n) " yn
-        case $yn in
-            [yY]|"" ) reboot;
-                break;;
-            [nN] ) echo -e "${RED}Warning: Wi-Fi might not work fully until you reboot!${NO_COLOUR}";
-                   exit 0;;
-            * ) echo "Error: Invalid response";;
-        esac
+    if [ "$NO_PROMPT" == "--no-prompt" ]; then
+        reboot
+    else
+        while true; do
+            read -p "A reboot is required. Reboot now? (Y/n) " yn
+            case $yn in
+                [yY]|"" ) reboot;
+                    break;;
+                [nN] ) echo -e "${RED}Warning: Wi-Fi might not work fully until you reboot!${NO_COLOUR}";
+                       exit 0;;
+                * ) echo "Error: Invalid response";;
+            esac
         done
+    fi
 }
 
 # usage output
