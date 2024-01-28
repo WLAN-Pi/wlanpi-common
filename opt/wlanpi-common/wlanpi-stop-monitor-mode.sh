@@ -18,10 +18,10 @@ stopInterfaces() {
     done
   fi
   if [ "${WIRELESS_TOOLS}" = "1" ] && [ -x "$(command -v sort 2>&1)" ]; then
-    for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
+    for iface in $(iw dev 2> /dev/null | grep -i interface | awk '{ print $2 }'); do
       iface_list="${iface_list} ${iface}"
     done
-    #                                           sort needs newline separated,   convert back after
+    # sort needs newline separated, convert back after
     iface_list="$(printf "%s" "${iface_list}" | sed 's/ /\n/g' | sort -bu | sed ':a;N;$!ba;s/\n/ /g')"
   fi
   for wlaniface in ${iface_list}

@@ -50,9 +50,6 @@ function log_offline {
   echo "--- ethtool eth1 -----------------------------"
   ethtool eth1 2>&1
   echo ""
-  echo "--- iwconfig ---------------------------------"
-  iwconfig 2>&1
-  echo ""
   echo "--- IP routing table -------------------------"
   ip route show
   echo ""
