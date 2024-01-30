@@ -158,13 +158,21 @@ if [[ "$MODEL" == "Mcuzone" ]]; then
         debugger "USB mode is already set to host mode, no action needed"
     fi
 
-    # Enable pcie-32bit-dma overlay for MediaTek Wi-Fi 6E adapters to work
-    if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
-        debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
-        sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
-        REQUIRES_REBOOT=1
+    # Enable pcie-32bit-dma overlay for MediaTek Wi-Fi 6E MT7921K and MT7922A adapters to work
+    if lspci -nn | grep -q -E "14c3:0608|14c3:0616"; then
+        if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+            debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
+            sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
+            REQUIRES_REBOOT=1
+        else
+            debugger "pcie-32bit-dma overlay is already enabled, no action needed"
+        fi
     else
-        debugger "pcie-32bit-dma overlay is already enabled, no action needed"
+        if sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+            debugger "pcie-32bit-dma is enabled but non-MediaTek M.2 adapter is used, disabling 32-bit DMA overlay now"
+            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" /boot/config.txt
+            REQUIRES_REBOOT=1
+        fi
     fi
 
     # Disable RTC
