@@ -16,10 +16,12 @@ usage() {
     echo "  -a           Performs apt update and apt upgrade of all packages"
     echo "  -d           Adds WLAN Pi packagecloud/dev repository"
     echo "  -l           Lists all installed WLAN Pi packages and their versions"
+    echo "  -n           Adds a DNS server manually to resolv.conf"
     echo "  -u PACKAGE   Completely uninstalls specified package and all its files (more than apt purge)"
     echo "  -f FILE      Watch live contents changes of a file"
     echo "  -s SERVICE   Watch live service log"
     echo "  -h           Display this help message"
+    echo "  -t           Sync time with NTP server manually"
     echo
     echo -e "${RED}Warning: This script is only used by WLAN Pi development team!${NO_COLOUR}"
     echo
@@ -97,8 +99,26 @@ build_package(){
     sudo dpkg-buildpackage -us -uc
 }
 
+sync_time_ntp(){
+    echo "Time before sync: $(date)"
+    sudo systemctl restart chronyd
+    sleep 5
+    echo "Time after sync: $(date)"
+}
+
+add_dns_server(){
+    if grep -q -E "^\s*static domain_name_servers=208.67.222.222" /etc/dhcpcd.conf; then
+        echo "Restarting dhdcpcd service"
+        sudo service dhcpcd restart
+    else
+        echo "Adding DNS server and restarting dhdcpcd service"
+        echo "static domain_name_servers=208.67.222.222" >> /etc/dhcpcd.conf
+        sudo service dhcpcd restart
+    fi
+}
+
 # Parse command line arguments
-while getopts "abdlhs:u:f:" opt; do
+while getopts "abdnlhts:u:f:" opt; do
   case $opt in
     a)
       # Handle option -a
@@ -112,6 +132,9 @@ while getopts "abdlhs:u:f:" opt; do
       # Add packagecloud/dev repo
       add_packagecloud_dev
       ;;
+    n)
+      add_dns_server
+      ;;
     l)
       # Handle option -l
       list_wlanpi_packages
@@ -123,6 +146,10 @@ while getopts "abdlhs:u:f:" opt; do
     s)
       # Watch service log
       watch_service_log "$OPTARG"
+      ;;
+    t)
+      #Sync time with NTP server manually
+      sync_time_ntp
       ;;
     u)
       # Completely uninstalls specified package and all its files (more than apt purge)

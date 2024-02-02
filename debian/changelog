@@ -1,3 +1,10 @@
+wlanpi-common (1.1.6) unstable; urgency=medium
+
+  * wpdev -n: Adds DNS server manually to resolv.conf
+  * wpdev -t: Syncs time with NTP server manually 
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 30 Jan 2024 12:10:00 +0000
+
 wlanpi-common (1.1.5-1) unstable; urgency=medium
 
   * Disable 32-bit DMA overlay if non-MediaTek M.2 adapter is being used on WLAN Pi M4
