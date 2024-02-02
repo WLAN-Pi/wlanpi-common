@@ -98,7 +98,8 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Main board:           WLAN Pi Pro"
         fi
         debugger "End script now. Platform is WLAN Pi Pro."
-    # Powered by CM4 and no Pro hardware found -> Mcuzone
+    # Powered by CM4 and no Pro hardware found
+    # Is it M4?
     elif [ $LSPCI_LINES -le 2 ]; then
         debugger "Found less than 2 lines in lspci"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
@@ -110,6 +111,8 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     # Is it M4+?
     elif lsusb | grep -q "2109:3431" && lspci -n | grep -q "1106:3483" && lspci -n | grep -q "1b21:1182"; then
         debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
+        debugger "Found USB controller: VIA Technologies, Inc. VL805/806 xHCI USB 3.0 Controller (rev 01) in lspci"
+        debugger "Found PCI bridge: ASMedia Technology Inc. ASM1182e 2-Port PCIe x1 Gen2 Packet Switch in lspci"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4+"
         else
