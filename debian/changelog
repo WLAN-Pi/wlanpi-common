@@ -1,4 +1,4 @@
-wlanpi-common (1.1.5) unstable; urgency=medium
+wlanpi-common (1.1.5-1) unstable; urgency=medium
 
   * Disable 32-bit DMA overlay if non-MediaTek M.2 adapter is being used on WLAN Pi M4
 
