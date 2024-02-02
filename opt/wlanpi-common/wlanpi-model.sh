@@ -106,14 +106,23 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         else
             echo "Main board:           Mcuzone"
         fi
-        debugger "End script now. Platform is Mcuzone."
+        debugger "End script now. Platform is M4."
+    # Is it M4+?
+    elif lsusb | grep -q "2109:3431" && lspci -n | grep -q "1106:3483" && lspci -n | grep -q "1b21:1182"; then
+        debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+            echo "M4+"
+        else
+            echo "Main board:           Mcuzone M4+"
+        fi
+        debugger "End script now. Platform is M4+."
     else
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "?"
         else
             echo "Unknown platform"
         fi
-    fi  
+    fi
 else
     # Not CM4 nor RPi4 -> Unknown platform
     if [ "$BRIEF_OUTPUT" -ne 0 ]; then

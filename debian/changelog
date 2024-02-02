@@ -1,3 +1,9 @@
+wlanpi-common (1.1.7) unstable; urgency=medium
+
+  * wlan-model now detects WLAN Pi M4+
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 02 Feb 2024 21:10:00 +0100
+
 wlanpi-common (1.1.6) unstable; urgency=medium
 
   * wpdev -n: Adds DNS server manually to resolv.conf
