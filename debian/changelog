@@ -1,6 +1,7 @@
-wlanpi-common (1.1.7-1) unstable; urgency=medium
+wlanpi-common (1.1.7-2) unstable; urgency=medium
 
   * wlan-model now detects WLAN Pi M4+
+  * MOTD now recognises WLAN Pi M4+
 
   -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 02 Feb 2024 21:10:00 +0100
 
