@@ -102,7 +102,7 @@ build_package(){
 sync_time_ntp(){
     echo "Time before sync: $(date)"
     sudo systemctl restart chronyd
-    sleep 5
+    sleep 8
     echo "Time after sync: $(date)"
 }
 
