@@ -72,6 +72,7 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R4"
     else
+        echo "Model:                WLAN Pi R4"
         echo "Main board:           Raspberry Pi 4"
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
@@ -95,6 +96,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Pro"
         else
+            echo "Model:                WLAN Pi Pro"
             echo "Main board:           WLAN Pi Pro"
         fi
         debugger "End script now. Platform is WLAN Pi Pro."
@@ -105,6 +107,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4"
         else
+            echo "Model:                WLAN Pi M4"
             echo "Main board:           Mcuzone M4"
         fi
         debugger "End script now. Platform is M4."
@@ -116,6 +119,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4+"
         else
+            echo "Model:                WLAN Pi M4+"
             echo "Main board:           Mcuzone M4+"
         fi
         debugger "End script now. Platform is M4+."
@@ -169,9 +173,15 @@ if [ "$BRIEF_OUTPUT" -eq 0 ]; then
         debugger "Found Bluetooth adapter"
         for item in $BLUETOOTH_ADAPTER
         do
+            # List Bluetooth adapters connected via USB
             echo "Bluetooth adapter:    $item"
         done
     else
-        echo "No Bluetooth adapter"
+        if hciconfig | grep -q "hci0"; then
+            # Built-in Bluetooth adapter is present on Raspberry Pi
+            echo "Bluetooth adapter:    Built-in"
+        else
+            echo "No Bluetooth adapter"
+        fi
     fi
 fi
