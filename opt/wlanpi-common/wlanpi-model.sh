@@ -136,36 +136,42 @@ else
 fi
 
 # List installed adapters
-USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -e "0608" | cut -d " " -f 6-)
+USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -E "0489:e0e2|0e8d:0608" | cut -d " " -f 6-)
 M2_WIFI_ADAPTER=$(lspci -nn | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
-BLUETOOTH_ADAPTER=$(lsusb | grep -i "Bluetooth" | cut -d " " -f 6-)
+BLUETOOTH_ADAPTER=$(lsusb | grep -i -E "Bluetooth|0489:e0e2|0e8d:0608|8087:0036" | cut -d " " -f 6-)
 
 IFS="
 "
-if [ -n "$USB_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
-    debugger "Found USB Wi-Fi adapter"
-    for item in $USB_WIFI_ADAPTER
-    do
-        echo "USB Wi-Fi adapter:    $item"
-    done
-fi
 
-if [ -n "$M2_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
-    debugger "Found M.2 Wi-Fi adapter"
-    for item in $M2_WIFI_ADAPTER
-    do
-        echo "M.2 Wi-Fi adapter:    $item"
-    done
-fi
+# Display list of adapters if brief mode isn't enabled
+if [ "$BRIEF_OUTPUT" -eq 0 ]; then
+    if [ -n "$USB_WIFI_ADAPTER" ]; then
+        debugger "Found USB Wi-Fi adapter"
+        for item in $USB_WIFI_ADAPTER
+        do
+            echo "USB Wi-Fi adapter:    $item"
+        done
+    fi
 
-if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
-    echo "No Wi-Fi adapter"
-fi
+    if [ -n "$M2_WIFI_ADAPTER" ]; then
+        debugger "Found M.2 Wi-Fi adapter"
+        for item in $M2_WIFI_ADAPTER
+        do
+            echo "M.2 Wi-Fi adapter:    $item"
+        done
+    fi
 
-if [ -n "$BLUETOOTH_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
-    debugger "Found Bluetooth adapter"
-    for item in $BLUETOOTH_ADAPTER
-    do
-        echo "Bluetooth adapter:    $item"
-    done
+    if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ]; then
+        echo "No Wi-Fi adapter"
+    fi
+
+    if [ -n "$BLUETOOTH_ADAPTER" ]; then
+        debugger "Found Bluetooth adapter"
+        for item in $BLUETOOTH_ADAPTER
+        do
+            echo "Bluetooth adapter:    $item"
+        done
+    else
+        echo "No Bluetooth adapter"
+    fi
 fi
