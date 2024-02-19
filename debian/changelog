@@ -1,4 +1,4 @@
-wlanpi-common (1.1.11) unstable; urgency=medium
+wlanpi-common (1.1.12) unstable; urgency=medium
 
   * wlanpi-model - add WLAN Pi model to output
   * wlanpi-model - detect built-in Raspberry Pi Bluetooth adapter which is not connected via USB
