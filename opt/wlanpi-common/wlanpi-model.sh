@@ -105,7 +105,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4"
         else
-            echo "Main board:           Mcuzone"
+            echo "Main board:           Mcuzone M4"
         fi
         debugger "End script now. Platform is M4."
     # Is it M4+?

@@ -1,3 +1,9 @@
+wlanpi-common (1.1.9) unstable; urgency=medium
+
+  * wlanpi-model - change M4 model from "Mcuzone" to "Mcuzone M4"
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Mon, 19 Feb 2024 15:02:00 +0100
+
 wlanpi-common (1.1.8-1) unstable; urgency=medium
 
   * Configure WLAN Pi M4+ features at boot - enable OTG, disable overlay, etc

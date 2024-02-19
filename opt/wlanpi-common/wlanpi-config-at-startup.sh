@@ -52,7 +52,7 @@ debugger "Detected WLAN Pi model: $MODEL"
 
 # Apply RPi4 platform specific settings
 if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
-    echo "Applying RPi4 settings"
+    echo "Applying WLAN Pi R4 settings"
 
     # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
     if [ ! -f "/etc/modprobe.d/blacklist-btusb.conf" ]; then
@@ -107,8 +107,8 @@ fi
 ########## M4 ##########
 
 # Apply M4 platform specific settings
-if [[ "$MODEL" == "Mcuzone" ]]; then
-    echo "Applying Mcuzone settings"
+if [[ "$MODEL" == "Mcuzone M4" ]]; then
+    echo "Applying WLAN Pi M4 settings"
 
     # Enable Waveshare display
     if [ ! -f "$WAVESHARE_FILE" ]; then
@@ -203,7 +203,7 @@ fi
 
 # Apply M4+ platform specific settings
 if [[ "$MODEL" == "Mcuzone M4+" ]]; then
-    echo "Applying M4+ settings"
+    echo "Applying WLAN Pi M4+ settings"
 
     # Enable Waveshare display
     if [ ! -f "$WAVESHARE_FILE" ]; then
