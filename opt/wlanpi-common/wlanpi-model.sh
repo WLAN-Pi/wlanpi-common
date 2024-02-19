@@ -135,9 +135,10 @@ else
     fi
 fi
 
-# List installed Wi-Fi adapters
+# List installed adapters
 USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -e "0608" | cut -d " " -f 6-)
-M2_WIFI_ADAPTER=$(lspci | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
+M2_WIFI_ADAPTER=$(lspci -nn | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
+BLUETOOTH_ADAPTER=$(lsusb | grep -i "Bluetooth" | cut -d " " -f 6-)
 
 IFS="
 "
@@ -159,4 +160,12 @@ fi
 
 if [ -z "$USB_WIFI_ADAPTER" ] && [ -z "$M2_WIFI_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
     echo "No Wi-Fi adapter"
+fi
+
+if [ -n "$BLUETOOTH_ADAPTER" ] && [ "$BRIEF_OUTPUT" -eq 0 ]; then
+    debugger "Found Bluetooth adapter"
+    for item in $BLUETOOTH_ADAPTER
+    do
+        echo "Bluetooth adapter:    $item"
+    done
 fi

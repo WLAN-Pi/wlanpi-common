@@ -1,3 +1,10 @@
+wlanpi-common (1.1.8) unstable; urgency=medium
+
+  * Configure WLAN Pi M4+ features at boot - enable OTG, disable overlay, etc
+  * wlanpi-model now lists Bluetooth adapters and PCI device IDs of Wi-Fi adapters
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Mon, 19 Feb 2024 10:53:00 +0100
+
 wlanpi-common (1.1.7-3) unstable; urgency=medium
 
   * wlan-model now detects WLAN Pi M4+
