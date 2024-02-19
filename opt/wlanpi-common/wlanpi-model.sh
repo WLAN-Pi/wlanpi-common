@@ -73,7 +73,7 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
         echo "R4"
     else
         echo "Model:                WLAN Pi R4"
-        echo "Main board:           Raspberry Pi 4"
+        echo "Main board:           $(grep "Raspberry Pi 4 Model B" /proc/cpuinfo | cut -d " " -f2-)"
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
 

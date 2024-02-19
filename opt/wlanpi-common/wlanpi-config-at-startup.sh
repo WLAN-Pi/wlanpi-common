@@ -51,7 +51,7 @@ debugger "Detected WLAN Pi model: $MODEL"
 ########## R4 ##########
 
 # Apply RPi4 platform specific settings
-if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
+if [[ "$MODEL" =~ "Raspberry Pi 4" ]]; then
     echo "Applying WLAN Pi R4 settings"
 
     # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
