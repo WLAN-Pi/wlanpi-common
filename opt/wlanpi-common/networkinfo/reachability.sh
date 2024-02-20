@@ -46,7 +46,7 @@ fi
 # --- Start tests ---
 mkdir "$TMPDIR" &>/dev/null
 
-{ timeout 2 ping -c1 -W2 -q google.com; } &> "$TMPDIR/pinggoogle.txt" &
+{ timeout 2 ping -c1 -W2 -4 -q google.com; } &> "$TMPDIR/pinggoogle.txt" &
 { timeout 2 curl -s -L www.google.com | grep "google.com" &>/dev/null; echo $?; } &> "$TMPDIR/browsegoogle.txt" &
 { ping -c1 -W2 -q "$DEFAULTGATEWAY"; } &> "$TMPDIR/pinggateway.txt" &
 

@@ -1,3 +1,9 @@
+wlanpi-common (1.1.13) unstable; urgency=medium
+
+  * reachability - force ping google to use IPv4
+
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 20 Feb 2024 10:46:00 -0700
+
 wlanpi-common (1.1.12) unstable; urgency=medium
 
   * wlanpi-model - add WLAN Pi model to output
