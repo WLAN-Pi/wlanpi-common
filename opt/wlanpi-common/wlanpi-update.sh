@@ -10,7 +10,7 @@ upgradable_wlanpi () {
     echo "Checking for updates ..."
     updates=`sudo apt update 2>&1`
     if echo $updates | grep --quiet -E "Err|Fail"; then
-        error "Error: Failed to check for available updates"
+        echo "Error: Failed to check for available updates"
         exit 1
     else
         sudo apt list --upgradable 2>/dev/null | grep upgradable | grep "wlanpi-" || { echo "All WLAN Pi packages are up-to-date"; exit 0; }
