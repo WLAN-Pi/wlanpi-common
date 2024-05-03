@@ -1,3 +1,11 @@
+wlanpi-common (1.1.15) unstable; urgency=medium
+
+  * wlanpi-update -i checks for new image available for download
+  * wlanpi-update -c returns number of upgradeable WLAN Pi packages
+  * MOTD notifies about newly available software image
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fti, 03 May 2024 12:49:00 +0100
+
 wlanpi-common (1.1.14) unstable; urgency=medium
 
   * wlanpi-update - fix error message when apt update fails
