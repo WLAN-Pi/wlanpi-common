@@ -1,0 +1,5 @@
+# Executes by apt update command
+APT::Update::Post-Invoke {"/usr/bin/systemctl restart wlanpi-check-for-updates.service";};
+
+# Executes by apt upgrade command
+DPkg::Post-Invoke {"/usr/bin/systemctl restart wlanpi-check-for-updates.service";};

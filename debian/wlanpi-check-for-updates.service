@@ -1,0 +1,10 @@
+[Unit]
+Description=Checks for WLAN Pi updates
+
+[Service]
+ExecStart=/opt/wlanpi-common/wlanpi-check-for-updates.sh
+WorkingDirectory=/opt/wlanpi-common/
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target

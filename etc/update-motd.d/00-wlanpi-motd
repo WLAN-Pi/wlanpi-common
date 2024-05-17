@@ -41,11 +41,9 @@ MEM_UTIL=$(free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$
 # Disk utilisation
 DISK_UTIL=$(df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }')
 
-# CPU utilisation
 # Get CPU utilisation and convert it from float to int by adding 0.5 and dropping everything after the dot
+# Script performance note: mpstat takes 1 second to run
 CPU_UTIL=$(mpstat 1 1 -o JSON | jq '(100.5-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))' | cut -d"." -f1)
-# Previous method of converting float to int using bc
-#CPU_UTIL=$(echo "($CPU_UTIL+0.5)/1" | bc)
 
 # WLAN Pi Mode
 WLAN_PI_MODE=$(cat /etc/wlanpi-state)
@@ -102,9 +100,18 @@ if sudo wlanpi-reg-domain get | grep -q "No reg domain configured"; then
     echo
 fi
 
-# New image is available for download
-if sudo wlanpi-update -i | grep -q "New software image is available for download"; then
-    echo " New software image is available for download " | toilet -f term --filter border:metal
-    echo "Download the new image from https://github.com/WLAN-Pi/pi-gen/releases/latest"
-    echo
+# Notify user if there is a new image available or WLAN Pi package updates
+if [ -s /tmp/wlanpi-update-packages ]; then
+    NUMBER_OF_PACKAGES=$(cat "/tmp/wlanpi-update-packages")
+    SOFTWARE_UPDATES+="There are $NUMBER_OF_PACKAGES updated WLAN Pi packages available. Install updates using \"sudo wlanpi-update\".\n"
+fi
+
+if [ -s /tmp/wlanpi-update-image ]; then
+    NEW_IMAGE_VERSION=$(cat "/tmp/wlanpi-update-image")
+    SOFTWARE_UPDATES+="New WLAN Pi OS image $NEW_IMAGE_VERSION is available at https://github.com/WLAN-Pi/pi-gen/releases/latest.\n"
+fi
+
+if [ -n "$SOFTWARE_UPDATES" ]; then
+    echo " Software updates are available " | toilet -f term --filter border:metal
+    echo -e "$SOFTWARE_UPDATES"
 fi
