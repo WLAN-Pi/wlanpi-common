@@ -6,6 +6,7 @@
 
 while true; do
     # Check for number of upgradeable WLAN Pi packages
+    declare -i NUMBER_OF_PACKAGES
     NUMBER_OF_PACKAGES=$(/opt/wlanpi-common/wlanpi-update.sh -c)
     if [ "$NUMBER_OF_PACKAGES" -gt 0 ]; then
         echo "$NUMBER_OF_PACKAGES" > /tmp/wlanpi-update-packages
