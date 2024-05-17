@@ -1,5 +1,2 @@
-# Executes by apt update command
-APT::Update::Post-Invoke {"/usr/bin/systemctl restart wlanpi-check-for-updates.service";};
-
-# Executes by apt upgrade command
-DPkg::Post-Invoke {"/usr/bin/systemctl restart wlanpi-check-for-updates.service";};
+# Executes after apt upgrade command
+DPkg::Post-Invoke {"echo 'Removing /tmp/wlanpi-update-packages file' && rm -f /tmp/wlanpi-update-packages";};
