@@ -1,10 +1,10 @@
-wlanpi-common (1.1.16-3) unstable; urgency=medium
+wlanpi-common (1.1.17) unstable; urgency=medium
 
   * MOTD notifies about newly available software image and WLAN Pi package updates
   * wlanpi-check-for-updates.service checks for updates regularly
   * After running apt upgrade, number of available package updates refreshes automatically to 0
 
-  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 17 May 2024 23:11:00 +0100
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sat, 18 May 2024 12:48:00 +0100
 
 wlanpi-common (1.1.15) unstable; urgency=medium
 
