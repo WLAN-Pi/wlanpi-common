@@ -1,4 +1,4 @@
-wlanpi-common (1.1.18) unstable; urgency=medium
+wlanpi-common (1.1.18-1) unstable; urgency=medium
 
   * Enable 32-bit DMA overlay for MT7925 adapter 14c3:7925
 
