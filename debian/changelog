@@ -1,3 +1,9 @@
+wlanpi-common (1.1.18) unstable; urgency=medium
+
+  * Enable 32-bit DMA overlay for MT7925 adapter 14c3:7925
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Tue, 18 Jun 2024 11:19:00 +0100
+
 wlanpi-common (1.1.17) unstable; urgency=medium
 
   * MOTD notifies about newly available software image and WLAN Pi package updates
