@@ -1,3 +1,9 @@
+wlanpi-common (1.1.19) unstable; urgency=medium
+
+  * Depends on i2c-tools
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 14 Jul 2024 16:24:00 +0100
+
 wlanpi-common (1.1.18-1) unstable; urgency=medium
 
   * Enable 32-bit DMA overlay for MT7925 adapter 14c3:7925
