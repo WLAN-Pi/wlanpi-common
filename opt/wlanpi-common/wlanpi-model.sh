@@ -98,8 +98,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     # It is powered by CM4 but it isn't Pro
 
     # Is it M4+?
-    elif [ -e /dev/i2c-1 ]; then
-        if i2cdetect -y 1 | grep -q "50: 50"; then
+    elif i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
             debugger "Detected M4+ Mcuzone EEPROM"
             if [ "$BRIEF_OUTPUT" -ne 0 ]; then
                 echo "M4+"
@@ -108,7 +107,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
                 echo "Main board:           Mcuzone M4+"
             fi
             debugger "End script now. Platform is M4+."
-        fi
+
     # Is it M4+ prototype with PCIe packet switch?
     elif lsusb | grep -q "2109:3431" && lspci -n | grep -q "1106:3483" && lspci -n | grep -q "1b21:1182"; then
         debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
