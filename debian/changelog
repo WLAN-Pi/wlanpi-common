@@ -1,3 +1,9 @@
+wlanpi-common (1.1.20) unstable; urgency=medium
+
+  * wlanpi-model now detects WLAN Pi M4+ model by EEPROM presence
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sun, 14 Jul 2024 17:20:00 +0100
+
 wlanpi-common (1.1.19) unstable; urgency=medium
 
   * Depends on i2c-tools

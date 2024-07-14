@@ -15,7 +15,7 @@ DEBUG=0
 # Show full output by default
 BRIEF_OUTPUT=0
 
-# Brief output mode only returns the WLAN Pi mode (R4, M4, Pro)
+# Brief output mode only returns the WLAN Pi model - R4, M4, M4+, Pro, Unknown platform
 brief_output(){
     BRIEF_OUTPUT=1
 }
@@ -52,19 +52,14 @@ debugger() {
     fi
 }
 
-# Brief output mode only returns the WLAN Pi mode (R4, M4, Pro)
-brief_output(){
-    BRIEF_OUTPUT=1
-}
-
-# Is it an easter egg? Unofficial support to just "turn the lights on"
+# Is it Raspberry Pi 3? It isn't officially supported but let's pretend it is R4.
 if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R4"
     else
         echo "Main board:           Raspberry Pi 4"
     fi
-    debugger "End script now. Platform is Raspberry Pi 4."
+    debugger "End script now. Platform is Raspberry Pi 3 pretending to be Raspberry Pi 4."
 fi
 
 # Is it Raspberry Pi 4?
@@ -77,8 +72,7 @@ if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
 
-# Is it WLAN Pi Pro, Mcuzone, or other platform?
-# Powered by CM4?
+# Is it powered by CM4?
 elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     debugger "Powered by CM4"
 
@@ -100,18 +94,22 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Main board:           WLAN Pi Pro"
         fi
         debugger "End script now. Platform is WLAN Pi Pro."
-    # Powered by CM4 and no Pro hardware found
-    # Is it M4?
-    elif [ $LSPCI_LINES -le 2 ]; then
-        debugger "Found less than 2 lines in lspci"
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "M4"
-        else
-            echo "Model:                WLAN Pi M4"
-            echo "Main board:           Mcuzone M4"
-        fi
-        debugger "End script now. Platform is M4."
+
+    # It is powered by CM4 but it isn't Pro
+
     # Is it M4+?
+    elif [ -e /dev/i2c-1 ]; then
+        if i2cdetect -y 1 | grep -q "50: 50"; then
+            debugger "Detected M4+ Mcuzone EEPROM"
+            if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+                echo "M4+"
+            else
+                echo "Model:                WLAN Pi M4+"
+                echo "Main board:           Mcuzone M4+"
+            fi
+            debugger "End script now. Platform is M4+."
+        fi
+    # Is it M4+ prototype with PCIe packet switch?
     elif lsusb | grep -q "2109:3431" && lspci -n | grep -q "1106:3483" && lspci -n | grep -q "1b21:1182"; then
         debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
         debugger "Found USB controller: VIA Technologies, Inc. VL805/806 xHCI USB 3.0 Controller (rev 01) in lspci"
@@ -122,21 +120,26 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Model:                WLAN Pi M4+"
             echo "Main board:           Mcuzone M4+"
         fi
-        debugger "End script now. Platform is M4+."
-    else
+        debugger "End script now. Platform is M4+ prototype with PCIe packet switch."
+
+    # Is it M4?
+    elif [ $LSPCI_LINES -le 2 ]; then
+        debugger "Found less than 2 lines in lspci"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "?"
+            echo "M4"
         else
-            echo "Unknown platform"
+            echo "Model:                WLAN Pi M4"
+            echo "Main board:           Mcuzone M4"
         fi
-    fi
-else
-    # Not CM4 nor RPi4 -> Unknown platform
-    if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-        echo "?"
+        debugger "End script now. Platform is M4."
+
+    # Unknown platform based on CM4
     else
         echo "Unknown platform"
     fi
+else
+    # Unknown platform not based on CM4 nor RPi4
+    echo "Unknown platform"
 fi
 
 # List installed adapters
