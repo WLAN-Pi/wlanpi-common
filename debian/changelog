@@ -1,3 +1,9 @@
+wlanpi-common (1.1.21) unstable; urgency=medium
+
+  * Adds automatic USB mode switching between host and OTG mode on M4+ based on physical switch position
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Mon, 22 Jul 2024 16:01:00 +0100
+
 wlanpi-common (1.1.20-1) unstable; urgency=medium
 
   * wlanpi-model now detects WLAN Pi M4+ model by EEPROM presence

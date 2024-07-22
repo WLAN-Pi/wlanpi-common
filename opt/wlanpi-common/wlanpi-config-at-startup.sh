@@ -85,7 +85,7 @@ if [[ "$MODEL" =~ "Raspberry Pi 4" ]]; then
         REQUIRES_REBOOT=1
     fi
 
-    # Set USB mode to otg mode
+    # Set USB mode to OTG mode
     CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
     LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
@@ -99,7 +99,7 @@ if [[ "$MODEL" =~ "Raspberry Pi 4" ]]; then
         sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
         REQUIRES_REBOOT=1
     else
-        debugger "USB mode is already set to otg mode, no action needed"
+        debugger "USB mode is already set to OTG mode, no action needed"
     fi
 
 fi
@@ -205,6 +205,47 @@ fi
 if [[ "$MODEL" == "Mcuzone M4+" ]]; then
     echo "Applying WLAN Pi M4+ settings"
 
+    # Function to ping an IP address
+    ping_ip() {
+        local IP="$1"
+        if ping -c 2 -W 2 -4 -I usb0 "$IP" &> /dev/null; then
+            echo "$IP is up" >> "$RESULT_FILE"
+        fi
+    }
+
+    ping_otg() {
+        debugger "Pinging via OTG"
+
+        # OTG DHCP pool uses 10 addresses
+        BASE_IP="169.254.42"
+        START=2
+        END=11
+
+        # Create temporary file to collect ping results
+        RESULT_FILE=$(mktemp)
+        
+        # Ping the specified IP addresses in parallel
+        for i in $(seq $START $END); do
+            ping_ip "$BASE_IP.$i" &
+        done
+
+        # Wait for all background jobs to finish
+        wait
+
+        # Check if any IPs responded by checking the result file
+        if [ -s "$RESULT_FILE" ]; then
+            debugger "Detected OTG mode by pinging remote device via usb0"
+            cat "$RESULT_FILE" >> /home/wlanpi/otg.log
+            OTG_PING_SUCCESS="true"
+        else
+            debugger "No response to ping received via usb0"
+            echo "No hosts responded" >> /home/wlanpi/otg.log
+        fi
+
+        # Clean up the temporary file
+        rm "$RESULT_FILE"
+    }
+
     # Enable Waveshare display
     if [ ! -f "$WAVESHARE_FILE" ]; then
         debugger "Creating Waveshare file to enable display and buttons"
@@ -223,14 +264,7 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         debugger "Fan controller is already disabled, no action needed"
     fi
 
-    # Enable OTG by setting USB 2.0 controller OTG mode to 0
-    if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
-        debugger "otg_mode is currently set to 1, comment the line out"
-        sed -i "s/^\s*otg_mode=1/#otg_mode=1/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    fi
-
-    # Set USB ports to otg mode
+    # Set DWC2 dr_mode=otg
     CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
     LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
@@ -244,7 +278,7 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
         REQUIRES_REBOOT=1
     else
-        debugger "USB mode is already set to otg mode, no action needed"
+        debugger "USB DWC2 dr_mode=otg is already set, no action needed"
     fi
 
     # Enable pcie-32bit-dma overlay for MediaTek M.2 Wi-Fi adapters to work
@@ -286,7 +320,47 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         debugger "Battery gauge is already disabled, no action needed"
     fi
 
+    # Detect host/OTG USB mode switch position and change USB mode if needed
+    if [ $(lsusb | wc -l) -eq 1 ]; then
+        debugger "Detected 1 line in lsusb output"
+        # Ping remote device via OTG usb0 link to see if OTG is operational
+        ping_otg
+                
+        if [ -n "$OTG_PING_SUCCESS" ]; then
+            debugger "Operating correctly in USB OTG mode, do nothing"
+        elif grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
+                debugger "Host mode is enabled in configuration but isn't working"
+                if [ -f /etc/wlanpi-stay-in-host-mode ]; then
+                    debugger "Staying in host mode and removing force host mode file"
+                    rm -f /etc/wlanpi-stay-in-host-mode
+                else
+                    debugger "Switching to OTG mode and rebooting now"
+                    sed -i "s/^\s*otg_mode=1/#otg_mode=1/" /boot/config.txt
+                    reboot
+                fi
+        elif ! grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
+                debugger "OTG mode is enabled in configuration but isn't working"
+                debugger "Switching to host mode and rebooting now"
+                if grep -q -E "^\s*#\s*otg_mode=1" /boot/config.txt; then
+                    debugger "Uncommenting otg_mode=1 to enable host mode"
+                    sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" /boot/config.txt
+                    debugger "Creating force host mode file"
+                    touch /etc/wlanpi-stay-in-host-mode
+                    reboot
+                else
+                    debugger "otg_mode=1 line not found in config file, creating a new line in [cm4] section"
+                    sed -i "s/\[cm4\]/&\notg_mode=1/" /boot/config.txt
+                    touch /etc/wlanpi-stay-in-host-mode
+                    reboot
+                fi
+        fi
+    else
+        # Two or more lines in lsusb means that host mode is working fine
+        debugger "Operating correctly in USB host mode, do nothing"
+        rm -f /etc/wlanpi-stay-in-host-mode
+    fi
 fi
+
 
 ########## Pro ##########
 
@@ -316,7 +390,7 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
         REQUIRES_REBOOT=1
     fi
 
-    # Set USB ports to otg mode
+    # Set USB ports to OTG mode
     CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
     LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
@@ -330,7 +404,7 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
         sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
         REQUIRES_REBOOT=1
     else
-        debugger "USB mode is already set to otg mode, no action needed"
+        debugger "USB mode is already set to OTG mode, no action needed"
     fi
 fi
 
@@ -339,56 +413,3 @@ if [ "$REQUIRES_REBOOT" -gt 0 ]; then
     echo "Reboot required, rebooting now"
     reboot
 fi
-
-
-
-
-
-# The rest of this script is commented out
-# We have no plans to support SD card swapping between Pro and CE platforms
-
-: '
-########## Pro ##########
-
-# Apply WLAN Pi Pro platform specific settings
-if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
-    echo "Applying WLAN Pi Pro settings"
-
-    # Disable Waveshare display
-    if [ -f "$WAVESHARE_FILE" ]; then
-        debugger "Waveshare file found, removing it now"
-        rm "$WAVESHARE_FILE"
-    fi
-
-    # Enable WLAN Pi Pro fan controller if disabled
-    if grep -q -E "\s*#\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
-        sed -i "s/\s*#\s*dtoverlay=gpio-fan,gpiopin=26/dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
-        debugger "Fan controller is disabled, enabling it now"
-        REQUIRES_REBOOT=1
-    else
-        debugger "Fan controller is already enabled, no action needed"
-    fi
-fi
-
-########## RPi4 ##########
-
-# Apply RPi4 platform specific settings
-if [[ "$MODEL" == "Raspberry Pi 4" ]]; then
-    echo "Applying RPi4 settings"
-
-    # Waveshare file is not needed on RPi4 - FPMS recognises RPi4
-    if [ -f "$WAVESHARE_FILE" ]; then
-        debugger "Waveshare file found, removing it now"
-        rm "$WAVESHARE_FILE"
-    fi
-
-    # If WLAN Pi Pro fan controller is enabled, disable the controller
-    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
-        debugger "Fan controller is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    else
-        debugger "Fan controller is already disabled, no action needed"
-    fi
-fi
-'
