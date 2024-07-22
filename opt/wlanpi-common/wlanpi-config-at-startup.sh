@@ -235,11 +235,9 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         # Check if any IPs responded by checking the result file
         if [ -s "$RESULT_FILE" ]; then
             debugger "Detected OTG mode by pinging remote device via usb0"
-            cat "$RESULT_FILE" >> /home/wlanpi/otg.log
             OTG_PING_SUCCESS="true"
         else
             debugger "No response to ping received via usb0"
-            echo "No hosts responded" >> /home/wlanpi/otg.log
         fi
 
         # Clean up the temporary file
