@@ -208,7 +208,7 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
     # Function to ping an IP address
     ping_ip() {
         local IP="$1"
-        if ping -c 2 -W 2 -4 -I usb0 "$IP" &> /dev/null; then
+        if ping -c 2 -W 1 -4 -I usb0 "$IP" &> /dev/null; then
             echo "$IP is up" >> "$RESULT_FILE"
         fi
     }
@@ -223,7 +223,10 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
 
         # Create temporary file to collect ping results
         RESULT_FILE=$(mktemp)
-        
+
+        # Wait for usb0 interface to become available and for far end RNDIS device to obtain IP address
+        sleep 2
+
         # Ping the specified IP addresses in parallel
         for i in $(seq $START $END); do
             ping_ip "$BASE_IP.$i" &
@@ -353,12 +356,11 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
                 fi
         fi
     else
-        # Two or more lines in lsusb means that host mode is working fine
+        # Two or more lines in lsusb mean that host mode is working fine
         debugger "Operating correctly in USB host mode, do nothing"
         rm -f /etc/wlanpi-stay-in-host-mode
     fi
 fi
-
 
 ########## Pro ##########
 

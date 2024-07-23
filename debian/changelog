@@ -1,4 +1,4 @@
-wlanpi-common (1.1.21) unstable; urgency=medium
+wlanpi-common (1.1.21-1) unstable; urgency=medium
 
   * Adds automatic USB mode switching between host and OTG mode on M4+ based on physical switch position
 
