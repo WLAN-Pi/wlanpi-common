@@ -265,23 +265,6 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         debugger "Fan controller is already disabled, no action needed"
     fi
 
-    # Set DWC2 dr_mode=otg
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
-    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
-        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
-        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
-        debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
-        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    else
-        debugger "USB DWC2 dr_mode=otg is already set, no action needed"
-    fi
-
     # Enable pcie-32bit-dma overlay for MediaTek M.2 Wi-Fi adapters to work
     if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925"; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
