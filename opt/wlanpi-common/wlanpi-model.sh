@@ -105,7 +105,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             else
                 echo "Model:                WLAN Pi M4+"
                 echo "Main board:           Mcuzone M4+"
-                if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+                if grep -q -E "^\s*otg_mode=1" /boot/config.txt && [ $(lsusb | wc -l) -gt 1 ]; then
                     echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
                 else
                     echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"

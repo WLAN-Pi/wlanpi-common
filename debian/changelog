@@ -1,4 +1,4 @@
-wlanpi-common (1.1.22) unstable; urgency=medium
+wlanpi-common (1.1.22-1) unstable; urgency=medium
 
   * wlanpi-model command executed on M4+ now shows USB mode (host/OTG)
 
