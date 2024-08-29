@@ -44,6 +44,9 @@ debugger() {
     fi
 }
 
+# Set baud rate for WLAN Pi Go discover port
+stty -F /dev/ttyAMA0 115200 2>/dev/null
+
 # Get WLAN Pi model
 MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
 debugger "Detected WLAN Pi model: $MODEL"
@@ -224,8 +227,8 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         # Create temporary file to collect ping results
         RESULT_FILE=$(mktemp)
 
-        # Wait for usb0 interface to become available and for far end RNDIS device to obtain IP address
-        sleep 2
+        # Wait for usb0 interface to become available, Mac user to accept security dialog, and for far end RNDIS device to obtain IP address
+        sleep 5
 
         # Ping the specified IP addresses in parallel
         for i in $(seq $START $END); do
@@ -309,7 +312,7 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         debugger "Detected 1 line in lsusb output"
         # Ping remote device via OTG usb0 link to see if OTG is operational
         ping_otg
-                
+
         if [ -n "$OTG_PING_SUCCESS" ]; then
             debugger "Operating correctly in USB OTG mode, do nothing"
         elif grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
@@ -344,6 +347,61 @@ if [[ "$MODEL" == "Mcuzone M4+" ]]; then
         rm -f /etc/wlanpi-stay-in-host-mode
     fi
 fi
+
+
+########## Go ##########
+
+# Apply Go platform specific settings
+if [[ "$MODEL" == "Oscium Go" ]]; then
+    echo "Applying WLAN Pi Go settings"
+    debugger "Disabling FPMS service"
+    systemctl disable wlanpi-fpms.service
+
+    # Disable RTC
+    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" /boot/config.txt; then
+        debugger "RTC is enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "RTC is already disabled, no action needed"
+    fi
+
+    # Disable battery gauge
+    if grep -q -E "^\s*dtoverlay=battery_gauge" /boot/config.txt; then
+        debugger "Battery gauge is enabled, disabling it now"
+        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "Battery gauge is already disabled, no action needed"
+    fi
+
+    # Set USB mode to OTG mode
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
+    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
+        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
+        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
+        debugger "Setting CM4 USB to otg mode"
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
+        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
+        REQUIRES_REBOOT=1
+    else
+        debugger "USB mode is already set to OTG mode, no action needed"
+    fi
+
+    # Comment otg_mode=1 line out to enable OTG
+    if grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
+        debugger "Found otg_mode=1 in config file"
+        debugger "Commenting otg_mode=1 out"
+        sed -i "s/^\s*otg_mode=1/#otg_mode=1/" /boot/config.txt
+        REQUIRES_REBOOT=1       
+    fi
+
+fi
+
 
 ########## Pro ##########
 

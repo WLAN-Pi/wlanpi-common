@@ -97,6 +97,18 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
 
     # It is powered by CM4 but it isn't Pro
 
+
+    # Is it Go?
+    elif timeout 2 grep -q -m 1 -E "^14," /dev/ttyAMA0 2>/dev/null; then
+        debugger "Detected Go"
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+            echo "Go"
+        else
+            echo "Model:                WLAN Pi Go"
+            echo "Main board:           Oscium Go"
+        fi
+        debugger "End script now. Platform is Go."
+
     # Is it M4+?
     elif i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
             debugger "Detected M4+ Mcuzone EEPROM"
