@@ -1,6 +1,6 @@
-wlanpi-common (1.1.23) unstable; urgency=medium
+wlanpi-common (1.1.23-1) unstable; urgency=medium
 
-  * Detect and configure WLAN Pi Go at startup
+  * Detect WLAN Pi Go at startup but don't configure it
 
   -- Jiri Brejcha <jirka@jiribrejcha.net>  Thu, 29 Aug 2024 23:02:00 +0100
 

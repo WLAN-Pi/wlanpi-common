@@ -353,53 +353,7 @@ fi
 
 # Apply Go platform specific settings
 if [[ "$MODEL" == "Oscium Go" ]]; then
-    echo "Applying WLAN Pi Go settings"
-    debugger "Disabling FPMS service"
-    systemctl disable wlanpi-fpms.service
-
-    # Disable RTC
-    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" /boot/config.txt; then
-        debugger "RTC is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    else
-        debugger "RTC is already disabled, no action needed"
-    fi
-
-    # Disable battery gauge
-    if grep -q -E "^\s*dtoverlay=battery_gauge" /boot/config.txt; then
-        debugger "Battery gauge is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    else
-        debugger "Battery gauge is already disabled, no action needed"
-    fi
-
-    # Set USB mode to OTG mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
-    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
-        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
-        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
-        debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
-        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
-        REQUIRES_REBOOT=1
-    else
-        debugger "USB mode is already set to OTG mode, no action needed"
-    fi
-
-    # Comment otg_mode=1 line out to enable OTG
-    if grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
-        debugger "Found otg_mode=1 in config file"
-        debugger "Commenting otg_mode=1 out"
-        sed -i "s/^\s*otg_mode=1/#otg_mode=1/" /boot/config.txt
-        REQUIRES_REBOOT=1       
-    fi
-
+    echo "Detected WLAN Pi Go"
 fi
 
 
