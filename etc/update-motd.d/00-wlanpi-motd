@@ -72,9 +72,11 @@ echo
 INTERFACES=('eth0' 'wlan0' 'pan0' 'usb0' 'eth1' 'wlan1')
 echo "Network interfaces:"
 for INT in ${INTERFACES[*]}; do
-    IP=$(ifconfig | grep -A1 $INT | grep inet | awk '{print $2}')
-    if [ ! -z ${IP} ]; then
-        echo "  $INT  $IP"
+    if ip link show $INT > /dev/null 2>&1; then
+        IP=$(ip -o -f inet addr show $INT | awk '{print $4}' | cut -d/ -f1)
+        if [ ! -z ${IP} ]; then
+            echo "  $INT  $IP"
+        fi
     fi
 done
 echo
