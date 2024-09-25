@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [bullseye]
-        arch: [armhf,arm64]
+        distro: [bullseye,bookworm]
+        arch: [arm64]
     
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Archive artifacts and upload to GitHub
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wlanpi-common-${{ matrix.distro }}-${{ matrix.arch }}
           path: ${{ steps.build-debian-package.outputs.deb-package }}
