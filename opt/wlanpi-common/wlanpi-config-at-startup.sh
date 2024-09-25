@@ -47,14 +47,16 @@ debugger() {
 # Set baud rate for WLAN Pi Go discover port
 stty -F /dev/ttyAMA0 115200 2>/dev/null
 
-# Get WLAN Pi model
-MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
-debugger "Detected WLAN Pi model: $MODEL"
+# Get WLAN Pi specs
+SPECS=$(wlanpi-model)
+MODEL=$(echo "$SPECS" | grep "Model:" | cut -d ":" -f2 | xargs)
+BOARD=$(echo "$SPECS" | grep "Main board:" | cut -d ":" -f2 | xargs)
+debugger "Detected WLAN Pi board: $BOARD"
 
 ########## R4 ##########
 
 # Apply RPi4 platform specific settings
-if [[ "$MODEL" =~ "Raspberry Pi 4" ]]; then
+if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
     echo "Applying WLAN Pi R4 settings"
 
     # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
@@ -110,7 +112,7 @@ fi
 ########## M4 ##########
 
 # Apply M4 platform specific settings
-if [[ "$MODEL" == "Mcuzone M4" ]]; then
+if [[ "$BOARD" == "Mcuzone M4" ]]; then
     echo "Applying WLAN Pi M4 settings"
 
     # Enable Waveshare display
@@ -205,7 +207,7 @@ fi
 ########## M4+ ##########
 
 # Apply M4+ platform specific settings
-if [[ "$MODEL" == "Mcuzone M4+" ]]; then
+if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     echo "Applying WLAN Pi M4+ settings"
 
     # Function to ping an IP address
@@ -352,7 +354,7 @@ fi
 ########## Go ##########
 
 # Apply Go platform specific settings
-if [[ "$MODEL" == "Oscium Go" ]]; then
+if [[ "$BOARD" == "Oscium Go" ]]; then
     echo "Detected WLAN Pi Go"
 fi
 
@@ -360,7 +362,7 @@ fi
 ########## Pro ##########
 
 # Apply WLAN Pi Pro platform specific settings
-if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
+if [[ "$BOARD" == "WLAN Pi Pro" ]]; then
     echo "Applying WLAN Pi Pro settings"
 
     # Enable PCIe on WLAN Pi Pro if disabled. We disabled PCIe at boot by default as a workaround for M4.
@@ -402,6 +404,9 @@ if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
         debugger "USB mode is already set to OTG mode, no action needed"
     fi
 fi
+
+# Set model
+echo "$MODEL" > /etc/wlanpi-model
 
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
