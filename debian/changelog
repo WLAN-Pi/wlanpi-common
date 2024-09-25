@@ -1,3 +1,9 @@
+wlanpi-common (1.1.24-1) unstable; urgency=medium
+
+  * Sets /etc/wlanpi-model with the model used when configuring
+
+  -- Adrian Granados <adrian@intuitibits.com>  Wed, 25 Sep 2024 00:00:00 -0500
+
 wlanpi-common (1.1.23-1) unstable; urgency=medium
 
   * Detect WLAN Pi Go at startup but don't configure it
