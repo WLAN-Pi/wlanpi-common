@@ -210,46 +210,21 @@ fi
 if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     echo "Applying WLAN Pi M4+ settings"
 
-    # Function to ping an IP address
-    ping_ip() {
-        local IP="$1"
-        if ping -c 2 -W 1 -4 -I usb0 "$IP" &> /dev/null; then
-            echo "$IP is up" >> "$RESULT_FILE"
-        fi
-    }
+    # Check if OTG link is active
+    otg_link_active() {
+        for i in {1..5}; do
+            # Get the number of received packets
+            rx_packets=$(ip -s link show usb0 2>/dev/null | awk '/RX:/{getline; print $2}')
 
-    ping_otg() {
-        debugger "Pinging via OTG"
-
-        # OTG DHCP pool uses 10 addresses
-        BASE_IP="169.254.42"
-        START=2
-        END=11
-
-        # Create temporary file to collect ping results
-        RESULT_FILE=$(mktemp)
-
-        # Wait for usb0 interface to become available, Mac user to accept security dialog, and for far end RNDIS device to obtain IP address
-        sleep 5
-
-        # Ping the specified IP addresses in parallel
-        for i in $(seq $START $END); do
-            ping_ip "$BASE_IP.$i" &
+            # Check if at least 1 packet was received
+            if [ -n "$rx_packets" ] && [ "$rx_packets" -gt 1 ]; then
+                debugger "OTG link is active, more than 1 packet received"
+                return 0
+            fi
+            sleep 1
         done
-
-        # Wait for all background jobs to finish
-        wait
-
-        # Check if any IPs responded by checking the result file
-        if [ -s "$RESULT_FILE" ]; then
-            debugger "Detected OTG mode by pinging remote device via usb0"
-            OTG_PING_SUCCESS="true"
-        else
-            debugger "No response to ping received via usb0"
-        fi
-
-        # Clean up the temporary file
-        rm "$RESULT_FILE"
+        debugger "OTG link isn't operational"
+        return 1
     }
 
     # Enable Waveshare display
@@ -312,10 +287,8 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     # Detect host/OTG USB mode switch position and change USB mode if needed
     if [ $(lsusb | wc -l) -eq 1 ]; then
         debugger "Detected 1 line in lsusb output"
-        # Ping remote device via OTG usb0 link to see if OTG is operational
-        ping_otg
 
-        if [ -n "$OTG_PING_SUCCESS" ]; then
+        if otg_link_active; then
             debugger "Operating correctly in USB OTG mode, do nothing"
         elif grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
                 debugger "Host mode is enabled in configuration but isn't working"

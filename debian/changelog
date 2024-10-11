@@ -1,3 +1,9 @@
+wlanpi-common (1.1.25) unstable; urgency=medium
+
+  * USB mode switching between host and OTG on M4+ now uses number of Rx packets instead of ping to detect active OTG link
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Fri, 11 Oct 2024 23:29:00 +0100
+
 wlanpi-common (1.1.24-1) unstable; urgency=medium
 
   * Sets /etc/wlanpi-model with the model used when configuring
