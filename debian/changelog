@@ -1,3 +1,9 @@
+wlanpi-common (1.1.26) unstable; urgency=medium
+
+  * Removes reference to non-existent pcie.service
+
+  -- Jiri Brejcha <jirka@jiribrejcha.net>  Sat, 12 Oct 2024 20:29:00 +0100
+
 wlanpi-common (1.1.25) unstable; urgency=medium
 
   * USB mode switching between host and OTG on M4+ now uses number of Rx packets instead of ping to detect active OTG link
