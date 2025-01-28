@@ -1,60 +1,127 @@
 #!/bin/bash
 
 # Shows WLAN Pi Message Of The Day (MOTD) after user SSHs in
-
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
-# Any feedback is very welcome
+
+# Set default values
+DEFAULT_RELEASE="Unknown"
+DEFAULT_MODE="Unknown"
+DEFAULT_TEMP="--"
+
+safe_read_file() {
+    local file=$1
+    local default=$2
+    if [[ -f "$file" ]]; then
+        cat "$file" 2>/dev/null || echo "$default"
+    else
+        echo "$default"
+    fi
+}
+
+safe_execute() {
+    local cmd=$1
+    local default=$2
+    local result
+    result=$(eval "$cmd" 2>/dev/null) || result=$default
+    echo "$result"
+}
+
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+    tput civis  # Hide cursor
+    while [ -d "/proc/$pid" ]; do
+        local temp=${spinstr#?}
+        printf " Loading wlanpi-stats ... %c" "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        printf "\r"
+        sleep $delay
+    done
+    printf "\r%s\n" "$(tput el)"
+    tput cnorm
+}
 
 # WLAN Pi model
-MODEL=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
-if [[ "$MODEL" == "WLAN Pi Pro" ]]; then
-    WLAN_PI_MODEL="WLAN Pi Pro"
-elif [[ "$MODEL" =~ "Raspberry Pi 4" ]]; then
-    WLAN_PI_MODEL="WLAN Pi R4"
-elif [[ "$MODEL" == "Mcuzone M4+" ]]; then
-    WLAN_PI_MODEL="WLAN Pi M4+"
-elif [[ "$MODEL" == "Mcuzone M4" ]]; then
-    WLAN_PI_MODEL="WLAN Pi M4"
-elif [[ "$MODEL" == "Oscium Go" ]]; then
-    WLAN_PI_MODEL="WLAN Pi Go"
+MODEL=$(safe_execute "wlanpi-model | grep 'Main board:' | cut -d ':' -f2 | xargs" "Unknown")
+case "$MODEL" in
+    "WLAN Pi Pro") WLAN_PI_MODEL="WLAN Pi Pro" ;;
+    *"Raspberry Pi 4"*) WLAN_PI_MODEL="WLAN Pi R4" ;;
+    "Mcuzone M4+") WLAN_PI_MODEL="WLAN Pi M4+" ;;
+    "Mcuzone M4") WLAN_PI_MODEL="WLAN Pi M4" ;;
+    "Oscium Go") WLAN_PI_MODEL="WLAN Pi Go" ;;
+    *) WLAN_PI_MODEL="Unsupported hardware platform" ;;
+esac
+
+if command -v toilet >/dev/null 2>&1; then
+    echo
+    toilet -f term --filter border:gay " $WLAN_PI_MODEL "
 else
-    WLAN_PI_MODEL="Unsupported hardware platform"
+    echo
+    echo "=== $WLAN_PI_MODEL ==="
 fi
+
+{
+    # CPU utilization
+    if command -v mpstat >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+        mpstat 1 1 -o JSON | jq '(100.5-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))' | cut -d'.' -f1 > /tmp/cpu_util.$$
+    fi
+    
+    # Internet check (using ping instead of curl)
+    { ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1 && echo "Reachable" || echo "Unreachable"; } > /tmp/internet.$$ 2>&1
+    
+    # Memory check
+    free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$2,$3,$4; }' > /tmp/memory.$$
+    
+    # Disk check
+    df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }' > /tmp/disk.$$
+} &
+BACKGROUND_PID=$!
+
+spinner $BACKGROUND_PID
 
 # Release
-WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '=' -f 2 2>/dev/null)
-echo
-toilet -f term --filter border:gay " $WLAN_PI_MODEL "
+if [ -f "/etc/wlanpi-release" ]; then
+    WLAN_PI_RELEASE=$(grep "VERSION" /etc/wlanpi-release | cut -d '=' -f 2 2>/dev/null)
+    # If grep returns nothing or file is empty, use default
+    if [ -z "$WLAN_PI_RELEASE" ]; then
+        WLAN_PI_RELEASE="$DEFAULT_RELEASE"
+    fi
+else
+    WLAN_PI_RELEASE="$DEFAULT_RELEASE"
+fi
 
 # Calculate uptime
-UP_SECONDS=$(/usr/bin/cut -d "." -f1 /proc/uptime)
-SECS=$((${UP_SECONDS}%60))
-MINS=$((${UP_SECONDS}/60%60))
-HRS=$((${UP_SECONDS}/3600%24))
-DAYS=$((${UP_SECONDS}/86400))
-UPTIME=$(printf "%d days, %d hrs %d mins %d secs" "$DAYS" "$HRS" "$MINS" "$SECS")
+UP_SECONDS=$(safe_read_file "/proc/uptime" "0" | cut -d "." -f1)
+if [[ "$UP_SECONDS" =~ ^[0-9]+$ ]]; then
+    SECS=$((UP_SECONDS%60))
+    MINS=$((UP_SECONDS/60%60))
+    HRS=$((UP_SECONDS/3600%24))
+    DAYS=$((UP_SECONDS/86400))
+    UPTIME=$(printf "%d days, %d hrs %d mins %d secs" "$DAYS" "$HRS" "$MINS" "$SECS")
+else
+    UPTIME="Unknown"
+fi
 
 # Measure temperature
-TEMP=$(vcgencmd measure_temp | awk -F "[=\']" '{print ($2-int($2)<0.499)?int($2):int($2)+1}')
-
-# Memory utilisation
-MEM_UTIL=$(free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$2,$3,$4; }')
-
-# Disk utilisation
-DISK_UTIL=$(df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }')
-
-# Get CPU utilisation and convert it from float to int by adding 0.5 and dropping everything after the dot
-# Script performance note: mpstat takes 1 second to run
-CPU_UTIL=$(mpstat 1 1 -o JSON | jq '(100.5-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))' | cut -d"." -f1)
+if command -v vcgencmd >/dev/null 2>&1; then
+    TEMP=$(vcgencmd measure_temp 2>/dev/null | awk -F "[=\']" '{print ($2-int($2)<0.499)?int($2):int($2)+1}' || echo "$DEFAULT_TEMP")
+else
+    TEMP=$DEFAULT_TEMP
+fi
 
 # WLAN Pi Mode
-WLAN_PI_MODE=$(cat /etc/wlanpi-state)
+WLAN_PI_MODE=$(safe_read_file "/etc/wlanpi-state" "$DEFAULT_MODE")
 
-#Internet connectivity check
-INTERNET="Unreachable"
-if timeout 2 curl -s -L www.google.com | grep "google.com" &>/dev/null; then
-    INTERNET="Reachable"
-fi
+wait $BACKGROUND_PID
+
+MEM_UTIL=$(cat /tmp/memory.$$ 2>/dev/null || echo "Unable to determine memory usage")
+DISK_UTIL=$(cat /tmp/disk.$$ 2>/dev/null || echo "Unable to determine disk usage")
+CPU_UTIL=$(cat /tmp/cpu_util.$$ 2>/dev/null || echo "N/A (mpstat or jq not available)")
+INTERNET=$(cat /tmp/internet.$$ 2>/dev/null || echo "Unreachable")
+
+# Cleanup temp files
+rm -f /tmp/memory.$$ /tmp/disk.$$ /tmp/cpu_util.$$ /tmp/internet.$$ 2>/dev/null
 
 # Display output
 echo "Mode:        ${WLAN_PI_MODE}"
@@ -64,33 +131,47 @@ echo "Date:        $(date)"
 echo "Memory:      ${MEM_UTIL}"
 echo "Disk:        ${DISK_UTIL}"
 echo "CPU temp:    ${TEMP}°C"
-echo "CPU util:    ${CPU_UTIL} %"
+echo "CPU util:    ${CPU_UTIL}%"
 echo "Internet:    ${INTERNET}"
 echo
 
 # Display network interfaces and IP addresses
-INTERFACES=('eth0' 'wlan0' 'pan0' 'usb0' 'eth1' 'wlan1')
+INTERFACES=('eth0' 'wlan0' 'pan0' 'usb0' 'usb1' 'eth1' 'wlan1')
 echo "Network interfaces:"
-for INT in ${INTERFACES[*]}; do
-    if ip link show $INT > /dev/null 2>&1; then
-        IP=$(ip -o -f inet addr show $INT | awk '{print $4}' | cut -d/ -f1)
-        if [ ! -z ${IP} ]; then
-            echo "  $INT  $IP"
+found_interfaces=false
+for INT in "${INTERFACES[@]}"; do
+    if ip link show "$INT" > /dev/null 2>&1; then
+        IPS=$(ip -o -f inet addr show "$INT" 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+        if [ -n "$IPS" ]; then
+            found_interfaces=true
+            echo "  $INT  $(echo "$IPS" | head -n1)"
+            echo "$IPS" | tail -n +2 | while read -r ip; do
+                echo "        $ip"
+            done
         fi
     fi
 done
+if [ "$found_interfaces" = false ]; then
+    echo "  No active interfaces found"
+fi
 echo
 
 # Display WLAN Pi tips
-if [ -f /opt/wlanpi-common/motd-tips.txt ]; then
-    echo " Tip " | toilet -f term --filter border:gay
+TIPS_FILE="/opt/wlanpi-common/motd-tips.txt"
+if [ -f "$TIPS_FILE" ] && [ -r "$TIPS_FILE" ]; then
+    if command -v toilet >/dev/null 2>&1; then
+        echo " Tip " | toilet -f term --filter border:gay
+    else
+        echo "=== Tip ==="
+    fi
     echo "$(shuf -n 1 /opt/wlanpi-common/motd-tips.txt)"
     echo
 fi
 
 # MediaTek 7612U Wi-Fi adapter does not work in top USB 3.0 port on RPi4. Warn the user.
-if [ -f /sys/bus/usb/devices/2-1/idProduct ]; then
-    if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo && grep -q "7612" /sys/bus/usb/devices/2-1/idProduct; then
+USB_PRODUCT_FILE="/sys/bus/usb/devices/2-1/idProduct"
+if [ -f "$USB_PRODUCT_FILE" ]; then
+    if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo && grep -q "7612" "$USB_PRODUCT_FILE"; then
         echo " Error: Connect Wi-Fi adapter to different USB port " | toilet -f term --filter border:metal
         echo "MediaTek 7612U Wi-Fi adapter is not supported in the top USB 3.0 port. Use the bottom USB 3.0 port or any USB 2.0 port instead."
         echo
@@ -98,24 +179,38 @@ if [ -f /sys/bus/usb/devices/2-1/idProduct ]; then
 fi
 
 # No RF regulatory domain configured
-if sudo wlanpi-reg-domain get | grep -q "No reg domain configured"; then
-    echo " Warning: No RF regulatory domain has been configured " | toilet -f term --filter border:metal
-    echo "Configure one using \"sudo wlanpi-reg-domain set XX\", followed by \"sudo reboot\". XX represents the country code."
-    echo
+if command -v wlanpi-reg-domain >/dev/null 2>&1; then
+    if wlanpi-reg-domain get 2>/dev/null | grep -q "No reg domain configured"; then
+        if command -v toilet >/dev/null 2>&1; then
+            echo " Warning: No RF regulatory domain has been configured " | toilet -f term --filter border:metal
+        else
+            echo "=== Warning: No RF regulatory domain has been configured ==="
+        fi
+        echo "Configure one using \"sudo wlanpi-reg-domain set XX\", followed by \"sudo reboot\". XX represents the country code."
+        echo
+    fi
 fi
 
 # Notify user if there is a new image available or WLAN Pi package updates
-if [ -s /tmp/wlanpi-update-packages ]; then
-    NUMBER_OF_PACKAGES=$(cat "/tmp/wlanpi-update-packages")
+SOFTWARE_UPDATES=""
+UPDATE_PACKAGES_FILE="/tmp/wlanpi-update-packages"
+UPDATE_IMAGE_FILE="/tmp/wlanpi-update-image"
+
+if [ -s "$UPDATE_PACKAGES_FILE" ] && [ -r "$UPDATE_PACKAGES_FILE" ]; then
+    NUMBER_OF_PACKAGES=$(cat "$UPDATE_PACKAGES_FILE")
     SOFTWARE_UPDATES+="There are $NUMBER_OF_PACKAGES updated WLAN Pi packages available. Install updates using \"sudo wlanpi-update\".\n"
 fi
 
-if [ -s /tmp/wlanpi-update-image ]; then
-    NEW_IMAGE_VERSION=$(cat "/tmp/wlanpi-update-image")
+if [ -s "$UPDATE_IMAGE_FILE" ] && [ -r "$UPDATE_IMAGE_FILE" ]; then
+    NEW_IMAGE_VERSION=$(cat "$UPDATE_IMAGE_FILE")
     SOFTWARE_UPDATES+="New WLAN Pi OS image $NEW_IMAGE_VERSION is available at https://github.com/WLAN-Pi/pi-gen/releases/latest.\n"
 fi
 
 if [ -n "$SOFTWARE_UPDATES" ]; then
-    echo " Software updates are available " | toilet -f term --filter border:metal
+    if command -v toilet >/dev/null 2>&1; then
+        echo " Software updates are available " | toilet -f term --filter border:metal
+    else
+        echo "=== Software updates are available ==="
+    fi
     echo -e "$SOFTWARE_UPDATES"
 fi
