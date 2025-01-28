@@ -14,7 +14,7 @@ jobs:
   sbuild:
     name: sbuild ${{ matrix.distro }}+${{ matrix.arch }}
 
-    runs-on: 'ubuntu-22.04'
+    runs-on: 'ubuntu-24.04-arm'
 
     strategy:
       fail-fast: false
@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: sbuild for ${{ matrix.distro }} ${{ matrix.arch }}
         uses: wlan-pi/sbuild-debian-package@main
