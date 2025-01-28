@@ -1,3 +1,9 @@
+wlanpi-common (1.1.27) unstable; urgency=medium
+
+  * Improve wlanpi-stats experience
+
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Tues, 28 Jan 2025 00:00:00 -0400
+
 wlanpi-common (1.1.26) unstable; urgency=medium
 
   * Removes reference to non-existent pcie.service
