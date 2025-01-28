@@ -33,12 +33,6 @@ NO_PROMPT=$3
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
-# check if the script is running as root
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must run as root. Add \"sudo\" please".
-   exit 1
-fi
-
 # just in case we need to debug this script:
 debugger() {
     if [ "$DEBUG" != '0' ];then
@@ -100,6 +94,12 @@ get_domain () {
         exit 0
     fi
 }
+
+# check if the script is running as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must run as root. Add \"sudo\" please".
+   exit 1
+fi
 
 # set domain in reg domain file
 set_domain () {
