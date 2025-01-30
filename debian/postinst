@@ -21,6 +21,14 @@ if [ ! -f /etc/apt/sources.list.d/influxdb.list ]; then
     echo "deb [signed-by=/usr/share/keyrings/influxdb-archive-keyring.gpg] https://repos.influxdata.com/debian $(grep "VERSION_CODENAME=" /etc/os-release |awk -F= {'print $2'} | sed s/\"//g) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list
 fi
 
+if ! ischroot; then
+    echo "Restarting avahi-daemon ..."
+    if ! deb-systemd-invoke restart avahi-daemon.service; then
+        echo "avahi-daemon.service restart failed, continuing installation..." >&2
+        systemctl status avahi-daemon.service >&2 || true
+    fi
+fi
+
 # Fails during apt install wlanpi-common due to apt lock conflict
 #echo "Running apt update"
 #apt update 1> /dev/null 2>& 1
