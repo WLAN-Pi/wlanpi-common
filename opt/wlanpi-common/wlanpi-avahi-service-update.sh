@@ -21,7 +21,7 @@ if [ -z "$MODEL" ]; then
     exit 1
 fi
 
-if ! VERSION=$(cat "$WLANPI_RELEASE_FILE"); then
+if ! VERSION=$(sed 's/^VERSION=//' "$WLANPI_RELEASE_FILE"); then
     echo "Error: Failed to read version file" >&2
     exit 1
 fi
