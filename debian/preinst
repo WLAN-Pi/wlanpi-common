@@ -7,6 +7,9 @@ case "$1" in
         if [ -f /etc/update-motd.d/00-wlanpi-motd ]; then
             rm -f /etc/update-motd.d/00-wlanpi-motd
         fi
+        if [ -f /etc/avahi/services/ssh.service ]; then
+            rm -f /etc/avahi/services/ssh.service
+        fi
         ;;
 esac
 
