@@ -95,11 +95,17 @@ get_domain () {
     fi
 }
 
-# check if the script is running as root
-if [[ $EUID -ne 0 ]]; then
-    echo "This script requires root privileges."
-    exec sudo "$0" "$@"
-fi
+# handle privilege escalation for set operations
+handle_privileges() {
+    if [[ $EUID -ne 0 ]]; then
+        case "$1" in
+            set)
+                echo "Setting the regulatory domain requires elevated privileges."
+                exec sudo "$0" "$@"
+                ;;
+        esac
+    fi
+}
 
 # set domain in reg domain file
 set_domain () {
@@ -202,6 +208,7 @@ case "$1" in
         get_domain
         ;;
   set)
+        handle_privileges "set"
         set_domain
         ;;
   -h|--help|help|"")

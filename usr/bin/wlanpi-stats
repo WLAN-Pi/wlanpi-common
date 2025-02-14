@@ -180,7 +180,9 @@ fi
 
 # No RF regulatory domain configured
 if command -v wlanpi-reg-domain >/dev/null 2>&1; then
-    if ! wlanpi-reg-domain get >/dev/null 2>&1; then
+    reg_output=$(wlanpi-reg-domain get)
+    reg_status=$?
+    if [ $reg_status -ne 0 ] || echo "$reg_output" | grep -q "No reg domain"; then
         if command -v toilet >/dev/null 2>&1; then
             echo " Warning: No RF regulatory domain has been configured " | toilet -f term --filter border:metal
         else
