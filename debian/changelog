@@ -1,6 +1,7 @@
-wlanpi-common (1.1.29) unstable; urgency=medium
+wlanpi-common (1.1.29-1) unstable; urgency=medium
 
   * fix: handle missing CRDA file in reg domain check
+  * fix: add privilege esclation to wlanpi-reg-domain
 
   -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 13 Feb 2025 00:00:00 -0400
 

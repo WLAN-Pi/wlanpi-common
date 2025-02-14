@@ -97,8 +97,8 @@ get_domain () {
 
 # check if the script is running as root
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must run as root. Add \"sudo\" please".
-   exit 1
+    echo "This script requires root privileges."
+    exec sudo "$0" "$@"
 fi
 
 # set domain in reg domain file
