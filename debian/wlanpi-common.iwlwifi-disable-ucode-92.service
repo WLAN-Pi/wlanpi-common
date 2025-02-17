@@ -1,0 +1,14 @@
+[Unit]
+Description=Disable iwlwifi-gl-c0-fm-c0-92.ucode
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+ConditionPathExists=!/etc/iwlwifi-gl-c0-fm-c0-92.ucode.disabled-at-startup
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/wlanpi-iwlwifi-ucode-92 disable
+ExecStartPost=/usr/bin/touch /etc/iwlwifi-gl-c0-fm-c0-92.ucode.disabled-at-startup
+
+[Install]
+WantedBy=multi-user.target

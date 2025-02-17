@@ -23,3 +23,4 @@ opt/wlanpi-common/wlanpi-bluetooth.sh usr/bin/wlanpi-bluetooth
 opt/wlanpi-common/wlanpi-model.sh usr/bin/wlanpi-model
 opt/wlanpi-common/wpdev.sh usr/bin/wpdev
 opt/wlanpi-common/wlanpi-avahi-service-update.sh usr/bin/wlanpi-avahi-service-update
+opt/wlanpi-common/wlanpi-iwlwifi-ucode-92.sh usr/bin/wlanpi-iwlwifi-ucode-92
