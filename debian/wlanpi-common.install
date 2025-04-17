@@ -1,7 +1,6 @@
 opt/wlanpi-common/* opt/wlanpi-common/
 usr/bin/wlanpi-stats usr/bin/
 etc/profile.d/wlanpi-stats.sh etc/profile.d/
-etc/sudoers.d/spectools etc/sudoers.d/
 etc/systemd/system/isc-dhcp-server.service.d/* etc/systemd/system/isc-dhcp-server.service.d/
 etc/systemd/system/avahi-daemon.service.d/* etc/systemd/system/avahi-daemon.service.d/
 etc/avahi/services/wlanpi_announce.service etc/avahi/services/
