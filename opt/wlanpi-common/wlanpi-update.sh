@@ -6,7 +6,7 @@
 #          Adrian Granados, adrian@intuitibits.com, @adriangranados
 #
 
-WLAN_PI_PACKAGES='wlanpi-|iw|grafana|scandump'
+WLAN_PI_PACKAGES='wlanpi-|iw|scandump'
 
 number_of_upgradeable () {
     sudo apt update >/dev/null 2>&1 && sudo apt list --upgradeable 2>/dev/null | grep -c -E "$WLAN_PI_PACKAGES" && exit 0
@@ -68,7 +68,7 @@ upgrade_all () {
 }
 
 upgrade_wlanpi () {
-    sudo apt -y --only-upgrade install "wlanpi-*" iw grafana scandump
+    sudo apt -y --only-upgrade install "wlanpi-*" iw scandump
 }
 
 usage () {
