@@ -1,2 +1,2 @@
 # Executes after apt upgrade command
-DPkg::Post-Invoke {"echo 'Removing /tmp/wlanpi-update-packages file' && rm -f /tmp/wlanpi-update-packages";};
+DPkg::Post-Invoke {"rm -f /tmp/wlanpi-update-packages > /dev/null 2>&1";};
