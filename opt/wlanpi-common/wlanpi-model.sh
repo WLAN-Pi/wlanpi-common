@@ -99,7 +99,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
 
 
     # Is it Go?
-    elif timeout 2 grep -q -m 1 -E "^14," /dev/ttyAMA0 2>/dev/null; then
+    elif timeout 2 grep -q -m 1 -E "^14," /dev/ttyAMA0 2>/dev/null || grep -i -q "^go$" /home/.device-info/model 2>/dev/null; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Go"
