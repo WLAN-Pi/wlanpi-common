@@ -1,3 +1,9 @@
+wlanpi-common (1.1.33-1) unstable; urgency=medium
+
+  * improve WLAN Pi Go model detection reliability
+
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 25 Apr 2025 00:00:00 -0400
+
 wlanpi-common (1.1.32-1) unstable; urgency=medium
 
   * improve WLAN Pi Go model detection reliability
