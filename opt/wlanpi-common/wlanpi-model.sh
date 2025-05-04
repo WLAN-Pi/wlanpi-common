@@ -205,11 +205,15 @@ if [ "$BRIEF_OUTPUT" -eq 0 ]; then
             echo "Bluetooth adapter:    $item"
         done
     else
-        if hciconfig | grep -q "hci0"; then
-            # Built-in Bluetooth adapter is present on Raspberry Pi
-            echo "Bluetooth adapter:    Built-in"
+        if command -v hciconfig &> /dev/null; then
+            if hciconfig | grep -q "hci0"; then
+                # Built-in Bluetooth adapter is present on Raspberry Pi
+                echo "Bluetooth adapter:    Built-in"
+            else
+                echo "No Bluetooth adapter"
+            fi
         else
-            echo "No Bluetooth adapter"
+            echo "Bluetooth tools (BlueZ) not installed (hciconfig not found)"
         fi
     fi
 fi
