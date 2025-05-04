@@ -1,4 +1,4 @@
-wlanpi-common (1.1.34-1) unstable; urgency=medium
+wlanpi-common (1.1.34-2) unstable; urgency=medium
 
   * handle missing hciconfig on WLAN Pi Go
   
