@@ -45,7 +45,7 @@ debugger() {
 }
 
 # Set baud rate for WLAN Pi Go discover port
-stty -F /dev/ttyAMA0 115200 2>/dev/null
+stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 
 # Get WLAN Pi specs
 SPECS=$(wlanpi-model)
