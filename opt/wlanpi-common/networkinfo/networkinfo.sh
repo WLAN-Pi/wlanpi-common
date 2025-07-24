@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Author: Jiri Brejcha, jirka@jiribrejcha.net
-#Monitors syslog for eth0 up and down events and triggers networkinfo scripts like CDP, LLDP, internet watchdog
+#Monitors syslog for eth0 and eth1 up and down events and triggers networkinfo scripts like CDP, LLDP, internet watchdog
 
 DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -29,7 +29,7 @@ do
    sleep 1
 done
 
-#Monitor up/down status changes of eth0 and execute neighbour detection or cleanup
+#Monitor up/down status changes of eth0 and eth1 and execute neighbour detection or cleanup
 tail -fn0 $MESSAGES |
 while read -r line
 do
@@ -40,12 +40,31 @@ do
     pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
     pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
     #Execute neighbour detection scripts
-    sleep 4 
+    sleep 4
     "$DIRECTORY"/lldpneigh.sh &
     "$DIRECTORY"/cdpneigh.sh &
   ;;
   *"eth0: Link is Down"*)
     logger "networkinfo script: eth0 went down"
+    #Kill any running instances of the CDP and LLDP scripts
+    pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
+    pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
+    #Execute cleanup scripts
+    "$DIRECTORY"/lldpcleanup.sh
+    "$DIRECTORY"/cdpcleanup.sh
+  ;;
+  *"eth1: Link is Up"*)
+    logger "networkinfo script: eth1 went up"
+    #Kill any running instances of the CDP and LLDP scripts
+    pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
+    pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
+    #Execute neighbour detection scripts
+    sleep 4
+    "$DIRECTORY"/lldpneigh.sh &
+    "$DIRECTORY"/cdpneigh.sh &
+  ;;
+  *"eth1: Link is Down"*)
+    logger "networkinfo script: eth1 went down"
     #Kill any running instances of the CDP and LLDP scripts
     pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
     pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
