@@ -1,3 +1,9 @@
+wlanpi-common (1.1.35-1) unstable; urgency=medium
+
+  * Add support for eth1
+  
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 24 Jul 2025 00:00:00 -0400
+
 wlanpi-common (1.1.34-2) unstable; urgency=medium
 
   * handle missing hciconfig on WLAN Pi Go
