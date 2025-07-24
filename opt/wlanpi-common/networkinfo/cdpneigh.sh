@@ -22,16 +22,29 @@ DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #Clean up the output files
 sudo "$DIRECTORY"/cdpcleanup.sh
 
-logger "networkinfo script: looking for a CDP neighbour"
+ETH0ISUP=$(ip link show eth0 2>/dev/null | grep -q "state UP" && echo "UP")
+ETH1ISUP=$(ip link show eth1 2>/dev/null | grep -q "state UP" && echo "UP")
+
+if [ "$ETH0ISUP" ]; then
+    INTERFACE="eth0"
+elif [ "$ETH1ISUP" ]; then
+    INTERFACE="eth1"
+else
+    logger "networkinfo script: both eth0 and eth1 are down"
+    echo "Both eth0 and eth1 are down"
+    exit 1
+fi
+
+logger "networkinfo script: using interface $INTERFACE, looking for a CDP neighbour"
 
 #Run packet capture for up to 61 seconds or stop after we have got the right packets
 TIMETOSTOP=0
 while [ "$TIMETOSTOP" == 0 ]; do
-    timeout 61 sudo tcpdump -nv -s 1500 -c 1 -i eth0 -Q in 'ether[20:2] == 0x2000' and ether dst 01:00:0c:cc:cc:cc > "$CAPTUREFILE"
+    timeout 61 sudo tcpdump -nv -s 1500 -c 1 -i "$INTERFACE" -Q in 'ether[20:2] == 0x2000' and ether dst 01:00:0c:cc:cc:cc > "$CAPTUREFILE"
     TIMETOSTOP=$(grep "CDP" "$CAPTUREFILE")
 done
 
-#If we didn't capture any LLDP packets then return
+#If we didn't capture any CDP packets then return
 if [ -z "$TIMETOSTOP" ]; then
     logger "networkinfo script: no CDP neighbour detected"
     exit 0
