@@ -9,8 +9,12 @@ OUTPUTFILE="/tmp/lldpneigh.txt"
 logger "networkinfo script: cleaning LLDP neighbour cache files"
 echo "No neighbour, takes up to 60 seconds" > "$OUTPUTFILE"
 #Tell me if eth0 is down 
-sudo /sbin/ethtool eth0 | grep -q "Link detected: no" && echo "eth0 is down" > "$OUTPUTFILE"
-
+for interface in eth0 eth1; do
+    if sudo /sbin/ethtool "$interface" 2>/dev/null | grep -q "Link detected: no"; then
+        echo "$interface is down" > "$OUTPUTFILE"
+        break
+    fi
+done
 #Remove capture file
 sudo rm -f "$CAPTUREFILE"
 
