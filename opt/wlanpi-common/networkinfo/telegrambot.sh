@@ -67,10 +67,13 @@ logger "networkinfo telegrambot: Collecting data"
 #Collect all data
 ETH0SPEED=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 2>/dev/null | grep "Speed" | sed 's/....$//' | cut -d ' ' -f2  || echo "disconnected")
 ETH0DUPLEX=$(ethtool eth0 2>/dev/null | grep -q "Link detected: yes" && ethtool eth0 2>/dev/null | grep "Duplex" | cut -d ' ' -f 2 || echo "disconnected")
+ETH1SPEED=$(ethtool eth1 2>/dev/null | grep -q "Link detected: yes" && ethtool eth1 2>/dev/null | grep "Speed" | sed 's/....$//' | cut -d ' ' -f2  || echo "disconnected")
+ETH1DUPLEX=$(ethtool eth1 2>/dev/null | grep -q "Link detected: yes" && ethtool eth1 2>/dev/null | grep "Duplex" | cut -d ' ' -f 2 || echo "disconnected")
 HOSTNAME=$(hostname)
 UPTIME=$(uptime -p | cut -c4-)
 MODE=$(cat /etc/wlanpi-state)
 ETH0IP=$(ip a | grep "eth0" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
+ETH1IP=$(ip a | grep "eth0" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
 UPLINK=$(ip route show | grep "default via" | cut -d " " -f5)
 UPLINKIP=$(ip a | grep "$UPLINK" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
 NEIGHBOUR=$(grep -q "Name:" /tmp/lldpneigh.txt 2>/dev/null && cat /tmp/lldpneigh.txt | sed 's/^Name:/Connected to:/g' | sed 's/^Desc:/Port description:/g' | sed 's/^IP:/Neighbour IP:/g' | sed -z 's/\n/%0A/g')
@@ -92,6 +95,12 @@ else
   CURRENTIP="$ETH0IP"
 fi
 
+if [ -z "$ETH1IP" ]; then
+  CURRENTIP="$UPLINKIP"
+else
+  CURRENTIP="$ETH1IP"
+fi
+
 #Compose the message
 TEXT=""
 TEXT+="%f0%9f%9f%a2 <b>$HOSTNAME is now online</b> %0A"
@@ -104,6 +113,15 @@ else
   TEXT+="Eth0 speed: $ETH0SPEED %0A"
   TEXT+="Eth0 duplex: $ETH0DUPLEX %0A"
 fi
+if [ "$ETH1IP" ]; then
+  TEXT+="Eth1 IP address: <code>$ETH1IP</code> %0A"
+fi
+if [[ "$ETH1SPEED" == "disconnected" ]]; then
+  TEXT+="Eth1 is down %0A"
+else
+  TEXT+="Eth1 speed: $ETH1SPEED %0A"
+  TEXT+="Eth1 duplex: $ETH1DUPLEX %0A"
+fi
 TEXT+="WLAN Pi mode: $MODE %0A"
 TEXT+="Uptime: $UPTIME %0A"
 
@@ -114,7 +132,7 @@ fi
 
 TEXT+="%0A"
 TEXT+="Uplink to internet: $UPLINK %0A"
-if [[ "$UPLINK" != "eth0" ]]; then
+if [[ "$UPLINK" != "eth0" && "$UPLINK" != "eth1" ]]; then
   TEXT+="Local $UPLINK IP address: $UPLINKIP %0A"
 fi
 TEXT+="Public IP: <code>$PUBLICIP</code>, <code>$PUBLICIPHOSTNAME</code> %0A"
