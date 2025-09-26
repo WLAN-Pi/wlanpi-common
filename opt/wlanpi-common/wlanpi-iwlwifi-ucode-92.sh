@@ -24,6 +24,7 @@ check_space() {
     if [ -f "$file" ]; then
         required_space=$(stat -c%s "$file")
         available_space=$(df --output=avail "$FIRMWARE_DIR" | tail -n1)
+        available_space=$((available_space * 1024))
         [ "$available_space" -gt "$required_space" ] || error_exit "Insufficient space for backup ..."
     fi
 }
