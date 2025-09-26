@@ -1,3 +1,9 @@
+wlanpi-common (1.1.36-1) unstable; urgency=medium
+
+  * fix: unit mismatch in firmware backup space check
+  
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 26 Sep 2025 00:00:00 -0400
+
 wlanpi-common (1.1.35-1) unstable; urgency=medium
 
   * Add support for eth1
