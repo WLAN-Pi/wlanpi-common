@@ -1,3 +1,9 @@
+wlanpi-common (1.1.37-1) unstable; urgency=medium
+
+  * fix: run iwlwifi ucode disable service before network initialization
+  
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 30 Sep 2025 00:00:00 -0400
+
 wlanpi-common (1.1.36-1) unstable; urgency=medium
 
   * fix: unit mismatch in firmware backup space check
