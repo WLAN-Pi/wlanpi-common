@@ -17,6 +17,19 @@ if ! ischroot; then
     fi
 fi
 
+# Install udev rule to disable iwlwifi ucode 92 at boot
+echo "Installing udev rule to disable iwlwifi ucode 92 at boot..."
+
+UDEV_RULE_FILE="/etc/udev/rules.d/50-iwlwifi-disable-v92.rules"
+UDEV_RULE_CONTENT='# Disable iwlwifi v92 firmware at boot - Intel BE200
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x272b", RUN+="/bin/sh -c '\''test -f /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode && mv /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode.disabled'\''"'
+
+if echo "$UDEV_RULE_CONTENT" > "$UDEV_RULE_FILE"; then
+    echo "Udev rule installed. Will take effect on next boot."
+else
+    echo "Warning: Failed to create udev rule file" >&2
+fi
+
 # Fails during apt install wlanpi-common due to apt lock conflict
 #echo "Running apt update"
 #apt update 1> /dev/null 2>& 1

@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|purge)
+        # Clean up udev rule
+        rm -f /etc/udev/rules.d/50-iwlwifi-disable-v92.rules
+        
+        # Restore firmware if disabled
+        if [ -f /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode.disabled ]; then
+            mv /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode.disabled \
+               /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode 2>/dev/null || true
+        fi
+        ;;
+esac
+
+#DEBHELPER#
