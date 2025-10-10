@@ -1,3 +1,11 @@
+wlanpi-common (1.1.38-1) unstable; urgency=medium
+
+  * fix: use udev rule to disable iwlwifi v92 firmware at boot
+  * Replaces systemd service which couldn't run early enough
+  * udev rule triggers on PCI device detection before driver binding
+
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 9 Oct 2025 00:00:00 -0400
+
 wlanpi-common (1.1.37-1) unstable; urgency=medium
 
   * fix: run iwlwifi ucode disable service before network initialization
