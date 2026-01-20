@@ -143,8 +143,11 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         debugger "Found 2 or less lines in lspci"
 
         # Check for HDMI (M4 has HDMI port where other platforms like Go lack)
-        lsmod | grep -q "hdmi"
-        HDMI_STATUS=$?
+        if lsmod | grep -q "hdmi"; then
+            HDMI_STATUS=0
+        else
+            HDMI_STATUS=1
+        fi
 
         if [ $HDMI_STATUS -eq 0 ]; then
             debugger "HDMI module found loaded"
@@ -156,6 +159,9 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
                 echo "Main board:           Mcuzone M4"
             fi
             debugger "End script now. Platform is M4."
+        else
+            debugger "HDMI module not found, expected for M4 platform"
+            echo "Unknown platform"
         fi
 
     # Unknown platform based on CM4
