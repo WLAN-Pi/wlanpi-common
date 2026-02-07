@@ -7,7 +7,7 @@
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.9"
+VERSION="1.0.10"
 SCRIPT_NAME="$(basename "$0")"
 
 usage(){
@@ -91,6 +91,8 @@ show_all_5(){
             echo "Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-2C"
         elif [[ " ${UNII_3_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
             echo "Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-3"
+        elif [[ " ${UNII_4_CHANNELS[*]} " =~ " ${INPUT} " ]]; then
+            echo "Band: $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5000)) MHz   U-NII-4"
         fi
     done
     exit 0
@@ -114,11 +116,22 @@ show_all_6(){
             LOWER_UPPER="Upper 6 GHz"
         fi
 
+        # Determine U-NII band for 6 GHz
+        if [ $INPUT -le 93 ]; then
+            UNII_BAND="U-NII-5"
+        elif [ $INPUT -le 113 ]; then
+            UNII_BAND="U-NII-6"
+        elif [ $INPUT -le 181 ]; then
+            UNII_BAND="U-NII-7"
+        else
+            UNII_BAND="U-NII-8"
+        fi
+
         if [ $(($INPUT%4)) -eq 1 ]; then
             if [ $(($INPUT%16)) -eq 5 ]; then
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER   $UNII_BAND"
             else
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER   $UNII_BAND"
             fi
         fi
     done

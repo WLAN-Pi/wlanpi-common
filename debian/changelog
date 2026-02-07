@@ -1,3 +1,9 @@
+wlanpi-common (1.1.40) unstable; urgency=medium
+
+  * improve wifichannel.sh for U4 and U5-U8 display
+
+  -- Josh Schmelzle <josh@joshschmelzle.com>  Sat, 7 Feb 2026 00:00:00 -0400
+
 wlanpi-common (1.1.39-1) unstable; urgency=medium
 
   * fix: M4 detection to properly check HDMI module status
