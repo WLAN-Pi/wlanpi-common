@@ -5,7 +5,6 @@
 #
 # This script is uses the following scripts to change modes
 #  - /opt/wlanpi-hotspot/hotspot_switcher
-#  - /opt/wlanpi-hotspot/wconsole_switcher
 #  - /opt/wlanpi-hotspot/server_switcher
 #
 # To get the current mode, the followign file is read:
@@ -14,7 +13,6 @@
 # States available:
 #  - classic
 #  - hotspot
-#  - wconsole
 #  - server
 #
 # Return values:
@@ -35,7 +33,6 @@ MODE=""
 SCRIPT_NAME=$(echo ${0##*/})
 
 HOTSPOT_SWITCHER="/opt/wlanpi-hotspot/hotspot_switcher"
-WCONSOLE_SWITCHER="/opt/wlanpi-wconsole/wconsole_switcher"
 SERVER_SWITCHER="/opt/wlanpi-server/server_switcher"
 CONFIRM_REQ=$3
 
@@ -127,7 +124,7 @@ set_mode() {
     NEW_MODE=$1
 
     # check new mode is valid
-    if [[ ! $NEW_MODE =~ (classic|hotspot|wconsole|server) ]]; then
+    if [[ ! $NEW_MODE =~ (classic|hotspot|server) ]]; then
         echo "* Invalid mode requested : $NEW_MODE"
         exit 1
     fi
@@ -153,11 +150,6 @@ set_mode() {
             check_yn
             `$HOTSPOT_SWITCHER on`
             ;;
-    wconsole)
-            echo "* Switching from classic to wconsole mode"
-            check_yn
-            `$WCONSOLE_SWITCHER on`
-            ;;
     server)
             echo "* Switching from classic to server mode"
             check_yn
@@ -169,11 +161,6 @@ set_mode() {
                     echo "* Switching from hotspot to classic mode";
                     check_yn;
                     `$HOTSPOT_SWITCHER off`
-                    ;;
-            wconsole)
-                    echo "* Switching from wconsole to classic mode";
-                    check_yn;
-                    `$WCONSOLE_SWITCHER off`
                     ;;
             server)
                     echo "* Switching from server to classic mode";
@@ -197,8 +184,8 @@ usage () {
         echo "Usage: wlanpi-mode.sh { get | set | help }"
         echo ""
         echo "  wlanpi-mode.sh get: show current mode"
-        echo "  wlanpi-mode.sh set [ classic | hotspot | wconsole | server ]"
-        echo "  wlanpi-mode.sh set [ classic | hotspot | wconsole | server ] [ -q ] (quiet switch)"
+        echo "  wlanpi-mode.sh set [ classic | hotspot | server ]"
+        echo "  wlanpi-mode.sh set [ classic | hotspot | server ] [ -q ] (quiet switch)"
         echo "  wlanpi-mode.sh : show usage info"
         echo ""
         exit 0
