@@ -1,3 +1,9 @@
+wlanpi-common (1.1.43) unstable; urgency=medium
+
+  * Add support for 6 GHz LPI/SP identification and references to band. (#65)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Mon, 16 Feb 2026 14:17:32 -0700
+
 wlanpi-common (1.1.42) unstable; urgency=medium
 
   * Implement channel width reporting (#64)
