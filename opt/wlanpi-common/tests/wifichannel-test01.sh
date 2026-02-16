@@ -131,6 +131,42 @@ run_tests () {
   check_all_lines "All 5 GHz lines have Widths" "-5" "Widths:"
   check_all_lines "All 6 GHz lines have Widths" "-6" "Widths:"
 
+  # ---- 6 GHz U-NII band tests (channel lookup) ----
+  check_output "6 GHz ch 1 U-NII band" "1" "U-NII-5"
+  check_output "6 GHz ch 93 U-NII band" "93" "U-NII-5"
+  check_output "6 GHz ch 97 U-NII band" "97" "U-NII-6"
+  check_output "6 GHz ch 113 U-NII band" "113" "U-NII-6"
+  check_output "6 GHz ch 117 U-NII band" "117" "U-NII-7"
+  check_output "6 GHz ch 181 U-NII band" "181" "U-NII-7"
+  check_output "6 GHz ch 185 U-NII band" "185" "U-NII-8"
+  check_output "6 GHz ch 233 U-NII band" "233" "U-NII-8"
+
+  # ---- 6 GHz U-NII band tests (frequency lookup) ----
+  check_output "6 GHz freq 5955 (ch 1) U-NII band" "5955" "U-NII-5"
+  check_output "6 GHz freq 6435 (ch 97) U-NII band" "6435" "U-NII-6"
+  check_output "6 GHz freq 6535 (ch 117) U-NII band" "6535" "U-NII-7"
+  check_output "6 GHz freq 6875 (ch 185) U-NII band" "6875" "U-NII-8"
+
+  # ---- 6 GHz power class tests (channel lookup) ----
+  check_output "6 GHz ch 1 power class (LPI/SP)" "1" "Power: LPI/SP"
+  check_output "6 GHz ch 93 power class (LPI/SP)" "93" "Power: LPI/SP"
+  check_output "6 GHz ch 97 power class (LPI only)" "97" "Power: LPI"
+  check_output "6 GHz ch 113 power class (LPI only)" "113" "Power: LPI"
+  check_output "6 GHz ch 117 power class (LPI/SP)" "117" "Power: LPI/SP"
+  check_output "6 GHz ch 181 power class (LPI/SP)" "181" "Power: LPI/SP"
+  check_output "6 GHz ch 185 power class (LPI only)" "185" "Power: LPI"
+  check_output "6 GHz ch 233 power class (LPI only)" "233" "Power: LPI"
+
+  # ---- 6 GHz power class tests (frequency lookup) ----
+  check_output "6 GHz freq 5975 (ch 5) power class" "5975" "Power: LPI/SP"
+  check_output "6 GHz freq 6455 (ch 101) power class" "6455" "Power: LPI"
+  check_output "6 GHz freq 6535 (ch 117) power class" "6535" "Power: LPI/SP"
+  check_output "6 GHz freq 6875 (ch 185) power class" "6875" "Power: LPI"
+
+  # ---- Band listing U-NII and power class tests ----
+  check_all_lines "All 6 GHz lines have U-NII band" "-6" "U-NII-"
+  check_all_lines "All 6 GHz lines have Power class" "-6" "Power:"
+
   # ---- Existing behavior preservation tests ----
   check_output "Ch 36 still shows frequency" "36" "5180 MHz"
   check_output "Ch 6 still shows recommended" "6" "Recommended: Yes"

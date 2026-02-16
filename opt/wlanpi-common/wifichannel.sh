@@ -7,7 +7,7 @@
 
 INPUT="$1"
 BAND=""
-VERSION="1.0.11"
+VERSION="1.0.12"
 SCRIPT_NAME="$(basename "$0")"
 
 # Returns available channel widths for a given band and channel
@@ -61,6 +61,32 @@ get_channel_widths(){
             echo "$widths"
             ;;
     esac
+}
+
+# Returns the U-NII band for a given 6 GHz channel
+get_6ghz_unii_band(){
+    local channel=$1
+    if [ $channel -le 93 ]; then
+        echo "U-NII-5"
+    elif [ $channel -le 113 ]; then
+        echo "U-NII-6"
+    elif [ $channel -le 181 ]; then
+        echo "U-NII-7"
+    else
+        echo "U-NII-8"
+    fi
+}
+
+# Returns the power class for a given 6 GHz channel (FCC rules)
+# U-NII-5 and U-NII-7: LPI and Standard Power (with AFC)
+# U-NII-6 and U-NII-8: LPI only
+get_6ghz_power_class(){
+    local channel=$1
+    if [ $channel -le 93 ] || ([ $channel -ge 117 ] && [ $channel -le 181 ]); then
+        echo "LPI/SP"
+    else
+        echo "LPI   "
+    fi
 }
 
 usage(){
@@ -172,23 +198,16 @@ show_all_6(){
             LOWER_UPPER="Upper 6 GHz"
         fi
 
-        # Determine U-NII band for 6 GHz
-        if [ $INPUT -le 93 ]; then
-            UNII_BAND="U-NII-5"
-        elif [ $INPUT -le 113 ]; then
-            UNII_BAND="U-NII-6"
-        elif [ $INPUT -le 181 ]; then
-            UNII_BAND="U-NII-7"
-        else
-            UNII_BAND="U-NII-8"
-        fi
+        # Determine U-NII band and power class for 6 GHz
+        UNII_BAND=$(get_6ghz_unii_band "$INPUT")
+        POWER_CLASS=$(get_6ghz_power_class "$INPUT")
 
         if [ $(($INPUT%4)) -eq 1 ]; then
             WIDTHS=$(get_channel_widths "6" "$INPUT")
             if [ $(($INPUT%16)) -eq 5 ]; then
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER   $UNII_BAND   Widths: $WIDTHS"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
             else
-                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER   $UNII_BAND   Widths: $WIDTHS"
+                echo "Band: $BAND GHz   Channel:$PAD $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
             fi
         fi
     done
@@ -246,12 +265,16 @@ freq_to_channel(){
         if [ $(($CHANNEL_6%4)) -eq 1 ] && [ $(($CHANNEL_6%16)) -eq 5 ]; then
             BAND="6"
             WIDTHS=$(get_channel_widths "6" "$CHANNEL_6")
-            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: Yes   $LOWER_UPPER   Widths: $WIDTHS"
+            UNII_BAND=$(get_6ghz_unii_band "$CHANNEL_6")
+            POWER_CLASS=$(get_6ghz_power_class "$CHANNEL_6")
+            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: Yes   $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
         # Valid 6 GHz non-PSC channel
         elif [ $(($CHANNEL_6%4)) -eq 1 ]; then
             BAND="6"
             WIDTHS=$(get_channel_widths "6" "$CHANNEL_6")
-            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: No    $LOWER_UPPER   Widths: $WIDTHS"
+            UNII_BAND=$(get_6ghz_unii_band "$CHANNEL_6")
+            POWER_CLASS=$(get_6ghz_power_class "$CHANNEL_6")
+            echo "Band:   $BAND GHz   Channel: $CHANNEL_6   PSC: No    $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
         fi
     fi
 
@@ -307,13 +330,17 @@ channel_to_freq(){
     if [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ] && [ $(($INPUT%16)) -eq 5 ]; then
         BAND="6"
         WIDTHS=$(get_channel_widths "6" "$INPUT")
-        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER   Widths: $WIDTHS"
+        UNII_BAND=$(get_6ghz_unii_band "$INPUT")
+        POWER_CLASS=$(get_6ghz_power_class "$INPUT")
+        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: Yes   $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
 
     # 6 GHz non-PSC channel
     elif [ "$INPUT" -ge 1 ] && [ "$INPUT" -le 233 ] && [ $(($INPUT%4)) -eq 1 ]; then
         BAND="6"
         WIDTHS=$(get_channel_widths "6" "$INPUT")
-        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER   Widths: $WIDTHS"
+        UNII_BAND=$(get_6ghz_unii_band "$INPUT")
+        POWER_CLASS=$(get_6ghz_power_class "$INPUT")
+        echo "Band:   $BAND GHz   Channel: $INPUT   Center freq: $((($INPUT * 5) + 5950)) MHz   PSC: No    $LOWER_UPPER   $UNII_BAND   Power: $POWER_CLASS   Widths: $WIDTHS"
     fi
 
     invalid_input
