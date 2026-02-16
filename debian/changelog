@@ -1,3 +1,10 @@
+wlanpi-common (1.1.42) unstable; urgency=medium
+
+  * Implement channel width reporting (#64)
+  * Ensure regulatory domain input is set to uppercase (#63)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Mon, 16 Feb 2026 09:10:59 -0700
+
 wlanpi-common (1.1.41) unstable; urgency=medium
 
   * Handle config file location variance for config location (#62)
