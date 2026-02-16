@@ -1,3 +1,12 @@
+wlanpi-common (1.1.41) unstable; urgency=medium
+
+  * Handle config file location variance for config location (#62)
+  * Adding user input to debugger function (#60)
+  * Remove bullseye from GH actions on main branch (#58)
+  * Remove wconsole mode from wlanpi-common (#56)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Sun, 15 Feb 2026 19:08:37 -0700
+
 wlanpi-common (1.1.40) unstable; urgency=medium
 
   * improve wifichannel.sh for U4 and U5-U8 display
