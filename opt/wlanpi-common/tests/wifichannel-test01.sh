@@ -173,6 +173,32 @@ run_tests () {
   check_output "Ch 36 still shows U-NII band" "36" "U-NII-1"
   check_output "Ch 132 still shows U-NII band" "132" "U-NII-2C"
 
+  # ---- U-NII band listing tests ----
+  check_all_lines "U-NII-1 listing shows U-NII-1" "-unii-1" "U-NII-1"
+  check_all_lines "U-NII-1 listing shows 5 GHz" "-unii-1" "Band: 5 GHz"
+  check_output "U-NII-1 listing includes ch 36" "-unii-1" "Channel:  36"
+  check_output "U-NII-1 listing includes ch 48" "-unii-1" "Channel:  48"
+  check_all_lines "U-NII-2A listing shows U-NII-2A" "-unii-2a" "U-NII-2A"
+  check_output "U-NII-2A listing includes ch 52" "-unii-2a" "Channel:  52"
+  check_all_lines "U-NII-2C listing shows U-NII-2C" "-unii-2c" "U-NII-2C"
+  check_output "U-NII-2C listing includes ch 100" "-unii-2c" "Channel:  100"
+  check_all_lines "U-NII-3 listing shows U-NII-3" "-unii-3" "U-NII-3"
+  check_output "U-NII-3 listing includes ch 149" "-unii-3" "Channel:  149"
+  check_all_lines "U-NII-4 listing shows U-NII-4" "-unii-4" "U-NII-4"
+  check_output "U-NII-4 listing includes ch 169" "-unii-4" "Channel:  169"
+  check_all_lines "U-NII-5 listing shows U-NII-5" "-unii-5" "U-NII-5"
+  check_all_lines "U-NII-5 listing shows 6 GHz" "-unii-5" "Band: 6 GHz"
+  check_output "U-NII-5 listing includes ch 1" "-unii-5" "Channel:   1"
+  check_output "U-NII-5 listing includes ch 93" "-unii-5" "Channel:  93"
+  check_all_lines "U-NII-6 listing shows U-NII-6" "-unii-6" "U-NII-6"
+  check_output "U-NII-6 listing includes ch 97" "-unii-6" "Channel:  97"
+  check_all_lines "U-NII-7 listing shows U-NII-7" "-unii-7" "U-NII-7"
+  check_output "U-NII-7 listing includes ch 117" "-unii-7" "Channel: 117"
+  check_all_lines "U-NII-8 listing shows U-NII-8" "-unii-8" "U-NII-8"
+  check_output "U-NII-8 listing includes ch 185" "-unii-8" "Channel: 185"
+  check_all_lines "U-NII band listing has Widths" "-unii-1" "Widths:"
+  check_all_lines "U-NII-5 listing has Power class" "-unii-5" "Power:"
+
   # ---- Error handling preserved ----
   info "Invalid input still shows error"
   output=$($SCRIPT_NAME "abc" 2>&1)
