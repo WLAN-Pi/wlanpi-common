@@ -12,6 +12,15 @@ WAVESHARE_FILE="/boot/waveshare"
 EEPROM_FILE="/opt/wlanpi-common/r4-eeprom-boot.conf"
 REQUIRES_REBOOT=0
 
+if [ -d "/boot/firmware" ]; then
+    CONFIG_FILE="/boot/firmware/config.txt"
+elif [ -d "/boot" ]; then
+    CONFIG_FILE="/boot/config.txt"
+else
+    echo "ERROR: Boot not found"
+    exit 1
+fi
+
 # Shows help
 show_help(){
     echo "Applies platform specific settings to WLAN Pi R4 and M4 at startup time"
@@ -79,30 +88,30 @@ if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
     fi
 
     # Set USB 2.0 controller OTG mode to 0
-    if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+    if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE; then
         debugger "Setting otg_mode to 0"
-        sed -i "s/^\s*otg_mode=1/otg_mode=0/" /boot/config.txt
+        sed -i "s/^\s*otg_mode=1/otg_mode=0/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif grep -q -E "^\s*otg_mode=0" /boot/config.txt; then
+    elif grep -q -E "^\s*otg_mode=0" $CONFIG_FILE; then
         debugger "otg_mode is already set to 0, no action needed"
     else
         debugger "otg_mode line not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\notg_mode=0/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\notg_mode=0/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     fi
 
     # Set USB mode to OTG mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" $CONFIG_FILE | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
         DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
         debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
         debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
         debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "USB mode is already set to OTG mode, no action needed"
@@ -126,39 +135,39 @@ if [[ "$BOARD" == "Mcuzone M4" ]]; then
     fi
 
     # If WLAN Pi Pro fan controller is enabled, disable the controller
-    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" $CONFIG_FILE; then
         debugger "Fan controller is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "Fan controller is already disabled, no action needed"
     fi
 
     # Set USB 2.0 controller OTG mode to 1
-    if grep -q -E "^\s*#\s*otg_mode=1" /boot/config.txt; then
+    if grep -q -E "^\s*#\s*otg_mode=1" $CONFIG_FILE; then
         debugger "Setting otg_mode to 1 by uncommenting the config line"
-        sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" /boot/config.txt
+        sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+    elif grep -q -E "^\s*otg_mode=1" $CONFIG_FILE; then
         debugger "otg_mode is already set to 1, no action needed"
     else
         debugger "otg_mode line not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\notg_mode=1/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\notg_mode=1/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     fi
 
     # Set USB ports to host mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=otg" | cut -d ":" -f1)
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" $CONFIG_FILE | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -n "dtoverlay=dwc2,dr_mode=otg" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
         DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
         debugger "Found \"dtoverlay=dwc2,dr_mode=otg\" CM4 config on line $DR_MODE_LINE_NUMBER"
         debugger "Setting CM4 USB to host mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=host/" /boot/config.txt
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=host/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=host"; then
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=dwc2,dr_mode=host"; then
         debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host\n/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=host\n/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "USB mode is already set to host mode, no action needed"
@@ -166,38 +175,38 @@ if [[ "$BOARD" == "Mcuzone M4" ]]; then
 
     # Enable pcie-32bit-dma overlay for MediaTek M.2 Wi-Fi adapters to work
     if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925"; then
-        if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        if ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
-            if sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
-                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" /boot/config.txt
+            if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
+                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
             else
-                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
+                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" $CONFIG_FILE
             fi
             REQUIRES_REBOOT=1
         else
             debugger "pcie-32bit-dma overlay is already enabled, no action needed"
         fi
     else
-        if sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma is enabled but non-MediaTek M.2 adapter is used, disabling 32-bit DMA overlay now"
-            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" /boot/config.txt
+            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
             REQUIRES_REBOOT=1
         fi
     fi
 
     # Disable RTC
-    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" $CONFIG_FILE; then
         debugger "RTC is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "RTC is already disabled, no action needed"
     fi
 
     # Disable battery gauge
-    if grep -q -E "^\s*dtoverlay=battery_gauge" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=battery_gauge" $CONFIG_FILE; then
         debugger "Battery gauge is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "Battery gauge is already disabled, no action needed"
@@ -238,9 +247,9 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     fi
 
     # If WLAN Pi Pro fan controller is enabled, disable the controller
-    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=gpio-fan,gpiopin=26" $CONFIG_FILE; then
         debugger "Fan controller is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=gpio-fan,gpiopin=26/#dtoverlay=gpio-fan,gpiopin=26/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "Fan controller is already disabled, no action needed"
@@ -248,38 +257,38 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
 
     # Enable pcie-32bit-dma overlay for MediaTek M.2 Wi-Fi adapters to work
     if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925"; then
-        if ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        if ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
-            if sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
-                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" /boot/config.txt
+            if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
+                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
             else
-                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" /boot/config.txt
+                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" $CONFIG_FILE
             fi
             REQUIRES_REBOOT=1
         else
             debugger "pcie-32bit-dma overlay is already enabled, no action needed"
         fi
     else
-        if sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma is enabled but non-MediaTek M.2 adapter is used, disabling 32-bit DMA overlay now"
-            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" /boot/config.txt
+            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
             REQUIRES_REBOOT=1
         fi
     fi
 
     # Disable RTC
-    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" $CONFIG_FILE; then
         debugger "RTC is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51/#dtoverlay=i2c-rtc,pcf85063a,addr=0x51/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "RTC is already disabled, no action needed"
     fi
 
     # Disable battery gauge
-    if grep -q -E "^\s*dtoverlay=battery_gauge" /boot/config.txt; then
+    if grep -q -E "^\s*dtoverlay=battery_gauge" $CONFIG_FILE; then
         debugger "Battery gauge is enabled, disabling it now"
-        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" /boot/config.txt
+        sed -i "s/^\s*dtoverlay=battery_gauge/#dtoverlay=battery_gauge/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "Battery gauge is already disabled, no action needed"
@@ -291,28 +300,28 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
 
         if otg_link_active; then
             debugger "Operating correctly in USB OTG mode, do nothing"
-        elif grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
+        elif grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
                 debugger "Host mode is enabled in configuration but isn't working"
                 if [ -f /etc/wlanpi-stay-in-host-mode ]; then
                     debugger "Staying in host mode and removing force host mode file"
                     rm -f /etc/wlanpi-stay-in-host-mode
                 else
                     debugger "Switching to OTG mode and rebooting now"
-                    sed -i "s/^\s*otg_mode=1/#otg_mode=1/" /boot/config.txt
+                    sed -i "s/^\s*otg_mode=1/#otg_mode=1/" $CONFIG_FILE
                     reboot
                 fi
-        elif ! grep -q -E "^\s*otg_mode=1" /boot/config.txt ; then
+        elif ! grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
                 debugger "OTG mode is enabled in configuration but isn't working"
                 debugger "Switching to host mode and rebooting now"
-                if grep -q -E "^\s*#\s*otg_mode=1" /boot/config.txt; then
+                if grep -q -E "^\s*#\s*otg_mode=1" $CONFIG_FILE; then
                     debugger "Uncommenting otg_mode=1 to enable host mode"
-                    sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" /boot/config.txt
+                    sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" $CONFIG_FILE
                     debugger "Creating force host mode file"
                     touch /etc/wlanpi-stay-in-host-mode
                     reboot
                 else
                     debugger "otg_mode=1 line not found in config file, creating a new line in [cm4] section"
-                    sed -i "s/\[cm4\]/&\notg_mode=1/" /boot/config.txt
+                    sed -i "s/\[cm4\]/&\notg_mode=1/" $CONFIG_FILE
                     touch /etc/wlanpi-stay-in-host-mode
                     reboot
                 fi
@@ -340,8 +349,8 @@ if [[ "$BOARD" == "WLAN Pi Pro" ]]; then
     echo "Applying WLAN Pi Pro settings"
 
     # Enable PCIe on WLAN Pi Pro if disabled. We disabled PCIe at boot by default as a workaround for M4.
-    if grep -q -E "\s*dtparam=pcie=off" /boot/config.txt; then
-        sed -i "s/\s*dtparam=pcie=off/dtparam=pcie=on/" /boot/config.txt
+    if grep -q -E "\s*dtparam=pcie=off" $CONFIG_FILE; then
+        sed -i "s/\s*dtparam=pcie=off/dtparam=pcie=on/" $CONFIG_FILE
         debugger "PCIe is disabled, enabling it now"
         REQUIRES_REBOOT=1
     else
@@ -349,30 +358,30 @@ if [[ "$BOARD" == "WLAN Pi Pro" ]]; then
     fi
 
     # Set USB 2.0 controller OTG mode to 0
-    if grep -q -E "^\s*otg_mode=1" /boot/config.txt; then
+    if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE; then
         debugger "Setting otg_mode to 0"
-        sed -i "s/^\s*otg_mode=1/otg_mode=0/" /boot/config.txt
+        sed -i "s/^\s*otg_mode=1/otg_mode=0/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif grep -q -E "^\s*otg_mode=0" /boot/config.txt; then
+    elif grep -q -E "^\s*otg_mode=0" $CONFIG_FILE; then
         debugger "otg_mode is already set to 0, no action needed"
     else
         debugger "otg_mode line not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\notg_mode=0/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\notg_mode=0/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     fi
 
     # Set USB ports to OTG mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" /boot/config.txt | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
+    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" $CONFIG_FILE | cut -d ":" -f1)
+    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
     if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
         DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
         debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
         debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" /boot/config.txt
+        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
         REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' /boot/config.txt | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
+    elif ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
         debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" /boot/config.txt
+        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" $CONFIG_FILE
         REQUIRES_REBOOT=1
     else
         debugger "USB mode is already set to OTG mode, no action needed"
