@@ -119,6 +119,9 @@ set_domain () {
        exit 1
     fi
 
+    # ensure domain is uppercase
+    DOMAIN="${DOMAIN^^}"
+
     # set the new reg domain in the config file
      sed -i "s/REGDOMAIN=.*/REGDOMAIN=$DOMAIN/" "$REG_DOMAIN_FILE"
 
