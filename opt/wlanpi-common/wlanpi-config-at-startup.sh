@@ -41,6 +41,7 @@ done
 debugger() {
     if [ "$DEBUG" -ne 0 ];then
       echo "Debugger: $1"
+      read -p "Press key to continue..."
     fi
 }
 
