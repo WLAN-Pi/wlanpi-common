@@ -148,7 +148,6 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         debugger "End script now. Platform is M4+ prototype with PCIe packet switch."
     # Assume M4
     else
-        debugger "HDMI module found loaded"
             # HDMI module is loaded (status 0)
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4"
