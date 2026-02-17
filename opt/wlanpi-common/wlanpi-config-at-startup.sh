@@ -173,8 +173,8 @@ if [[ "$BOARD" == "Mcuzone M4" ]]; then
         debugger "USB mode is already set to host mode, no action needed"
     fi
 
-    # Enable pcie-32bit-dma overlay for MediaTek M.2 Wi-Fi adapters to work
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925"; then
+    # Enable pcie-32bit-dma overlay for MediaTek and QCA M.2 Wi-Fi adapters to work
+    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
             if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
