@@ -146,42 +146,19 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Main board:           Mcuzone M4+"
         fi
         debugger "End script now. Platform is M4+ prototype with PCIe packet switch."
-
-    # Is it M4?
-    elif [ $LSPCI_LINES -le 2 ]; then
-        debugger "Found 2 or less lines in lspci"
-
-        # Check for HDMI (M4 has HDMI port where other platforms like Go lack)
-        if lsmod | grep -q "hdmi"; then
-            HDMI_STATUS=0
-        else
-            HDMI_STATUS=1
-        fi
-
-        if [ $HDMI_STATUS -eq 0 ]; then
-            debugger "HDMI module found loaded"
-            # HDMI module is loaded (status 0)
-            if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-                echo "M4"
-            else
-                echo "Model:                WLAN Pi M4"
-                echo "Main board:           Mcuzone M4"
-            fi
-            debugger "End script now. Platform is M4."
-        else
-            debugger "HDMI module not found, expected for M4 platform"
-            echo "Unknown platform"
-        fi
-
-    # Unknown platform based on CM4
+    # Assume M4
     else
-        echo "Unknown platform"
+        debugger "HDMI module found loaded"
+            # HDMI module is loaded (status 0)
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+            echo "M4"
+        else
+            echo "Model:                WLAN Pi M4"
+            echo "Main board:           Mcuzone M4"
+        fi
+        debugger "End script now. Platform is M4."
     fi
-else
-    # Unknown platform not based on CM4 nor RPi4
-    echo "Unknown platform"
 fi
-
 # List installed adapters
 USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -E "0489:e0e2|0e8d:0608" | cut -d " " -f 6-)
 M2_WIFI_ADAPTER=$(lspci -nn | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
