@@ -1,3 +1,11 @@
+wlanpi-common (1.1.43+trixie2) unstable; urgency=medium
+
+  * Fix ipconfig.sh DHCP and speed/duplex reporting on trixie
+  * Add deviceID for QCA WCN785x (#69)
+  * M4 model detection default (#67)
+
+ -- Jake Snyder <jsnyder81@gmail.com>  Fri, 03 Jul 2026 03:01:11 +0000
+
 wlanpi-common (1.1.43) unstable; urgency=medium
 
   * Add support for 6 GHz LPI/SP identification and references to band. (#65)
