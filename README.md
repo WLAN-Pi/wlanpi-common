@@ -1,16 +1,36 @@
-# Common WLAN Pi scripts and files
+# wlanpi-common
 
-These are support scripts and files used by other WLAN Pi packages on the RPi4/CM4 platforms.
+`wlanpi-common` provides shared scripts, utilities, and support files used across multiple WLAN-Pi packages. It is a dependency of `wlanpi-fpms` and other packages that need common network information, MOTD tips, and platform support files.
 
-Previously, some of these files were part of the `fpms` package. This has now changed and `wlanpi-fpms` depends on this new standalone `wlanpi-common` package.
+Previously, these files were bundled inside the `fpms` package. They were split out into this standalone package so that multiple consumers can depend on them without duplicating code.
 
 ## Components
 
-networkinfo scripts deliver features like CDP/LLDP neighbour detection, allow you to display public IP address, check reachability of internet services or blink eth0 LEDs and allow you to trace an unknown Ethernet cable and a switch port it connects to. 
+### Network Information Scripts
 
-## MOTD tips
-After you SSH to WLAN Pi you will notice Tips in the MOTD. More of them can be added in a one-per-line fashion here: /opt/wlanpi-common/motd-tips.txt
+A collection of `networkinfo` scripts that provide:
 
-## Installation instructions
+- CDP/LLDP neighbour detection — identify the switch port and upstream device a WLAN Pi is connected to
+- Public IP address display
+- Internet reachability checks
+- Ethernet LED blinking — trace an unknown cable to a switch port
 
-Assuming you are using one of the newer images running WLAN Pi OS, you can install or upgrade `wlanpi-common` by executing `sudo apt update && sudo apt install wlanpi-common`.
+These scripts are called by `wlanpi-fpms` to populate the front panel menu display.
+
+### MOTD Tips
+
+Tips shown after SSH login appear one per line in `/opt/wlanpi-common/motd-tips.txt`. Add new tips there — one tip per line.
+
+## Installation
+
+```bash
+sudo apt update && sudo apt install wlanpi-common
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [WLAN Pi developer documentation](https://github.com/WLAN-Pi/developers).
+
+## License
+
+See [LICENSE](LICENSE).
