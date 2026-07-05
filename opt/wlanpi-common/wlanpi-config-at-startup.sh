@@ -222,7 +222,18 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
 
     # Check if OTG link is active
     otg_link_active() {
-        for i in {1..5}; do
+        # Allow time for the USB gadget service to bind the UDC and for the
+        # attached host to enumerate at boot; judging too early causes a
+        # false "OTG isn't working" and an unwanted flip back to host mode
+        for i in {1..30}; do
+            # Host has enumerated and configured our gadget - definitive
+            # sign the OTG link works, even before any IP traffic flows
+            udc_state=$(cat /sys/class/udc/*/state 2>/dev/null | head -n 1)
+            if [ "$udc_state" = "configured" ]; then
+                debugger "OTG link is active, gadget is in configured state"
+                return 0
+            fi
+
             # Get the number of received packets
             rx_packets=$(ip -s link show usb0 2>/dev/null | awk '/RX:/{getline; print $2}')
 
@@ -307,24 +318,30 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                     rm -f /etc/wlanpi-stay-in-host-mode
                 else
                     debugger "Switching to OTG mode and rebooting now"
-                    sed -i "s/^\s*otg_mode=1/#otg_mode=1/" $CONFIG_FILE
+                    # otg_mode must be explicitly 0: commenting the line out is
+                    # not enough because recent CM4 firmware defaults to routing
+                    # USB to the XHCI host controller, which leaves the DWC2
+                    # device tree node disabled so no gadget UDC can appear
+                    sed -i "s/^\s*otg_mode=1/otg_mode=0/" $CONFIG_FILE
+                    # DWC2 must be in otg mode (not host) so it can take the
+                    # peripheral role selected by the M4+ hardware switch
+                    sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
                     reboot
                 fi
         elif ! grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
                 debugger "OTG mode is enabled in configuration but isn't working"
                 debugger "Switching to host mode and rebooting now"
-                if grep -q -E "^\s*#\s*otg_mode=1" $CONFIG_FILE; then
-                    debugger "Uncommenting otg_mode=1 to enable host mode"
-                    sed -i "s/^\s*#\s*otg_mode=1/otg_mode=1/" $CONFIG_FILE
-                    debugger "Creating force host mode file"
-                    touch /etc/wlanpi-stay-in-host-mode
-                    reboot
+                if grep -q -E "^\s*(#\s*)?otg_mode=" $CONFIG_FILE; then
+                    debugger "Setting otg_mode=1 to enable host mode"
+                    sed -i "s/^\s*#\?\s*otg_mode=[01]/otg_mode=1/" $CONFIG_FILE
                 else
-                    debugger "otg_mode=1 line not found in config file, creating a new line in [cm4] section"
+                    debugger "otg_mode line not found in config file, creating a new line in [cm4] section"
                     sed -i "s/\[cm4\]/&\notg_mode=1/" $CONFIG_FILE
-                    touch /etc/wlanpi-stay-in-host-mode
-                    reboot
                 fi
+                sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=otg/dtoverlay=dwc2,dr_mode=host/" $CONFIG_FILE
+                debugger "Creating force host mode file"
+                touch /etc/wlanpi-stay-in-host-mode
+                reboot
         fi
     else
         # Two or more lines in lsusb mean that host mode is working fine

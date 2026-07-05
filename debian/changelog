@@ -1,3 +1,15 @@
+wlanpi-common (1.1.43+trixie3) unstable; urgency=medium
+
+  * Fix M4+ OTG mode switching: set otg_mode=0 explicitly instead of
+    commenting the line out (recent CM4 firmware defaults to XHCI/host,
+    leaving the DWC2 node disabled with no gadget UDC), and toggle the
+    dwc2 overlay dr_mode between otg and host alongside otg_mode
+  * Fix M4+ boot-time race in otg_link_active: wait up to 30s (was 5s)
+    and treat UDC state "configured" as link-up, so the OTG boot is not
+    incorrectly reverted to host mode before the host has enumerated
+
+ -- Jake Snyder <jsnyder81@gmail.com>  Sat, 04 Jul 2026 17:30:00 +0000
+
 wlanpi-common (1.1.43+trixie2) unstable; urgency=medium
 
   * Fix ipconfig.sh DHCP and speed/duplex reporting on trixie
