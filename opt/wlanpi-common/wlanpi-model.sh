@@ -146,6 +146,26 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             echo "Main board:           Mcuzone M4+"
         fi
         debugger "End script now. Platform is M4+ prototype with PCIe packet switch."
+
+    # Is it M4+ that we cannot probe directly? Unprivileged users (e.g. wlanpi-stats
+    # at SSH login) cannot open /dev/i2c-1 to detect the Mcuzone EEPROM, and in OTG
+    # mode the USB hub is not visible either, so trust the model cached at boot by
+    # wlanpi-config-at-startup.sh running as root
+    elif [ ! -r /dev/i2c-1 ] && grep -q "M4+" /etc/wlanpi-model 2>/dev/null; then
+        debugger "Cannot access i2c bus, using cached model from /etc/wlanpi-model"
+        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+            echo "M4+"
+        else
+            echo "Model:                WLAN Pi M4+"
+            echo "Main board:           Mcuzone M4+"
+            if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ $(lsusb | wc -l) -gt 1 ]; then
+                echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
+            else
+                echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
+            fi
+        fi
+        debugger "End script now. Platform is M4+ from cached model."
+
     # Assume M4
     else
             # HDMI module is loaded (status 0)

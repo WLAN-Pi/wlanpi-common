@@ -1,3 +1,14 @@
+wlanpi-common (1.1.43+trixie4) unstable; urgency=medium
+
+  * Fix M4+ reported as M4 by wlanpi-stats in OTG mode: unprivileged
+    callers of wlanpi-model cannot open /dev/i2c-1 to probe the Mcuzone
+    EEPROM, and in OTG mode the USB hub fallback check fails too because
+    the host controller is off; fall back to the model cached in
+    /etc/wlanpi-model, which wlanpi-config-at-startup.sh rewrites as
+    root on every boot
+
+ -- Jake Snyder <jsnyder81@gmail.com>  Sun, 05 Jul 2026 00:30:00 +0000
+
 wlanpi-common (1.1.43+trixie3) unstable; urgency=medium
 
   * Fix M4+ OTG mode switching: set otg_mode=0 explicitly instead of
