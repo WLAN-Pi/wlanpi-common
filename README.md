@@ -2,7 +2,7 @@
 
 `wlanpi-common` provides shared scripts, utilities, and support files used across multiple WLAN-Pi packages. It is a dependency of `wlanpi-fpms` and other packages that need common network information, MOTD tips, and platform support files.
 
-Previously, these files were bundled inside the `fpms` package. They were split out into this standalone package so that multiple consumers can depend on them without duplicating code.
+Previously, some of these files were bundled inside the `fpms` package. They were split out into this standalone package so that multiple consumers can depend on them without duplicating code. Some of these scripts will be merged to a more centralized provider in `wlanpi-core` in the future.
 
 ## Components
 
