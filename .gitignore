@@ -1,0 +1,8 @@
+*.deb
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/wlanpi-common/
+debian/wlanpi-common.substvars
+debian/*.debhelper
+debian/*.debhelper.log
