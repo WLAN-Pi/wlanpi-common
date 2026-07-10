@@ -1,3 +1,9 @@
+wlanpi-common (1.1.45) unstable; urgency=medium
+
+  * Rebuild to publish packages for Debian trixie to packagecloud
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 09 Jul 2026 23:26:39 -0400
+
 wlanpi-common (1.1.44+trixie1) unstable; urgency=medium
 
   * Fix M4+ reported as M4 by wlanpi-stats in OTG mode: unprivileged
