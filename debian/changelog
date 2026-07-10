@@ -1,3 +1,9 @@
+wlanpi-common (1.1.45) unstable; urgency=medium
+
+  * No-change version bump for the trixie image build
+
+ -- Jake Snyder <jsnyder81@gmail.com>  Fri, 10 Jul 2026 18:09:32 +0000
+
 wlanpi-common (1.1.44+trixie1) unstable; urgency=medium
 
   * Fix M4+ reported as M4 by wlanpi-stats in OTG mode: unprivileged
