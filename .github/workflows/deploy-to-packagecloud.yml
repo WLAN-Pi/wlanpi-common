@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [bookworm,trixie]
+        distro: [trixie]
         arch: [arm64]
 
     environment: PACKAGECLOUD
