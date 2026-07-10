@@ -21,7 +21,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: sbuild for ${{ matrix.distro }} ${{ matrix.arch }}
         uses: wlan-pi/sbuild-debian-package@main
@@ -31,7 +31,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Archive artifacts and upload to GitHub
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wlanpi-common-${{ matrix.distro }}-${{ matrix.arch }}
           path: ${{ steps.build-debian-package.outputs.deb-package }}

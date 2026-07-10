@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: sbuild for ${{ matrix.distro }} ${{ matrix.arch }}
         uses: wlan-pi/sbuild-debian-package@main
@@ -36,30 +36,32 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Archive artifacts and upload to GitHub
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wlanpi-common-${{ matrix.distro }}-${{ matrix.arch }}
           path: ${{ steps.build-debian-package.outputs.deb-package }}
 
-      - name: Upload armhf package to raspbian/${{ matrix.distro }}
-        if: matrix.arch == 'armhf'
-        uses: danielmundi/upload-packagecloud@main
-        with:
-          package-name: ${{ steps.build-debian-package.outputs.deb-package }}
-          packagecloud-username: wlanpi
-          packagecloud-repo: dev
-          packagecloud-distrib: raspbian/${{ matrix.distro }}
-          packagecloud-token: ${{ secrets.PACKAGECLOUD_TOKEN }}
-
-      - name: Upload arm64 package to debian/${{ matrix.distro }}
-        if: matrix.arch == 'arm64'
-        uses: danielmundi/upload-packagecloud@main
-        with:
-          package-name: ${{ steps.build-debian-package.outputs.deb-package }}
-          packagecloud-username: wlanpi
-          packagecloud-repo: dev
-          packagecloud-distrib: debian/${{ matrix.distro }}
-          packagecloud-token: ${{ secrets.PACKAGECLOUD_TOKEN }}
+      # Push with the package_cloud CLI directly instead of an action so upload
+      # errors are detected: the CLI exits 0 even when a push fails (Thor bug),
+      # which has produced green runs that uploaded nothing.
+      - name: Upload package to packagecloud ${{ matrix.distro }}
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          DEB_PACKAGE: ${{ steps.build-debian-package.outputs.deb-package }}
+        run: |
+          if [ -z "${DEB_PACKAGE}" ]; then
+            echo "::error::sbuild produced no .deb package"
+            exit 1
+          fi
+          case "${{ matrix.arch }}" in
+            armhf) target="wlanpi/dev/raspbian/${{ matrix.distro }}" ;;
+            *)     target="wlanpi/dev/debian/${{ matrix.distro }}" ;;
+          esac
+          sudo gem install package_cloud
+          echo "Pushing ${DEB_PACKAGE} to ${target}"
+          out=$(package_cloud push "${target}" "${DEB_PACKAGE}" 2>&1) || true
+          echo "${out}"
+          echo "${out}" | grep -q "success!"
 
   slack-workflow-status:
     if: always()
