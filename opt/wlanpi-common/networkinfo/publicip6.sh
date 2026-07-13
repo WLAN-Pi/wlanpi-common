@@ -3,11 +3,12 @@
 
 HOST="ifconfig.co"
 
-#Fast DNS pre-check. Caps the wait at ~2s instead of the 20-30s resolver
-#retry storm on a broken DNS (getaddrinfo() walks every nameserver in
-#resolv.conf, ~5s x 2 attempts each). Distinguishes two states:
-#  124/137 - timeout had to stop getent: no nameserver answered
-#  other   - getent returned on its own: resolver answered, lookup failed
+#Fast DNS pre-check. Caps the wait at ~2s instead of the 20-30s stall a
+#broken DNS otherwise causes (getaddrinfo retries the A and AAAA lookups
+#across every configured nameserver before giving up). Two states:
+#  124/137 - timeout had to stop getent: no nameserver answered in time
+#  other   - getent returned non-zero on its own: resolution failed fast
+#            (name not found, SERVFAIL, or no/refusing resolver)
 #Resolution is transport-independent, so this correctly separates a DNS
 #problem from the normal "no IPv6 connectivity" case handled below.
 timeout -k 1 2 getent hosts "$HOST" >/dev/null 2>&1
