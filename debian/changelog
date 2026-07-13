@@ -1,3 +1,11 @@
+wlanpi-common (1.1.46) unstable; urgency=medium
+
+  * publicip: fast DNS pre-check with distinct "DNS unreachable" / "DNS failed"
+    states so the FPMS screen shows the cause and fails in ~2s instead of ~20s
+  * CI: do not post to Slack from fork PRs (secrets are unavailable there)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Mon, 13 Jul 2026 15:49:39 -0400
+
 wlanpi-common (1.1.45) unstable; urgency=medium
 
   * Rebuild to publish packages for Debian trixie to packagecloud
