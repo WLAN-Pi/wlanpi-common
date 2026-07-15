@@ -3,7 +3,14 @@
 # Script to get/set reg domain and country code on WLAN Pi Pro
 # Author : Nigel Bowden
 #
-# This script manipulates the REGDOMAIN field in the REGDOMAIN file
+# This script gets/sets the Wi-Fi regulatory domain using the cfg80211
+# kernel subsystem (via iw). crda and its /etc/default/crda config file
+# were removed in Debian bookworm, so the domain is now:
+#   - applied immediately with "iw reg set XX"
+#   - persisted across reboots via a cfg80211 module option in
+#     /etc/modprobe.d, which the kernel applies when cfg80211 loads
+# The matching country_code is also written into any installed hostapd
+# mode configs (Hotspot / Wi-Fi Console / Server).
 #
 # Return values:
 #
@@ -23,11 +30,13 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NO_COLOUR='\033[0m'
 
-REG_DOMAIN_FILE="/etc/default/crda"
+# Persist the domain via a cfg80211 module option. cfg80211 reads
+# ieee80211_regdom when it loads, which replaces the old crda mechanism.
+REGDOMAIN_MODPROBE_FILE="/etc/modprobe.d/wlanpi-regdomain.conf"
 HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
 WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
 SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
-VERSION=0.1.2
+VERSION=0.2.0
 DOMAIN=$2
 NO_PROMPT=$3
 SCRIPT_NAME=$(echo ${0##*/})
@@ -50,49 +59,48 @@ err_report() {
     return 0
 }
 
-# check if file exists
-check_file_exists() {
-
-    debugger "($SCRIPT_NAME) Checking file exists: $1"
-
-    if [ -z "$1" ]; then
-       err_report "No filename passed to : check_file_exists()"
-       exit 1
-    fi
-
-    filename=$1
-
-    if [ ! -e "${filename}" ] ; then
-      err_report "File not found: ${filename}"
-      exit 1
-    fi
-
-    debugger "($SCRIPT_NAME) File exists."
-}
-
-# return current domain from reg domain file
+# return the currently active regulatory domain from cfg80211
 get_domain () {
 
-    check_file_exists $REG_DOMAIN_FILE
-
-    # target field: REGDOMAIN=GB
-    debugger "Getting reg domain current value..."
-    crda_domain=$(cat $REG_DOMAIN_FILE | grep 'REGDOMAIN=' | awk -F'=' '{print $2}')
-
-    if [ "$?" != "0" ]; then
-        err_report "Error extracting reg domain from $REG_DOMAIN_FILE"
+    if ! command -v iw >/dev/null 2>&1; then
+        err_report "iw command not found; cannot read regulatory domain"
         exit 1
     fi
 
-    if [ -z "$crda_domain" ]; then
+    # "iw reg get" prints the global self-managed domain first, e.g.:
+    #   global
+    #   country US: DFS-FCC
+    # An unconfigured system reports "country 00" (the world domain).
+    debugger "Getting reg domain current value via iw..."
+    current_domain=$(iw reg get 2>/dev/null | awk '/^country/ {print $2; exit}' | tr -d ':')
+
+    if [ -z "$current_domain" ] || [ "$current_domain" = "00" ]; then
         debugger "No reg domain configured yet."
         echo "No reg domain configured yet. Configure one using \"sudo wlanpi-reg-domain set XX\", where XX represents the country code."
         exit 0
     else
-        debugger "Got reg domain: $crda_domain"
-        echo "$crda_domain"
+        debugger "Got reg domain: $current_domain"
+        echo "$current_domain"
         exit 0
     fi
+}
+
+# poll until the running regulatory domain matches the requested one.
+# "iw reg set" is asynchronous, and the kernel silently ignores a country
+# code that wireless-regdb has no rules for (leaving reg at "00"), so this
+# is how we confirm the change actually took effect.
+wait_for_domain () {
+    want="$1"
+    tries=0
+    while [ "$tries" -lt 10 ]; do
+        got=$(iw reg get 2>/dev/null | awk '/^country/ {print $2; exit}' | tr -d ':')
+        if [ "$got" = "$want" ]; then
+            return 0
+        fi
+        tries=$((tries + 1))
+        sleep 0.2
+    done
+    return 1
 }
 
 # handle privilege escalation for set operations
@@ -107,12 +115,27 @@ handle_privileges() {
     fi
 }
 
-# set domain in reg domain file
+# update the hostapd country_code for an installed mode, if present
+update_hostapd_country () {
+    conf_file="$1"
+    mode_name="$2"
+
+    # Mode packages are optional; only touch a config that is installed.
+    if [ ! -e "$conf_file" ]; then
+        debugger "Skipping $mode_name; $conf_file not present."
+        return 0
+    fi
+
+    debugger "Setting country code for $mode_name: $conf_file"
+    if ! sed -i "s/country_code=.*/country_code=$DOMAIN/" "$conf_file"; then
+        err_report "Error adding country code to $conf_file"
+        exit 1
+    fi
+    debugger "Added country code $DOMAIN to $conf_file"
+}
+
+# set the regulatory domain
 set_domain () {
-
-    check_file_exists $REG_DOMAIN_FILE
-
-    debugger "Setting domain: $REG_DOMAIN_FILE"
 
     if [ -z "$DOMAIN" ]; then
        err_report "No country code provided"
@@ -122,48 +145,42 @@ set_domain () {
     # ensure domain is uppercase
     DOMAIN="${DOMAIN^^}"
 
-    # set the new reg domain in the config file
-     sed -i "s/REGDOMAIN=.*/REGDOMAIN=$DOMAIN/" "$REG_DOMAIN_FILE"
-
-    if [ "$?" != '0' ]; then
-        err_report "Error adding domain to $REG_DOMAIN_FILE"
+    # validate: an ISO 3166-1 alpha-2 country code (two letters)
+    if ! [[ "$DOMAIN" =~ ^[A-Z]{2}$ ]]; then
+        err_report "Invalid country code: '$DOMAIN' (expected two letters, e.g. US, GB, DE)"
         exit 1
-    else
-        debugger "Added domain $DOMAIN to $REG_DOMAIN_FILE"
     fi
 
-    # set the new country code for Hotspot mode
-    check_file_exists "$HOTSPOT_FILE"
-    debugger "Setting country code for Hotspot mode: $HOTSPOT_FILE"
-    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$HOTSPOT_FILE"
-    if [ "$?" != '0' ]; then
-        err_report "Error adding country code to $HOTSPOT_FILE"
+    if ! command -v iw >/dev/null 2>&1; then
+        err_report "iw command not found; cannot set regulatory domain"
         exit 1
-    else
-        debugger "Added country code $DOMAIN to $HOTSPOT_FILE"
     fi
 
-    # set the new country code for Wi-Fi Console mode
-    check_file_exists "$WCONSOLE_FILE"
-    debugger "Setting country code for Wi-Fi Console mode: $WCONSOLE_FILE"
-    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$WCONSOLE_FILE"
-    if [ "$?" != '0' ]; then
-        err_report "Error adding country code to $WCONSOLE_FILE"
+    # apply immediately to the running system
+    debugger "Applying reg domain via iw: $DOMAIN"
+    if ! iw reg set "$DOMAIN"; then
+        err_report "Failed to submit regulatory domain $DOMAIN via iw"
         exit 1
-    else
-        debugger "Added country code $DOMAIN to $WCONSOLE_FILE"
     fi
 
-    # set the new country code for Server mode
-    check_file_exists "$SERVER_FILE"
-    debugger "Setting country code for Server mode: $SERVER_FILE"
-    sed -i "s/country_code=.*/country_code=$DOMAIN/" "$SERVER_FILE"
-    if [ "$?" != '0' ]; then
-        err_report "Error adding country code to $SERVER_FILE"
+    # confirm the kernel actually accepted the code before persisting anything,
+    # so we never leave a bogus value in the config that "sticks" on reboot
+    if ! wait_for_domain "$DOMAIN"; then
+        err_report "Regulatory domain did not apply as $DOMAIN; it may not exist in wireless-regdb. Nothing was changed."
         exit 1
-    else
-        debugger "Added country code $DOMAIN to $SERVER_FILE"
     fi
+
+    # persist across reboots via the cfg80211 module option (replaces crda)
+    debugger "Persisting reg domain to $REGDOMAIN_MODPROBE_FILE"
+    if ! echo "options cfg80211 ieee80211_regdom=$DOMAIN" > "$REGDOMAIN_MODPROBE_FILE"; then
+        err_report "Error writing $REGDOMAIN_MODPROBE_FILE"
+        exit 1
+    fi
+
+    # set the matching country code in any installed hostapd mode configs
+    update_hostapd_country "$HOTSPOT_FILE" "Hotspot mode"
+    update_hostapd_country "$WCONSOLE_FILE" "Wi-Fi Console mode"
+    update_hostapd_country "$SERVER_FILE" "Server mode"
 
     if ! grep -q "classic" /etc/wlanpi-state; then
         echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
