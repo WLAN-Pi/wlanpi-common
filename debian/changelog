@@ -1,3 +1,14 @@
+wlanpi-common (1.1.47) unstable; urgency=medium
+
+  * wlanpi-reg-domain: drop the removed /etc/default/crda dependency (gone in
+    Debian bookworm+). Apply the domain immediately with "iw reg set", verify
+    the kernel accepted it (unknown codes are silently ignored), and only then
+    persist it via /etc/modprobe.d/wlanpi-regdomain.conf (cfg80211
+    ieee80211_regdom). Only update hostapd country_code for installed modes
+    instead of hard-failing when a mode config is absent. (#47)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Wed, 15 Jul 2026 02:03:16 -0400
+
 wlanpi-common (1.1.46) unstable; urgency=medium
 
   * publicip: fast DNS pre-check with distinct "DNS unreachable" / "DNS failed"
