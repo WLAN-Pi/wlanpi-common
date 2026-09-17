@@ -1,5 +1,5 @@
-# Run wlanpi-stats for SSH sessions only
-if [ -n "$SSH_TTY" ] && [ -z "$WLANPI_STATS_RUN" ]; then
+# Show MOTD on interactive SSH and local console logins only; cap at 0.5s so a slow MOTD never delays login
+if [ -t 0 ] && [ -z "$WLANPI_STATS_RUN" ]; then
     export WLANPI_STATS_RUN=1
-    wlanpi-stats
+    timeout 0.5 wlanpi-stats || true
 fi
