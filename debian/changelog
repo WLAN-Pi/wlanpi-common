@@ -1,3 +1,12 @@
+wlanpi-common (1.1.49) unstable; urgency=medium
+
+  * MOTD no longer blocks SSH login. Show only on interactive SSH and local
+    console logins, cap runtime at 0.5s, drop blocking probes (mpstat 1s
+    sample, ping, wlanpi-model probing), read model from boot cache and CPU
+    load from /proc/loadavg. (#86)
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 17 Sep 2026 13:26:00 -0400
+
 wlanpi-common (1.1.48) unstable; urgency=medium
 
   * Enable pcie-32bit-dma for QCA M.2 adapters on M4+ (#85)
