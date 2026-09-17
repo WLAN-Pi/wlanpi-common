@@ -1,3 +1,13 @@
+wlanpi-common (1.1.50) unstable; urgency=medium
+
+  * Image update check parses and compares calver (YY.MM) releases as well as
+    semver: read the full version from /etc/wlanpi-release, compare with dpkg
+    (prerelease-aware dev < rc < final), and no longer report a "new image" for
+    a two-part version such as 26.02. Keep the cached update notice when the
+    check fails instead of deleting it.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 17 Sep 2026 14:05:11 -0400
+
 wlanpi-common (1.1.49) unstable; urgency=medium
 
   * MOTD no longer blocks SSH login. Show only on interactive SSH and local
