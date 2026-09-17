@@ -18,40 +18,9 @@ safe_read_file() {
     fi
 }
 
-safe_execute() {
-    local cmd=$1
-    local default=$2
-    local result
-    result=$(eval "$cmd" 2>/dev/null) || result=$default
-    echo "$result"
-}
-
-spinner() {
-    local pid=$1
-    local delay=0.1
-    local spinstr='|/-\'
-    tput civis  # Hide cursor
-    while [ -d "/proc/$pid" ]; do
-        local temp=${spinstr#?}
-        printf " Loading wlanpi-stats ... %c" "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        printf "\r"
-        sleep $delay
-    done
-    printf "\r%s\n" "$(tput el)"
-    tput cnorm
-}
-
-# WLAN Pi model
-MODEL=$(safe_execute "wlanpi-model | grep 'Main board:' | cut -d ':' -f2 | xargs" "Unknown")
-case "$MODEL" in
-    "WLAN Pi Pro") WLAN_PI_MODEL="WLAN Pi Pro" ;;
-    *"Raspberry Pi 4"*) WLAN_PI_MODEL="WLAN Pi R4" ;;
-    "Mcuzone M4+") WLAN_PI_MODEL="WLAN Pi M4+" ;;
-    "Mcuzone M4") WLAN_PI_MODEL="WLAN Pi M4" ;;
-    "Oscium Go") WLAN_PI_MODEL="WLAN Pi Go" ;;
-    *) WLAN_PI_MODEL="Unsupported hardware platform" ;;
-esac
+# WLAN Pi model (cached at boot by wlanpi-config-at-startup, no probing at login)
+WLAN_PI_MODEL=$(cat /etc/wlanpi-model 2>/dev/null)
+[ -z "$WLAN_PI_MODEL" ] && WLAN_PI_MODEL="Unsupported hardware platform"
 
 if command -v toilet >/dev/null 2>&1; then
     echo
@@ -61,24 +30,14 @@ else
     echo "=== $WLAN_PI_MODEL ==="
 fi
 
-{
-    # CPU utilization
-    if command -v mpstat >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-        mpstat 1 1 -o JSON | jq '(100.5-(.sysstat.hosts[0].statistics[0]."cpu-load"[0].idle))' | cut -d'.' -f1 > /tmp/cpu_util.$$
-    fi
-    
-    # Internet check (using ping instead of curl)
-    { ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1 && echo "Reachable" || echo "Unreachable"; } > /tmp/internet.$$ 2>&1
-    
-    # Memory check
-    free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$2,$3,$4; }' > /tmp/memory.$$
-    
-    # Disk check
-    df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }' > /tmp/disk.$$
-} &
-BACKGROUND_PID=$!
+# CPU load (1-minute load average, instant read instead of 1s mpstat sample)
+CPU_LOAD=$(cut -d ' ' -f1 /proc/loadavg 2>/dev/null)
 
-spinner $BACKGROUND_PID
+# Memory check
+MEM_UTIL=$(free -m | awk 'NR==2 { printf "Total: %sMB, Used: %sMB, Free: %sMB",$2,$3,$4; }')
+
+# Disk check
+DISK_UTIL=$(df -h ~ | awk 'NR==2 { printf "Total: %sB, Used: %sB, Free: %sB",$2,$3,$4; }')
 
 # Release
 if [ -f "/etc/wlanpi-release" ]; then
@@ -113,16 +72,6 @@ fi
 # WLAN Pi Mode
 WLAN_PI_MODE=$(safe_read_file "/etc/wlanpi-state" "$DEFAULT_MODE")
 
-wait $BACKGROUND_PID
-
-MEM_UTIL=$(cat /tmp/memory.$$ 2>/dev/null || echo "Unable to determine memory usage")
-DISK_UTIL=$(cat /tmp/disk.$$ 2>/dev/null || echo "Unable to determine disk usage")
-CPU_UTIL=$(cat /tmp/cpu_util.$$ 2>/dev/null || echo "N/A (mpstat or jq not available)")
-INTERNET=$(cat /tmp/internet.$$ 2>/dev/null || echo "Unreachable")
-
-# Cleanup temp files
-rm -f /tmp/memory.$$ /tmp/disk.$$ /tmp/cpu_util.$$ /tmp/internet.$$ 2>/dev/null
-
 # Display output
 echo "Mode:        ${WLAN_PI_MODE}"
 echo "Release:     ${WLAN_PI_RELEASE}"
@@ -131,8 +80,7 @@ echo "Date:        $(date)"
 echo "Memory:      ${MEM_UTIL}"
 echo "Disk:        ${DISK_UTIL}"
 echo "CPU temp:    ${TEMP}°C"
-echo "CPU util:    ${CPU_UTIL}%"
-echo "Internet:    ${INTERNET}"
+echo "CPU load:    ${CPU_LOAD}"
 echo
 
 # Display network interfaces and IP addresses
