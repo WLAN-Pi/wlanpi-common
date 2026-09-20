@@ -52,14 +52,34 @@ debugger() {
     fi
 }
 
-if [ -d "/boot/firmware" ]; then
-    CONFIG_FILE="/boot/firmware/config.txt"
-elif [ -d "/boot" ]; then
-    CONFIG_FILE="/boot/config.txt"
-else
+if [ ! -d "/boot/firmware" ] && [ ! -d "/boot" ]; then
     echo "ERROR: Boot not found"
     exit 1
 fi
+
+# Prints the M4+ USB mode line. Host mode is reported when the dwc2 controller
+# is configured as host, or when the dwc2 device tree node is unavailable and
+# the internal hub is enumerated (the node can be disabled when the firmware
+# routes the port to the xHCI controller).
+print_usb_mode() {
+    local dev dr_mode
+    for dev in /sys/bus/platform/devices/*.usb; do
+        if [ -r "$dev/of_node/dr_mode" ]; then
+            dr_mode=$(tr -d '\000' < "$dev/of_node/dr_mode")
+            break
+        fi
+    done
+
+    if [ "$dr_mode" = "host" ]; then
+        echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
+    elif [ "$dr_mode" = "otg" ] || [ "$dr_mode" = "peripheral" ]; then
+        echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
+    elif [ "$(lsusb 2>/dev/null | wc -l)" -gt 1 ]; then
+        echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
+    else
+        echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
+    fi
+}
 
 # Is it Raspberry Pi 3? It isn't officially supported but let's pretend it is R4.
 if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
@@ -126,11 +146,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             else
                 echo "Model:                WLAN Pi M4+"
                 echo "Main board:           Mcuzone M4+"
-                if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ $(lsusb | wc -l) -gt 1 ]; then
-                    echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
-                else
-                    echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
-                fi
+                print_usb_mode
             fi
             debugger "End script now. Platform is M4+."
 
@@ -158,11 +174,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         else
             echo "Model:                WLAN Pi M4+"
             echo "Main board:           Mcuzone M4+"
-            if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ $(lsusb | wc -l) -gt 1 ]; then
-                echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
-            else
-                echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
-            fi
+            print_usb_mode
         fi
         debugger "End script now. Platform is M4+ from cached model."
 
