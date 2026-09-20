@@ -10,6 +10,10 @@ on:
     paths:
       - 'debian/changelog'
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   sbuild:
     name: sbuild ${{ matrix.distro }}+${{ matrix.arch }}
