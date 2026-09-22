@@ -94,11 +94,17 @@ for name in "${FORMER_NAMES[@]}"; do
     ln -s "$VICTIM" "/tmp/$name"
 done
 
+# --- each cleanup must leave the other protocol's active capture alone ---
+touch "$RUNTIME_DIR/lldpneigh.test.cap" "$RUNTIME_DIR/cdpneigh.test.cap"
+
 # --- run the cleanup scripts, where the root service used to truncate ---
 RUNTIME_DIR="$RUNTIME_DIR" "$DIR/lldpcleanup.sh" > /dev/null 2>&1
 assert_ok $? "lldpcleanup.sh runs with RUNTIME_DIR"
+assert_file "$RUNTIME_DIR/cdpneigh.test.cap" "lldpcleanup.sh preserves CDP capture"
+touch "$RUNTIME_DIR/lldpneigh.test.cap"
 RUNTIME_DIR="$RUNTIME_DIR" "$DIR/cdpcleanup.sh" > /dev/null 2>&1
 assert_ok $? "cdpcleanup.sh runs with RUNTIME_DIR"
+assert_file "$RUNTIME_DIR/lldpneigh.test.cap" "cdpcleanup.sh preserves LLDP capture"
 
 # --- the planted targets must be untouched ---
 assert_eq "do not touch" "$(cat "$VICTIM")" "planted symlink target is not truncated"

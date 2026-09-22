@@ -24,6 +24,6 @@ done
 chmod 0600 "$PLACEHOLDER"
 mv -f "$PLACEHOLDER" "$OUTPUTFILE"
 #Remove capture files
-rm -f -- "$RUNTIME_DIR"/*.cap
+rm -f -- "$RUNTIME_DIR"/lldpneigh.*.cap
 
 exit 0
