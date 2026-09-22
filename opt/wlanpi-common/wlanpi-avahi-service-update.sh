@@ -1,6 +1,7 @@
 #!/bin/bash
 
 WLANPI_MODEL_CMD="/usr/bin/wlanpi-model"
+WLANPI_MODEL_CACHE="/etc/wlanpi-model"
 WLANPI_RELEASE_FILE="/etc/wlanpi-release"
 SERVICE_FILE="/etc/avahi/services/wlanpi_announce.service"
 
@@ -11,7 +12,12 @@ for req in "$WLANPI_MODEL_CMD" "$WLANPI_RELEASE_FILE" "$SERVICE_FILE"; do
     fi
 done
 
-if ! MODEL=$("$WLANPI_MODEL_CMD" | awk -F': +' '/^Model/ { print $2 }'); then
+# Prefer the model cached at boot by wlanpi-config-at-startup.sh (which this
+# unit is ordered after). Running wlanpi-model probes USB/PCIe and can block on
+# a stalled bus; the cache holds the same string the awk below extracts.
+if [ -s "$WLANPI_MODEL_CACHE" ]; then
+    MODEL=$(cat "$WLANPI_MODEL_CACHE")
+elif ! MODEL=$("$WLANPI_MODEL_CMD" | awk -F': +' '/^Model/ { print $2 }'); then
     echo "Error: Failed to get model information" >&2
     exit 1
 fi

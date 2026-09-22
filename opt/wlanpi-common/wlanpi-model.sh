@@ -61,6 +61,24 @@ else
     exit 1
 fi
 
+# Boot-time callers (wlanpi-config-at-startup, avahi) only need Model and Main
+# board, and the model is already cached in /etc/wlanpi-model from a previous
+# boot. Probing USB/PCIe for them is unnecessary and can block for tens of
+# seconds: lsusb blocks in read() on a USB string-descriptor sysfs attribute
+# while a hub port retries enumeration. Only short-circuit when the model is
+# already on disk; with no cache the full detection must run so the first boot
+# records the correct model and board.
+UPTIME="$(cut -f1 -d '.' /proc/uptime)"
+EARLY_BOOT=0
+if [ "$UPTIME" -lt 60 ]; then
+    EARLY_BOOT=1
+fi
+
+SKIP_PROBES=0
+if [ "$EARLY_BOOT" -eq 1 ] && [ -s /etc/wlanpi-model ]; then
+    SKIP_PROBES=1
+fi
+
 # Is it Raspberry Pi 3? It isn't officially supported but let's pretend it is R4.
 if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
@@ -86,12 +104,9 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
     debugger "Powered by CM4"
 
     # Sleep is only required at boot time for PCIe and i2c battery fuel gauge to initialise
-    UPTIME="$(cut -f1 -d '.' /proc/uptime)"
-    if [[ "$UPTIME" -lt 60 ]]; then
+    if [ "$EARLY_BOOT" -eq 1 ]; then
         sleep 1
     fi
-
-    LSPCI_LINES=$(lspci | wc -l)
 
     # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
     if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present > /dev/null 2>&1; then
@@ -119,14 +134,14 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         debugger "End script now. Platform is Go."
 
     # Is it M4+?
-    elif i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
+    elif timeout 3 i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
             debugger "Detected M4+ Mcuzone EEPROM"
             if [ "$BRIEF_OUTPUT" -ne 0 ]; then
                 echo "M4+"
             else
                 echo "Model:                WLAN Pi M4+"
                 echo "Main board:           Mcuzone M4+"
-                if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ $(lsusb | wc -l) -gt 1 ]; then
+                if [ "$SKIP_PROBES" -eq 0 ] && grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ "$(timeout 3 lsusb | wc -l)" -gt 1 ]; then
                     echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
                 else
                     echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
@@ -134,8 +149,9 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             fi
             debugger "End script now. Platform is M4+."
 
-    # Is it M4+ prototype with PCIe packet switch?
-    elif lsusb | grep -q "2109:3431" && lspci -n | grep -q "1106:3483" && lspci -n | grep -q "1b21:1182"; then
+    # Is it M4+ prototype with PCIe packet switch? Skipped when the model is
+    # cached and we are in early boot (see SKIP_PROBES): it probes USB/PCIe.
+    elif [ "$SKIP_PROBES" -eq 0 ] && timeout 3 lsusb | grep -q "2109:3431" && timeout 3 lspci -n | grep -q "1106:3483" && timeout 3 lspci -n | grep -q "1b21:1182"; then
         debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
         debugger "Found USB controller: VIA Technologies, Inc. VL805/806 xHCI USB 3.0 Controller (rev 01) in lspci"
         debugger "Found PCI bridge: ASMedia Technology Inc. ASM1182e 2-Port PCIe x1 Gen2 Packet Switch in lspci"
@@ -158,7 +174,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         else
             echo "Model:                WLAN Pi M4+"
             echo "Main board:           Mcuzone M4+"
-            if grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ $(lsusb | wc -l) -gt 1 ]; then
+            if [ "$SKIP_PROBES" -eq 0 ] && grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ "$(timeout 3 lsusb | wc -l)" -gt 1 ]; then
                 echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
             else
                 echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
@@ -178,16 +194,18 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         debugger "End script now. Platform is M4."
     fi
 fi
-# List installed adapters
-USB_WIFI_ADAPTER=$(lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -E "0489:e0e2|0e8d:0608" | cut -d " " -f 6-)
-M2_WIFI_ADAPTER=$(lspci -nn | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
-BLUETOOTH_ADAPTER=$(lsusb | grep -i -E "Bluetooth|0489:e0e2|0e8d:0608|8087:0036" | cut -d " " -f 6-)
+# List installed adapters. Skipped in brief mode and when SKIP_PROBES is set
+# (early boot with a cached model): these USB/PCIe probes block for tens of
+# seconds, and boot-time callers only need Model/Main board. Normal, post-boot
+# invocations still list adapters.
+if [ "$BRIEF_OUTPUT" -eq 0 ] && [ "$SKIP_PROBES" -eq 0 ]; then
+    USB_WIFI_ADAPTER=$(timeout 3 lsusb | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | grep -v -E "0489:e0e2|0e8d:0608" | cut -d " " -f 6-)
+    M2_WIFI_ADAPTER=$(timeout 3 lspci -nn | grep -i -E "Wireless|Wi-Fi|Wi_Fi|WiFi" | cut -d ":" -f 3- | cut -c 2-)
+    BLUETOOTH_ADAPTER=$(timeout 3 lsusb | grep -i -E "Bluetooth|0489:e0e2|0e8d:0608|8087:0036" | cut -d " " -f 6-)
 
-IFS="
+    IFS="
 "
 
-# Display list of adapters if brief mode isn't enabled
-if [ "$BRIEF_OUTPUT" -eq 0 ]; then
     if [ -n "$USB_WIFI_ADAPTER" ]; then
         debugger "Found USB Wi-Fi adapter"
         for item in $USB_WIFI_ADAPTER
@@ -217,7 +235,7 @@ if [ "$BRIEF_OUTPUT" -eq 0 ]; then
         done
     else
         if command -v hciconfig &> /dev/null; then
-            if hciconfig | grep -q "hci0"; then
+            if timeout 3 hciconfig | grep -q "hci0"; then
                 # Built-in Bluetooth adapter is present on Raspberry Pi
                 echo "Bluetooth adapter:    Built-in"
             else

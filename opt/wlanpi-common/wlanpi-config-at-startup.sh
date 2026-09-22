@@ -305,8 +305,14 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
         debugger "Battery gauge is already disabled, no action needed"
     fi
 
-    # Detect host/OTG USB mode switch position and change USB mode if needed
-    if [ $(lsusb | wc -l) -eq 1 ]; then
+    # Detect host/OTG USB mode switch position and change USB mode if needed.
+    # Count USB devices from sysfs instead of lsusb: lsusb reads the
+    # string-descriptor attributes (e.g. /sys/bus/usb/devices/*/product) which
+    # block for tens of seconds while a hub port retries enumeration. The sysfs
+    # count is identical (root hubs plus downstream devices) and still sees the
+    # hub, so host mode is detected even while a port is stuck.
+    usb_devices=$(find /sys/bus/usb/devices -maxdepth 1 -mindepth 1 ! -name "*:*" 2>/dev/null | wc -l)
+    if [ "$usb_devices" -eq 1 ]; then
         debugger "Detected 1 line in lsusb output"
 
         if otg_link_active; then
