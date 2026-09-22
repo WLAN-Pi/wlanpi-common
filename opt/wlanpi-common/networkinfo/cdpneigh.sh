@@ -8,8 +8,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #Prevent multiple instances of the script to run at the same time
-for pid in $(pidof -x $0); do
-    if [ $pid != $$ ]; then
+for pid in $(pidof -x "$0"); do
+    if [ "$pid" != "$$" ]; then
         echo "Error: Another instance of CDP script is already running. Quitting."
         exit 1
     fi
@@ -37,10 +37,15 @@ fi
 
 logger "networkinfo script: using interface $INTERFACE, looking for a CDP neighbour"
 
-#Run packet capture for up to 61 seconds or stop after we have got the right packets
-TIMETOSTOP=0
-while [ "$TIMETOSTOP" == 0 ]; do
-    timeout 61 sudo tcpdump -nv -s 1500 -c 1 -i "$INTERFACE" -Q in 'ether[20:2] == 0x2000' and ether dst 01:00:0c:cc:cc:cc > "$CAPTUREFILE"
+# Run packet capture, retrying until a parsable CDP packet arrives or the
+# window closes. The old loop tested "$TIMETOSTOP" == 0, which is never true
+# (the value is a matching line or empty), so it ran exactly once: one missed
+# window meant "no CDP neighbour detected". CDP advertises about every 60
+# seconds, so allow two intervals before giving up.
+DEADLINE=$((SECONDS + 130))
+TIMETOSTOP=""
+while [ -z "$TIMETOSTOP" ] && [ "$SECONDS" -lt "$DEADLINE" ]; do
+    timeout $((DEADLINE - SECONDS)) sudo tcpdump -nv -s 1500 -c 1 -i "$INTERFACE" -Q in 'ether[20:2] == 0x2000' and ether dst 01:00:0c:cc:cc:cc > "$CAPTUREFILE"
     TIMETOSTOP=$(grep "CDP" "$CAPTUREFILE")
 done
 

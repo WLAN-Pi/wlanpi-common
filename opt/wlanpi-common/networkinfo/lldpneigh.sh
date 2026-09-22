@@ -8,8 +8,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Prevent multiple instances of the script to run at the same time
-for pid in $(pidof -x $0); do
-    if [ $pid != $$ ]; then
+for pid in $(pidof -x "$0"); do
+    if [ "$pid" != "$$" ]; then
         echo "Error: Another instance of LLDP script is already running. Quitting."
         exit 1
     fi
@@ -45,10 +45,15 @@ sudo "$DIRECTORY"/lldpcleanup.sh
 
 logger "networkinfo script: looking for an LLDP neighbour on $INTERFACE"
 
-# Run packet capture for up to 61 seconds or stop after we have got the right packets
-TIMETOSTOP=0
-while [ "$TIMETOSTOP" == 0 ]; do
-  timeout 61 sudo tcpdump -vv -s 1500 -c 1 'ether[12:2]=0x88cc' -i "$INTERFACE" -Q in > "$CAPTUREFILE"
+# Run packet capture, retrying until a parsable LLDP packet arrives or the
+# window closes. The old loop tested "$TIMETOSTOP" == 0, which is never true
+# (the value is a matching line or empty), so it ran exactly once: one missed
+# window meant "no LLDP neighbour detected". LLDP advertises every 30 seconds,
+# so two intervals is a generous window.
+DEADLINE=$((SECONDS + 70))
+TIMETOSTOP=""
+while [ -z "$TIMETOSTOP" ] && [ "$SECONDS" -lt "$DEADLINE" ]; do
+  timeout $((DEADLINE - SECONDS)) sudo tcpdump -vv -s 1500 -c 1 'ether[12:2]=0x88cc' -i "$INTERFACE" -Q in > "$CAPTUREFILE"
   TIMETOSTOP=$(grep "LLDP" "$CAPTUREFILE")
 done
 
