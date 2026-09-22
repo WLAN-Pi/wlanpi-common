@@ -4,6 +4,12 @@ Description=Networkinfo daemon responsible for collecting network details of the
 [Service]
 ExecStart=/opt/wlanpi-common/networkinfo/networkinfo.sh
 WorkingDirectory=/opt/wlanpi-common/networkinfo
+# LLDP/CDP runtime files live here, root-owned and private, instead of the
+# shared /tmp where a local user could pre-create a symlink for this root
+# service to follow.
+RuntimeDirectory=wlanpi-networkinfo
+RuntimeDirectoryMode=0700
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target

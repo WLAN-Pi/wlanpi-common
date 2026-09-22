@@ -5,8 +5,11 @@
 
 CURRENTLY="offline"
 PREVIOUSLY="offline"
-DIRECTORY="/usr/share/fpms/BakeBit/Software/Python/scripts/networkinfo"
-LOG_FILE="/tmp/watchinternet.log"
+DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# /var/log is not writable by unprivileged users, so no symlink can be planted
+# at the log path; 027 keeps the log root-owned and group-readable.
+umask 027
+LOG_FILE="/var/log/wlanpi-watchinternet.log"
 DEFAULT_GATEWAY_IP=$(ip route show | grep "default via" | cut -d " " -f3)
 
 function gone_online {
