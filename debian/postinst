@@ -2,6 +2,29 @@
 
 #DEBHELPER#
 
+for group in gpio spi; do
+    getent group "$group" >/dev/null || groupadd --system "$group"
+done
+if id wlanpi >/dev/null 2>&1; then
+    usermod --append --groups gpio,spi wlanpi
+fi
+if command -v udevadm >/dev/null && ! ischroot; then
+    udevadm control --reload-rules || true
+    udevadm trigger --subsystem-match=gpio --subsystem-match=spidev || true
+fi
+
+# Migrate the image-created override now that the package owns the setting.
+IRTT_OVERRIDE=/etc/systemd/system/irtt.service.d/override.conf
+if [ -f "$IRTT_OVERRIDE" ] && [ "$(cat "$IRTT_OVERRIDE")" = $'[Service]\nUser=wlanpi' ]; then
+    rm -f "$IRTT_OVERRIDE"
+    rmdir "${IRTT_OVERRIDE%/*}" 2>/dev/null || true
+fi
+
+systemctl daemon-reload 2>/dev/null || true
+if systemctl is-active --quiet irtt.service; then
+    deb-systemd-invoke try-restart irtt.service || true
+fi
+
 # Disable last login message after user SSHs in
 if grep -q -E "^?PrintLastLog" /etc/ssh/sshd_config; then
     sudo sed -i "s/^#\?PrintLastLog.*/PrintLastLog no/" /etc/ssh/sshd_config
