@@ -167,7 +167,8 @@ test_udev_rule() {
     sleep 2
     
     log "Checking which firmware was loaded ..."
-    local loaded_firmware=$(dmesg | tail -30 | grep "loaded firmware version" | tail -1)
+    local loaded_firmware
+    loaded_firmware=$(dmesg | tail -30 | grep "loaded firmware version" | tail -1)
     log "Firmware check: $loaded_firmware"
     if echo "$loaded_firmware" | grep -q "gl-c0-fm-c0-92.ucode"; then
         log "FAIL: v92 firmware was loaded"

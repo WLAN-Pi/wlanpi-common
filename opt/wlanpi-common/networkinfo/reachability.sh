@@ -1,15 +1,17 @@
 #!/bin/bash
 # Checks reachability of default gateway, internet connectivity, DNS resolution, arpings default gateway
 
+# --- Variables ---
+# A private directory per run: the checks below write several files, and a
+# predictable path in the shared /tmp can be pre-created as a symlink for this
+# (root) script to follow.
+TMPDIR="$(mktemp -d)"
+
 # --- Clean up ---
 function cleanup () {
-  rm -r "$TMPDIR" &>/dev/null
+  [ -n "$TMPDIR" ] && rm -r "$TMPDIR" &>/dev/null
 }
-#Clean up now
-cleanup
-
-# --- Variables ---
-TMPDIR="/tmp/reachability"
+trap cleanup EXIT
 DEFAULTGATEWAY=$(ip route | grep "default" | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | head -n1)
 DGINTERFACE=$(ip route | grep "default" | head -n1 | cut -d ' ' -f5)
 DNSSERVERCOUNT=$(cat /etc/resolv.conf | grep "nameserver" | cut -d ' ' -f2 | wc -l)
@@ -31,8 +33,8 @@ fi
 
 # --- Checks ---
 #Prevent multiple instances of the script to run at the same time
-for pid in $(pidof -x $0); do
-  if [ $pid != $$ ]; then
+for pid in $(pidof -x "$0"); do
+  if [ "$pid" != "$$" ]; then
     echo "Another instance of the script is already running. Wait for it to finish first."
     exit 1
   fi
@@ -44,7 +46,6 @@ if [ ! "$DEFAULTGATEWAY" ]; then
 fi
 
 # --- Start tests ---
-mkdir "$TMPDIR" &>/dev/null
 
 { timeout 2 ping -c1 -W2 -4 -q google.com; } &> "$TMPDIR/pinggoogle.txt" &
 { timeout 2 curl -s -L www.google.com | grep "google.com" &>/dev/null; echo $?; } &> "$TMPDIR/browsegoogle.txt" &

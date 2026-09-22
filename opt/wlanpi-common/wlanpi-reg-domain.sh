@@ -25,9 +25,7 @@
 set -e
 
 # Define ANSI colour codes
-ORANGE='\033[0;33m'
 RED='\033[0;31m'
-GREEN='\033[0;32m'
 NO_COLOUR='\033[0m'
 
 # Persist the domain via a cfg80211 module option. cfg80211 reads

@@ -68,7 +68,7 @@ check_file_exists() {
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "File not found: ${filenme}"
+      err_report "File not found: ${filename}"
       exit 1
     fi
 

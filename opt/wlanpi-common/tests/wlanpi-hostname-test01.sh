@@ -61,7 +61,10 @@ info ()    { echo -n "(info) Test: $1" | tee -a $LOG_FILE;  }
 info_n ()  { echo "(info) Test: $1" | tee -a $LOG_FILE;  }
 comment () { echo $1 | tee -a $LOG_FILE; }
 
+# pass/fail take a label the callers never pass.
+# shellcheck disable=SC2120
 pass ()    { inc_passed; echo " $1  (pass)" | tee -a $LOG_FILE; }
+# shellcheck disable=SC2120
 fail ()    { inc_failed; echo " $1  (fail) <--- !!!!!!" | tee -a $LOG_FILE; }
 
 check ()     { if [[ $1 ]];   then pass; else fail; fi; }
@@ -74,7 +77,7 @@ symlink_not () { info "Checking file is not symlink: $1"; if [[ ! -L $1 ]]; then
 check_process ()  { info "Checking process running: $1"; if [[ `pgrep $1` ]]; then pass; else fail; fi; }
 check_systemctl () { info "Checking systemctl running: $1"; if [[ `systemctl status $1 | grep 'active (running)'` ]]; then pass; else fail; fi; }
 
-must_be_root () { info "Checking we must be root to run script"; check `/usr/bin/su -c "${SCRIPT_NAME}" wlanpi | grep root`; }
+must_be_root () { info "Checking we must be root to run script"; check "$(/usr/bin/su -c "${SCRIPT_NAME}" wlanpi | grep root)"; }
 
 ########################################
 # Test rig overview
@@ -107,22 +110,22 @@ run_tests () {
   must_be_root
 
   info "Checking hostname is wlanpi"
-  check `$SCRIPT_NAME get | grep ^wlanpi$`
+  check "$($SCRIPT_NAME get | grep ^wlanpi$)"
 
   info "Hostname set test - setting to : keith"
-  check `$SCRIPT_NAME set keith; echo $?`
+  check "$($SCRIPT_NAME set keith; echo $?)"
 
   info "Checking new hostname set to keith"
-  check `$SCRIPT_NAME get | grep ^keith$`
+  check "$($SCRIPT_NAME get | grep ^keith$)"
 
   info "Changing hostname back to wlanpi"
-  check `$SCRIPT_NAME set wlanpi; echo $?`
+  check "$($SCRIPT_NAME set wlanpi; echo $?)"
 
   info "Checking hostname back to wlanpi"
-  check `$SCRIPT_NAME get | grep ^wlanpi$`
+  check "$($SCRIPT_NAME get | grep ^wlanpi$)"
 
   info "Checking underscore not allowed in hostname"
-  check `$SCRIPT_NAME set keith_is_great | grep RFC`
+  check "$($SCRIPT_NAME set keith_is_great | grep RFC)"
 
   # Print test run results summary
   summary
@@ -165,7 +168,7 @@ esac
 # should never reach here, but just in case....
 exit 1
 
-<< 'HOWTO'
+: << 'HOWTO'
 
 #################################################################################################################
 

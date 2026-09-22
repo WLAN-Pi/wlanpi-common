@@ -14,6 +14,9 @@
 #----------------------------------------------------------
 
 CONFIG_PATH="/etc/networkinfo/"
+# The neighbour cache lives in a root-owned runtime directory (see the producer
+# scripts), so this must run as root to read it.
+RUNTIME_DIR="${RUNTIME_DIR:-/run/wlanpi-networkinfo}"
 CONFIG_FILE="/etc/networkinfo/telegrambot.conf"
 
 #Check if the script is running as root
@@ -31,6 +34,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 #Load configuration file
+# shellcheck source=/dev/null
 source "$CONFIG_FILE"
 
 #Do not continue if Port Blinker is running. We don't want to spam you with Telegram messages every time eth0 goes up. 
@@ -76,18 +80,15 @@ ETH0IP=$(ip a | grep "eth0" | grep "inet" | grep -v "secondary" | head -n1 | cut
 ETH1IP=$(ip a | grep "eth0" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
 UPLINK=$(ip route show | grep "default via" | cut -d " " -f5)
 UPLINKIP=$(ip a | grep "$UPLINK" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
-NEIGHBOUR=$(grep -q "Name:" /tmp/lldpneigh.txt 2>/dev/null && cat /tmp/lldpneigh.txt | sed 's/^Name:/Connected to:/g' | sed 's/^Desc:/Port description:/g' | sed 's/^IP:/Neighbour IP:/g' | sed -z 's/\n/%0A/g')
+NEIGHBOUR=$(grep -q "Name:" "$RUNTIME_DIR/lldpneigh.txt" 2>/dev/null && cat "$RUNTIME_DIR/lldpneigh.txt" | sed 's/^Name:/Connected to:/g' | sed 's/^Desc:/Port description:/g' | sed 's/^IP:/Neighbour IP:/g' | sed -z 's/\n/%0A/g')
 if [ -z "$NEIGHBOUR" ]; then
-  NEIGHBOUR=$(grep -q "Name:" /tmp/cdpneigh.txt 2>/dev/null && cat /tmp/cdpneigh.txt | sed 's/^Name:/Connected to:/g' | sed 's/^Port:/Port description:/g' | sed 's/^IP:/Neighbour IP:/g' |sed 's/^SW:/Software version:/g' | sed -z 's/\n/%0A/g')
+  NEIGHBOUR=$(grep -q "Name:" "$RUNTIME_DIR/cdpneigh.txt" 2>/dev/null && cat "$RUNTIME_DIR/cdpneigh.txt" | sed 's/^Name:/Connected to:/g' | sed 's/^Port:/Port description:/g' | sed 's/^IP:/Neighbour IP:/g' |sed 's/^SW:/Software version:/g' | sed -z 's/\n/%0A/g')
 fi
 
 #Get public IP data
 DATAINJSON=$(timeout 3 curl -s 'ifconfig.co/json')
 PUBLICIP=$(echo "$DATAINJSON" | jq -r '.ip')
-PUBLICIPCOUNTRY=$(echo "$DATAINJSON" | jq -r '.country')
-PUBLICIPASNORG=$(echo "$DATAINJSON" | jq -r '.asn_org')
 PUBLICIPHOSTNAME=$(echo "$DATAINJSON" | jq -r '.hostname')
-PUBLICIPASN=$(echo "$DATAINJSON" | jq -r '.asn')
 
 if [ -z "$ETH0IP" ]; then
   CURRENTIP="$UPLINKIP"

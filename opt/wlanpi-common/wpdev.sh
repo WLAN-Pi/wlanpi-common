@@ -4,9 +4,7 @@
 # This script is only used by WLAN Pi development team. You have been warned!
 
 # Define ANSI colour codes
-ORANGE='\033[0;33m'
 RED='\033[0;31m'
-GREEN='\033[0;32m'
 NO_COLOUR='\033[0m'
 
 usage() {
@@ -158,6 +156,10 @@ while getopts "abdnlhts:u:f:" opt; do
     f)
       # Watch file contents
       watch_file_contents "$OPTARG"
+      ;;
+    *)
+      echo "Unknown option: -$opt" >&2
+      usage
       ;;
   esac
 done

@@ -76,7 +76,7 @@ INTRO
    
     echo "Importing key..."
 
-    if `$IMPORT_CMD $GITHUB_USERNAME`; then
+    if "$IMPORT_CMD" "$GITHUB_USERNAME"; then
       echo "Key imported."
     else
       echo "Key import failed. Check username is valid and a public key exists & try again."
@@ -98,9 +98,9 @@ case "$1" in
         if [ "$1" == "" ]; then 
           echo "No username entered"
           usage
-          exit1
+          exit 1
         fi
-        `$IMPORT_CMD $1`
+        "$IMPORT_CMD" "$1"
         ;;
 esac
 

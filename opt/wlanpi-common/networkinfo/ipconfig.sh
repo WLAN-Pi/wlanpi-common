@@ -21,7 +21,6 @@ fi
 ETHLEASES="/var/lib/dhcp/dhclient.${INTERFACE}.leases"
 ACTIVEIP=$(ip a | grep "$INTERFACE" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
 SUBNET=$(ip a | grep "$INTERFACE" | grep "inet" | grep -v "secondary" | head -n1 | cut -d ' ' -f6 | tail -c 4)
-ETHISUP=$(/sbin/ifconfig "$INTERFACE" | grep "RUNNING")
 
 # DHCP lease details. Trixie and later have no dhclient or /etc/network/interfaces:
 # NetworkManager manages the interface with its internal DHCP client, so ask nmcli.

@@ -18,7 +18,6 @@
 # fail on script errors
 set -e
 
-CHAT_BOT_ROOT=/opt/wlanpi-chat-bot
 CONFIG_FILE=/etc/wlanpi-chat-bot/config.json
 VERSION=0.1.1
 SCRIPT_NAME=$(echo ${0##*/})
@@ -61,7 +60,7 @@ check_file_exists() {
     filename=$1
 
     if [ ! -e "${filename}" ] ; then
-      err_report "File not found: ${filenme}"      
+      err_report "File not found: ${filename}"      
       exit 1
     fi
 

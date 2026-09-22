@@ -1,3 +1,32 @@
+wlanpi-common (1.1.51) unstable; urgency=medium
+
+  * Boot: stop USB/PCIe probes blocking the boot path. lsusb blocks in read()
+    on a USB string-descriptor attribute while a hub port retries enumeration,
+    stalling wlanpi-config-at-startup and the avahi ExecStartPost. Skip the
+    probes at boot when the model is already cached, count USB devices from
+    sysfs, and wrap the remaining probes in timeout.
+  * wlanpi-model: report the M4+ USB mode from the device tree dr_mode, which
+    is world-readable and authoritative, instead of "otg_mode=1" plus the
+    lsusb count. A unit in host mode with otg_mode commented out reported OTG
+    while the hub and Bluetooth were enumerated.
+  * config-at-startup: re-check the USB topology after the 30s OTG wait before
+    flipping mode, so a hub that enumerated during the wait no longer causes an
+    unnecessary reboot, and log every reboot reason through logger by default.
+  * networkinfo: move the LLDP/CDP runtime files out of the shared /tmp into a
+    root-owned runtime directory, publish parsed output atomically, and create
+    captures with mktemp. reachability uses a private temporary directory per
+    run and watchinternet logs to /var/log. This closes a symlink attack where
+    a local user could make the root service truncate any file it can write.
+  * networkinfo: retry the CDP and LLDP capture until a parsable packet
+    arrives. The loop condition was never true, so one missed window meant "no
+    neighbour detected".
+  * portblinker: confirm before bouncing the interface, with -y to skip.
+  * CI: add shellcheck and actionlint, and fix the findings they reported,
+    including backtick invocations that executed a command's output and a
+    ${filenme} typo in two error messages.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 22 Sep 2026 00:45:00 -0400
+
 wlanpi-common (1.1.50) unstable; urgency=medium
 
   * Image update check parses and compares calver (YY.MM) releases as well as

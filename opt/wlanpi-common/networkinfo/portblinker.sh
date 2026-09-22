@@ -9,7 +9,9 @@ COUNT=5
 INTERFACE="eth0"
 # Use colors in output by default
 COLOR="yes"
-VERSION="2.0.1"
+# Ask for confirmation before bouncing by default
+ASSUME_YES="no"
+VERSION="2.1.0"
 SCRIPT_NAME="$(basename "$0")"
 
 # Check if the script is running as root
@@ -32,6 +34,7 @@ usage(){
     echo "  -v, --version   Show version"
     echo "  -h, --help      Show this screen"
     echo "  -i <interface>  Interface to bounce"
+    echo "  -y, --yes       Skip the confirmation prompt"
     echo "  --no-color      Disable color in the output"
     echo
     exit 0
@@ -40,6 +43,25 @@ usage(){
 version(){
     echo "$VERSION"
     exit 0
+}
+
+# Bouncing an interface can drop the connection this session is running over,
+# so confirm first. Skipped with -y/--yes, and when there is no terminal to
+# prompt on so scripted and menu callers keep working unattended.
+confirm(){
+  [ "$ASSUME_YES" == "yes" ] && return 0
+  [ -t 0 ] || return 0
+  echo "Port Blinker will bounce $INTERFACE, which can make the WLAN Pi unreachable"
+  echo "if you are connected through that interface."
+  printf "Continue? [y/N] "
+  read -r REPLY
+  case "$REPLY" in
+    [yY] | [yY][eE][sS]) return 0 ;;
+    *)
+      echo "Aborted."
+      exit 1
+      ;;
+  esac
 }
 
 NUMBER_OF_PROCESSES=$(pidof -x "portblinker.sh" | wc -w)
@@ -51,6 +73,7 @@ fi
 trap execute_on_int INT
 
 # Execute these commands when user presses CTRL+C or stops the process
+# shellcheck disable=SC2329  # invoked from the INT trap above
 execute_on_int(){
   ethtool -s "$INTERFACE" speed 1000
   sudo dhclient eth0 > /dev/null 2>&1 &
@@ -60,6 +83,7 @@ execute_on_int(){
 }
 
 blink_nonstop(){
+  confirm
   echo "Interface: $INTERFACE"
   while true; do
     if  [ "$COLOR" == "yes" ]; then
@@ -80,6 +104,7 @@ blink_nonstop(){
 }
 
 blink_n_times(){
+  confirm
   echo "Interface: $INTERFACE"
   COUNT=$1
   for (( c=1; c<="$COUNT"; c++ ))
@@ -103,8 +128,9 @@ blink_n_times(){
 }
 
 blink_n_seconds(){
+  confirm
   echo "Interface: $INTERFACE"
-  timeout --foreground $1 bash <<EOF
+  timeout --foreground "$1" bash <<EOF
   while true; do
     if  [ "$COLOR" == "yes" ]; then
       echo -e "\e[91m100 Mbps\033[0m"
@@ -128,7 +154,7 @@ sudo dhclient eth0 > /dev/null 2>&1 &
 
 # Was any interface name passed as an argument
 if [[ "$*" == *'-i '* ]]; then
-    INTERFACE=$(echo $@ | grep -o '\-i .*' | cut -d " " -f2)
+    INTERFACE=$(echo "$@" | grep -o '\-i .*' | cut -d " " -f2)
 fi
 
 # Was --no-color argument used
@@ -136,19 +162,25 @@ if [[ "$*" == *'--no-color'* ]]; then
     COLOR="no"
 fi
 
+# Was --yes argument used (skip the confirmation prompt)
+if [[ "$*" == *'-y'* ]] || [[ "$*" == *'--yes'* ]]; then
+    ASSUME_YES="yes"
+fi
+
 # Parse arguments
 while [ "$1" != "" ]; do
   case $1 in
       -c | --count)          shift
-                             blink_n_times $1
+                             blink_n_times "$1"
                              exit
                              ;;
       -t | --timeout)        shift
-                             blink_n_seconds $1
+                             blink_n_seconds "$1"
                              exit
                              ;;
       -h | --help)           usage ;;
       -v | --version)        version ;;
+      -y | --yes)            ASSUME_YES="yes" ;;
       * )
   esac
   shift

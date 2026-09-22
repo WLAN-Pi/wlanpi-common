@@ -7,6 +7,8 @@
 #
 ###########################################################
 
+# VERSION/COMMENTS are documentation.
+# shellcheck disable=SC2034
 MODULE=wlanpi-update.sh
 VERSION=1.0.0
 COMMENTS="wlanpi-update.sh test suite to validate image version comparison"
