@@ -52,11 +52,38 @@ debugger() {
     fi
 }
 
-if [ -d "/boot/firmware" ]; then
-    CONFIG_FILE="/boot/firmware/config.txt"
-elif [ -d "/boot" ]; then
-    CONFIG_FILE="/boot/config.txt"
-else
+# Reports the M4+ USB mode. The dwc2 platform attribute
+# (/sys/bus/platform/devices/*.usb/dr_mode) is not exported on the M4+, but the
+# device tree property is world-readable and authoritative. Fall back to the USB
+# device count when it is absent: the internal hub and Bluetooth being
+# enumerated means host mode. Both paths are overridable so the helper can be
+# tested.
+USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr_mode}"
+USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
+
+usb_mode() {
+    local dr_mode usb_devices
+    # shellcheck disable=SC2086  # the glob must expand
+    dr_mode=$(cat $USB_DR_MODE_GLOB 2>/dev/null | tr -d '\0' | head -n 1)
+    case "$dr_mode" in
+        host)
+            echo "Host - Bluetooth and USB-A ports enabled"
+            ;;
+        otg | peripheral)
+            echo "OTG - Bluetooth and USB-A ports disabled"
+            ;;
+        *)
+            usb_devices=$(find "$USB_DEVICES_PATH" -maxdepth 1 -mindepth 1 ! -name "*:*" 2>/dev/null | wc -l)
+            if [ "$usb_devices" -gt 1 ]; then
+                echo "Host - Bluetooth and USB-A ports enabled"
+            else
+                echo "OTG - Bluetooth and USB-A ports disabled"
+            fi
+            ;;
+    esac
+}
+
+if [ ! -d "/boot/firmware" ] && [ ! -d "/boot" ]; then
     echo "ERROR: Boot not found"
     exit 1
 fi
@@ -141,11 +168,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
             else
                 echo "Model:                WLAN Pi M4+"
                 echo "Main board:           Mcuzone M4+"
-                if [ "$SKIP_PROBES" -eq 0 ] && grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ "$(timeout 3 lsusb | wc -l)" -gt 1 ]; then
-                    echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
-                else
-                    echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
-                fi
+                echo "USB mode:             $(usb_mode)"
             fi
             debugger "End script now. Platform is M4+."
 
@@ -174,11 +197,7 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         else
             echo "Model:                WLAN Pi M4+"
             echo "Main board:           Mcuzone M4+"
-            if [ "$SKIP_PROBES" -eq 0 ] && grep -q -E "^\s*otg_mode=1" $CONFIG_FILE && [ "$(timeout 3 lsusb | wc -l)" -gt 1 ]; then
-                echo "USB mode:             Host - Bluetooth and USB-A ports enabled"
-            else
-                echo "USB mode:             OTG - Bluetooth and USB-A ports disabled"
-            fi
+            echo "USB mode:             $(usb_mode)"
         fi
         debugger "End script now. Platform is M4+ from cached model."
 
