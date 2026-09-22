@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Author: Jiri Brejcha, jirka@jiribrejcha.net
-#Monitors syslog for eth0 and eth1 up and down events and triggers networkinfo scripts like CDP, LLDP, internet watchdog
+#Monitors the kernel journal for eth0 and eth1 up and down events and triggers networkinfo scripts like CDP, LLDP, internet watchdog
 
 DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -12,25 +12,16 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #Start neighbour detection immediately after this service starts
-#pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
-#pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
-#sleep 2
-#"$DIRECTORY"/lldpneigh.sh &
-#"$DIRECTORY"/cdpneigh.sh &
+pgrep cdpneigh.sh | xargs sudo pkill -P 2>/dev/null
+pgrep lldpneigh.sh | xargs sudo pkill -P 2>/dev/null
+sleep 2
+"$DIRECTORY"/lldpneigh.sh &
+"$DIRECTORY"/cdpneigh.sh &
 #Start monitoring internet connectivity immediately after the WLAN Pi boots up
 #"$DIRECTORY"/watchinternet.sh &
 
-MESSAGES="/var/log/messages"
-
-#On first boot and bring up, /var/log/messages may not exist yet.
-#Wait for log to be created by rsyslog or other before trying to read from it
-while [ ! -f $MESSAGES ]
-do
-   sleep 1
-done
-
 #Monitor up/down status changes of eth0 and eth1 and execute neighbour detection or cleanup
-tail -fn0 $MESSAGES |
+journalctl -k -f -n 0 -o cat |
 while read -r line
 do
   case "$line" in

@@ -1,3 +1,10 @@
+wlanpi-common (1.1.54) unstable; urgency=medium
+
+  * Restore LLDP/CDP discovery at service startup, follow kernel link events
+    through journald, and prevent concurrent captures deleting each other.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 22 Sep 2026 16:15:00 -0400
+
 wlanpi-common (1.1.53) unstable; urgency=medium
 
   * Create the gpio and spi groups used by Raspberry Pi udev rules and grant
