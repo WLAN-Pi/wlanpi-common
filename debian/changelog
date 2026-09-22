@@ -1,3 +1,15 @@
+wlanpi-common (1.1.52) unstable; urgency=medium
+
+  * Publish /etc/wlanpi-model atomically immediately after detection, before
+    platform configuration can restart services or reboot. This restores M4+
+    detection for unprivileged consumers that cannot access the I2C EEPROM.
+  * Prevent the boot-time FPMS restart from deadlocking with hostname and
+    Avahi startup, and order config-at-startup before FPMS.
+  * Keep the boot-only configuration and hostname units from running during
+    package installation or upgrade.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 22 Sep 2026 12:30:00 -0500
+
 wlanpi-common (1.1.51) unstable; urgency=medium
 
   * Boot: stop USB/PCIe probes blocking the boot path. lsusb blocks in read()
