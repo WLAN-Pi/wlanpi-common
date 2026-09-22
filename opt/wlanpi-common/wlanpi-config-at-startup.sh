@@ -78,6 +78,20 @@ stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 SPECS=$(wlanpi-model)
 MODEL=$(echo "$SPECS" | grep "Model:" | cut -d ":" -f2 | xargs)
 BOARD=$(echo "$SPECS" | grep "Main board:" | cut -d ":" -f2 | xargs)
+
+if [ -z "$MODEL" ]; then
+    echo "ERROR: wlanpi-model returned no model" >&2
+    exit 1
+fi
+
+# Publish the model before platform changes can restart services or reboot.
+MODEL_CACHE_TMP=$(mktemp /etc/.wlanpi-model.XXXXXX)
+trap 'rm -f "$MODEL_CACHE_TMP"' EXIT
+printf '%s\n' "$MODEL" > "$MODEL_CACHE_TMP"
+chmod 0644 "$MODEL_CACHE_TMP"
+mv -- "$MODEL_CACHE_TMP" /etc/wlanpi-model
+trap - EXIT
+
 debugger "Detected WLAN Pi board: $BOARD"
 
 ########## R4 ##########
@@ -146,7 +160,6 @@ if [[ "$BOARD" == "Mcuzone M4" ]]; then
     if [ ! -f "$WAVESHARE_FILE" ]; then
         debugger "Creating Waveshare file to enable display and buttons"
         touch "$WAVESHARE_FILE"
-        systemctl restart wlanpi-fpms.service
     else
         debugger "Waveshare file already exists, no action needed"
     fi
@@ -269,7 +282,6 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     if [ ! -f "$WAVESHARE_FILE" ]; then
         debugger "Creating Waveshare file to enable display and buttons"
         touch "$WAVESHARE_FILE"
-        systemctl restart wlanpi-fpms.service
     else
         debugger "Waveshare file already exists, no action needed"
     fi
@@ -427,9 +439,6 @@ if [[ "$BOARD" == "WLAN Pi Pro" ]]; then
         debugger "USB mode is already set to OTG mode, no action needed"
     fi
 fi
-
-# Set model
-echo "$MODEL" > /etc/wlanpi-model
 
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
