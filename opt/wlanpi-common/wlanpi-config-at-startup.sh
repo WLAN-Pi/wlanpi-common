@@ -54,6 +54,23 @@ debugger() {
     fi
 }
 
+# Reboot reasons have to reach the journal by default. Diagnosing the
+# unnecessary-reboot report needed debug output enabled and the problem
+# reproduced, which is exactly what we cannot ask of a user.
+log_reason() {
+    logger "wlanpi-config-at-startup: $1"
+    debugger "$1"
+}
+
+# Count USB devices from sysfs instead of lsusb: lsusb reads the
+# string-descriptor attributes (e.g. /sys/bus/usb/devices/*/product) which
+# block for tens of seconds while a hub port retries enumeration. The sysfs
+# count is identical (root hubs plus downstream devices) and still sees the
+# hub, so host mode is detected even while a port is stuck.
+usb_device_count() {
+    find /sys/bus/usb/devices -maxdepth 1 -mindepth 1 ! -name "*:*" 2>/dev/null | wc -l
+}
+
 # Set baud rate for WLAN Pi Go discover port
 stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 
@@ -306,24 +323,24 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
     fi
 
     # Detect host/OTG USB mode switch position and change USB mode if needed.
-    # Count USB devices from sysfs instead of lsusb: lsusb reads the
-    # string-descriptor attributes (e.g. /sys/bus/usb/devices/*/product) which
-    # block for tens of seconds while a hub port retries enumeration. The sysfs
-    # count is identical (root hubs plus downstream devices) and still sees the
-    # hub, so host mode is detected even while a port is stuck.
-    usb_devices=$(find /sys/bus/usb/devices -maxdepth 1 -mindepth 1 ! -name "*:*" 2>/dev/null | wc -l)
-    if [ "$usb_devices" -eq 1 ]; then
-        debugger "Detected 1 line in lsusb output"
+    if [ "$(usb_device_count)" -eq 1 ]; then
+        debugger "Detected 1 USB device"
 
         if otg_link_active; then
-            debugger "Operating correctly in USB OTG mode, do nothing"
+            log_reason "Operating correctly in USB OTG mode, no action needed"
         elif grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
-                debugger "Host mode is enabled in configuration but isn't working"
-                if [ -f /etc/wlanpi-stay-in-host-mode ]; then
-                    debugger "Staying in host mode and removing force host mode file"
+                # otg_link_active() waits up to 30 seconds for the gadget. The
+                # hub can enumerate during that wait, which means host mode is
+                # fine and flipping to OTG would reboot for nothing, so re-read
+                # the topology before acting on the earlier count.
+                if [ "$(usb_device_count)" -gt 1 ]; then
+                    log_reason "USB host mode is working, no action needed"
+                    rm -f /etc/wlanpi-stay-in-host-mode
+                elif [ -f /etc/wlanpi-stay-in-host-mode ]; then
+                    log_reason "Staying in host mode and removing force host mode file"
                     rm -f /etc/wlanpi-stay-in-host-mode
                 else
-                    debugger "Switching to OTG mode and rebooting now"
+                    log_reason "Host mode is enabled in configuration but not working; switching to OTG mode and rebooting"
                     # otg_mode must be explicitly 0: commenting the line out is
                     # not enough because recent CM4 firmware defaults to routing
                     # USB to the XHCI host controller, which leaves the DWC2
@@ -335,8 +352,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                     reboot
                 fi
         elif ! grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
-                debugger "OTG mode is enabled in configuration but isn't working"
-                debugger "Switching to host mode and rebooting now"
+                log_reason "OTG mode is enabled in configuration but not working; switching to host mode and rebooting"
                 if grep -q -E "^\s*(#\s*)?otg_mode=" $CONFIG_FILE; then
                     debugger "Setting otg_mode=1 to enable host mode"
                     sed -i "s/^\s*#\?\s*otg_mode=[01]/otg_mode=1/" $CONFIG_FILE
@@ -350,8 +366,9 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                 reboot
         fi
     else
-        # Two or more lines in lsusb mean that host mode is working fine
-        debugger "Operating correctly in USB host mode, do nothing"
+        # More than one USB device means the hub is enumerated, so host mode
+        # is working fine.
+        log_reason "USB host mode is working, no action needed"
         rm -f /etc/wlanpi-stay-in-host-mode
     fi
 fi
@@ -416,6 +433,7 @@ echo "$MODEL" > /etc/wlanpi-model
 
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
+    log_reason "Reboot required to apply configuration changes; rebooting now"
     echo "Reboot required, rebooting now"
     reboot
 fi
