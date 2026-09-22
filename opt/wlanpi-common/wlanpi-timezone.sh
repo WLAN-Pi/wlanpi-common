@@ -100,11 +100,9 @@ set_tz() {
     TZ=$(echo $TZ | sed "s/UTC\/UTC/UTC/")
     
     # set the timezone
-    cmd="$TIMEDATECTL set-timezone $TZ"
-    debugger "Set cmd: $cmd"
-    err_msg=$($cmd)
+    debugger "Set cmd: $TIMEDATECTL set-timezone $TZ"
 
-    if [ "$?" != '0' ]; then
+    if ! "$TIMEDATECTL" set-timezone "$TZ"; then
        err_report "Error setting timezone"
        exit 1
     else

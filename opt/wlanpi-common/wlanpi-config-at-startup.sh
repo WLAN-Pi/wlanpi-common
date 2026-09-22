@@ -225,7 +225,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
         # Allow time for the USB gadget service to bind the UDC and for the
         # attached host to enumerate at boot; judging too early causes a
         # false "OTG isn't working" and an unwanted flip back to host mode
-        for i in {1..30}; do
+        for _ in {1..30}; do
             # Host has enumerated and configured our gadget - definitive
             # sign the OTG link works, even before any IP traffic flows
             udc_state=$(cat /sys/class/udc/*/state 2>/dev/null | head -n 1)

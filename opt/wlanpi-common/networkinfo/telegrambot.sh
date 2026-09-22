@@ -34,6 +34,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 #Load configuration file
+# shellcheck source=/dev/null
 source "$CONFIG_FILE"
 
 #Do not continue if Port Blinker is running. We don't want to spam you with Telegram messages every time eth0 goes up. 
@@ -87,10 +88,7 @@ fi
 #Get public IP data
 DATAINJSON=$(timeout 3 curl -s 'ifconfig.co/json')
 PUBLICIP=$(echo "$DATAINJSON" | jq -r '.ip')
-PUBLICIPCOUNTRY=$(echo "$DATAINJSON" | jq -r '.country')
-PUBLICIPASNORG=$(echo "$DATAINJSON" | jq -r '.asn_org')
 PUBLICIPHOSTNAME=$(echo "$DATAINJSON" | jq -r '.hostname')
-PUBLICIPASN=$(echo "$DATAINJSON" | jq -r '.asn')
 
 if [ -z "$ETH0IP" ]; then
   CURRENTIP="$UPLINKIP"

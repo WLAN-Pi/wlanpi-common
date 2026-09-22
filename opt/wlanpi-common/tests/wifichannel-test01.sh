@@ -44,7 +44,10 @@ inc_failed ()     { tests_failed=$((tests_failed + 1));  }
 
 info ()    { echo -n "(info) Test: $1";  }
 
+# pass/fail take a label the callers never pass.
+# shellcheck disable=SC2120
 pass ()    { inc_passed; echo " $1  (pass)"; }
+# shellcheck disable=SC2120
 fail ()    { inc_failed; echo " $1  (fail) <--- !!!!!!"; }
 
 # Check that output of a command contains an expected string

@@ -148,24 +148,24 @@ set_mode() {
     hotspot)
             echo "* Switching from classic to hotspot mode"
             check_yn
-            `$HOTSPOT_SWITCHER on`
+            $HOTSPOT_SWITCHER on
             ;;
     server)
             echo "* Switching from classic to server mode"
             check_yn
-            `$SERVER_SWITCHER on`
+            $SERVER_SWITCHER on
             ;;
     classic)
             case "$MODE" in
             hotspot)
                     echo "* Switching from hotspot to classic mode";
                     check_yn;
-                    `$HOTSPOT_SWITCHER off`
+                    $HOTSPOT_SWITCHER off
                     ;;
             server)
                     echo "* Switching from server to classic mode";
                     check_yn;
-                    `$SERVER_SWITCHER off`
+                    $SERVER_SWITCHER off
                     ;;
             classic)
                     echo "* Already in classic mode."
