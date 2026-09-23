@@ -7,14 +7,12 @@ contribution policy.
 
 - PRs target `main`, the default and release branch. Branch from current
   `origin/main` and use one branch per issue.
-- Keep each PR to one independently reviewable outcome. Up to 500 changed lines
-  needs no size justification; 501-1,000 needs a cohesion explanation and
-  review order; above 1,000 needs a split or maintainer-approved exception.
-  Measure additions plus deletions against the target branch's merge base and
-  follow the full policy in the
+- Keep each PR to one independently reviewable outcome. Size is a soft target:
+  above 500 changed lines, add a `Review order` section to the description;
+  above 1,000 is fine when the change is cohesive. Split only at real seams,
+  never to hit a number. Put moves, formatting, and generated output in
+  separate commits from behavioral changes. Full policy:
   [developer guide](https://github.com/WLAN-Pi/developers/blob/main/CONTRIBUTING.md#pr-size-and-scope).
-- Do not mix moves, formatting, generated output, or package artifacts with
-  behavioral changes.
 - Documentation-only and CI-only changes do not update `debian/changelog`.
   Changing it creates a release when the change reaches `main`.
 
