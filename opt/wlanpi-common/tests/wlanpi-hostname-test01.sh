@@ -82,12 +82,13 @@ must_be_root () { info "Checking we must be root to run script"; check "$(/usr/b
 # Pass if the command exits 0 (its output is ignored).
 check_ok () { if "$@" >/dev/null 2>&1; then pass; else fail; fi; }
 
-# Pass if a hostname is rejected: non-zero exit, RFC message, /etc/hosts unchanged.
+# Pass if a hostname is rejected: non-zero exit, message containing $2
+# (default "RFC"), and hostname and /etc/hosts unchanged.
 check_rejected () {
   local before out
-  before=$(sha256sum /etc/hosts)
+  before="$(hostname) $(sha256sum /etc/hosts)"
   if out=$($SCRIPT_NAME set "$1" 2>&1); then fail
-  elif [[ $out == *RFC* ]] && [ "$before" == "$(sha256sum /etc/hosts)" ]; then pass
+  elif [[ $out == *"${2:-RFC}"* ]] && [ "$before" == "$(hostname) $(sha256sum /etc/hosts)" ]; then pass
   else fail; fi
 }
 
@@ -182,18 +183,30 @@ run_tests () {
   info "Checking stale 127.0.1.1 line now maps to $ORIG_HOSTNAME"
   check "$(hosts_maps "$ORIG_HOSTNAME" && ! grep -q wlanpi-stale /etc/hosts && echo ok)"
 
-  info "Checking a repeat run leaves /etc/hosts untouched"
   before=$(stat -c '%i %y %z %s' /etc/hosts)
-  $SCRIPT_NAME set "$ORIG_HOSTNAME" >/dev/null 2>&1 || true
+  info "Checking a repeat run succeeds"
+  check_ok $SCRIPT_NAME set "$ORIG_HOSTNAME"
+
+  info "Checking a repeat run leaves /etc/hosts untouched"
   check "$([ "$before" == "$(stat -c '%i %y %z %s' /etc/hosts)" ] && echo ok)"
 
   info "Checking own hostname resolves to 127.0.1.1"
   check_ok resolves_local "$ORIG_HOSTNAME"
 
-  for bad in keith_is_great 'a/b' 'a&b' '-ab' 'ab-' 'a.b'; do
+  long63=$(printf 'a%.0s' {1..62})b
+  info "Checking 63-character hostname accepted"
+  check "$($SCRIPT_NAME set "$long63" >/dev/null 2>&1 && hosts_maps "$long63" && echo ok)"
+
+  info "Changing hostname back to $ORIG_HOSTNAME"
+  check_ok $SCRIPT_NAME set "$ORIG_HOSTNAME"
+
+  for bad in keith_is_great 'a/b' 'a&b' '-ab' 'ab-' 'a.b' "${long63}c"; do
     info "Checking invalid hostname rejected: $bad"
     check_rejected "$bad"
   done
+
+  info "Checking empty hostname rejected"
+  check_rejected "" "No hostname"
 
   # Print test run results summary
   summary

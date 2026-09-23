@@ -31,6 +31,10 @@ SCRIPT_NAME=$(echo ${0##*/})
 VERSION=0.1.0
 HOSTNAME=$2
 DEBUG=0
+# Temporary /etc/hosts replacement written by sync_hosts; removed if the
+# script exits or is killed before it is moved into place.
+SYNC_TMP=
+trap '[ -z "$SYNC_TMP" ] || rm -f "$SYNC_TMP"' EXIT
 
 # check if the script is running as root
 if [[ $EUID -ne 0 ]]; then
@@ -93,24 +97,33 @@ get_hostname() {
     fi
 }
 
-# Succeed if a 127.0.1.1 line in /etc/hosts lists $1 as a name (not in a comment).
+# Succeed if a 127.0.1.1 line in hosts file $2 (default /etc/hosts) lists $1
+# as a name, outside comments. Names are compared as strings ("1" != "01").
 hosts_maps() {
-    NAME=$1 awk '/^[ \t]*127\.0\.1\.1([ \t#]|$)/ { sub(/#.*/, "")
-        for (i = 2; i <= NF; i++) if ($i == ENVIRON["NAME"]) found = 1 }
-        END { exit !found }' "$HOSTS_FILE"
+    NAME=$1 awk 'BEGIN { name = ENVIRON["NAME"] "" }
+        /^[ \t]*127\.0\.1\.1([ \t#]|$)/ { sub(/#.*/, "")
+        for (i = 2; i <= NF; i++) if ($i == name) found = 1 }
+        END { exit !found }' "${2:-$HOSTS_FILE}"
 }
 
 # Point 127.0.1.1 in /etc/hosts at the new hostname. Only 127.0.1.1 lines are
-# edited, names are compared whole and outside comments, other names on the
-# line are kept, and the file is only replaced (atomically) when it changes:
-#   1. a 127.0.1.1 line already lists the new name: no change
+# edited, names are compared whole and outside comments, and other names on
+# the line are kept. The new file is checked before it atomically replaces
+# /etc/hosts.
+#   1. a 127.0.1.1 line already lists the new name: no change, no write
 #   2. rename: replace the old name, and old.domain with new.domain
 #   3. stale line (e.g. an interrupted rename): replace its first name
 #   4. no 127.0.1.1 line: append one
 sync_hosts() {
-    local old=$1 new=$2 tmp
+    local old=$1 new=$2
 
-    if ! tmp=$(mktemp "$HOSTS_FILE.XXXXXX"); then
+    if hosts_maps "$new"; then
+        debugger "($SCRIPT_NAME) $HOSTS_FILE already maps 127.0.1.1 to $new"
+        return 0
+    fi
+
+    if ! SYNC_TMP=$(mktemp "$HOSTS_FILE.XXXXXX"); then
+        SYNC_TMP=
         err_report "Cannot create a temporary file next to $HOSTS_FILE"
         exit 1
     fi
@@ -134,12 +147,8 @@ sync_hosts() {
         { L[NR] = $0 }
         /^[ \t]*127\.0\.1\.1([ \t#]|$)/ { ip[++nip] = NR }
         END {
-            old = ENVIRON["OLD"]; new = ENVIRON["NEW"]
-            for (j = 1; j <= nip; j++) {
-                parse(L[ip[j]])
-                for (k = 1; k < n; k++) if (tok[k] == new) have = 1
-            }
-            if (!have && old != "" && old != new) {
+            old = ENVIRON["OLD"] ""; new = ENVIRON["NEW"] ""
+            if (old != "" && old != new) {
                 for (j = 1; j <= nip; j++) {
                     parse(L[ip[j]]); changed = 0
                     for (k = 1; k < n; k++) {
@@ -160,27 +169,18 @@ sync_hosts() {
             }
             for (i = 1; i <= NR; i++) print L[i]
             if (!have) printf "127.0.1.1\t\t%s\n", new
-        }' "$HOSTS_FILE" > "$tmp"; then
-        rm -f "$tmp"
-        err_report "Failed to update $HOSTS_FILE"
+        }' "$HOSTS_FILE" > "$SYNC_TMP" || ! hosts_maps "$new" "$SYNC_TMP"; then
+        err_report "($SCRIPT_NAME) Could not map $new in $HOSTS_FILE, left it unchanged (please edit manually)"
         exit 1
     fi
 
-    if cmp -s "$tmp" "$HOSTS_FILE"; then
-        rm -f "$tmp"
-        debugger "($SCRIPT_NAME) $HOSTS_FILE already maps 127.0.1.1 to $new"
-    elif ! { chmod --reference="$HOSTS_FILE" "$tmp" &&
-             chown --reference="$HOSTS_FILE" "$tmp" &&
-             mv -f "$tmp" "$HOSTS_FILE"; }; then
-        rm -f "$tmp"
+    if ! { chmod --reference="$HOSTS_FILE" "$SYNC_TMP" &&
+           chown --reference="$HOSTS_FILE" "$SYNC_TMP" &&
+           mv -f "$SYNC_TMP" "$HOSTS_FILE"; }; then
         err_report "Failed to replace $HOSTS_FILE"
         exit 1
     fi
-
-    if ! hosts_maps "$new"; then
-        err_report "($SCRIPT_NAME) New hostname $new has not been set correctly in hosts file $HOSTS_FILE (please edit manually)"
-        exit 1
-    fi
+    SYNC_TMP=
     debugger "($SCRIPT_NAME) $HOSTS_FILE maps 127.0.1.1 to $new"
 }
 
