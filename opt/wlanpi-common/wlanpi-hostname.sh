@@ -8,7 +8,7 @@
 #
 #  - /usr/bin/hostnamectl set-hostname <hostname> (sets the hostname in /etc/hostname)
 #  - /usr/bin/hostname (gets current hostname)
-#  - sed -i 's/oldname/newname/g' /etc/hosts
+#  - awk to update the 127.0.1.1 line of /etc/hosts
 #  - /usr/bin/systemctl restart avahi-daemon (for new hostname to take effect)
 #
 # Return values:
@@ -31,6 +31,10 @@ SCRIPT_NAME=$(echo ${0##*/})
 VERSION=0.1.0
 HOSTNAME=$2
 DEBUG=0
+# Temporary /etc/hosts replacement written by sync_hosts; removed if the
+# script exits or is killed before it is moved into place.
+SYNC_TMP=
+trap '[ -z "$SYNC_TMP" ] || rm -f "$SYNC_TMP"' EXIT
 
 # check if the script is running as root
 if [[ $EUID -ne 0 ]]; then
@@ -93,6 +97,93 @@ get_hostname() {
     fi
 }
 
+# Succeed if a 127.0.1.1 line in hosts file $2 (default /etc/hosts) lists $1
+# as a name, outside comments. Names are compared as strings ("1" != "01").
+hosts_maps() {
+    NAME=$1 awk 'BEGIN { name = ENVIRON["NAME"] "" }
+        /^[ \t]*127\.0\.1\.1([ \t#]|$)/ { sub(/#.*/, "")
+        for (i = 2; i <= NF; i++) if ($i == name) found = 1 }
+        END { exit !found }' "${2:-$HOSTS_FILE}"
+}
+
+# Point 127.0.1.1 in /etc/hosts at the new hostname. Only 127.0.1.1 lines are
+# edited, names are compared whole and outside comments, and other names on
+# the line are kept. The new file is checked before it atomically replaces
+# /etc/hosts.
+#   1. a 127.0.1.1 line already lists the new name: no change, no write
+#   2. rename: replace the old name, and old.domain with new.domain
+#   3. stale line (e.g. an interrupted rename): replace its first name
+#   4. no 127.0.1.1 line: append one
+sync_hosts() {
+    local old=$1 new=$2
+
+    if hosts_maps "$new"; then
+        debugger "($SCRIPT_NAME) $HOSTS_FILE already maps 127.0.1.1 to $new"
+        return 0
+    fi
+
+    if ! SYNC_TMP=$(mktemp "$HOSTS_FILE.XXXXXX"); then
+        SYNC_TMP=
+        err_report "Cannot create a temporary file next to $HOSTS_FILE"
+        exit 1
+    fi
+    if ! OLD=$old NEW=$new awk '
+        function parse(line,    c, rest) {
+            c = index(line, "#")
+            comment = c ? substr(line, c) : ""
+            rest = c ? substr(line, 1, c - 1) : line
+            n = 0
+            while (match(rest, /[^ \t]+/)) {
+                sep[n] = substr(rest, 1, RSTART - 1)
+                tok[n++] = substr(rest, RSTART, RLENGTH)
+                rest = substr(rest, RSTART + RLENGTH)
+            }
+            trail = rest
+        }
+        function build(    k, s) {
+            for (k = 0; k < n; k++) s = s sep[k] tok[k]
+            return s trail comment
+        }
+        { L[NR] = $0 }
+        /^[ \t]*127\.0\.1\.1([ \t#]|$)/ { ip[++nip] = NR }
+        END {
+            old = ENVIRON["OLD"] ""; new = ENVIRON["NEW"] ""
+            if (old != "" && old != new) {
+                for (j = 1; j <= nip; j++) {
+                    parse(L[ip[j]]); changed = 0
+                    for (k = 1; k < n; k++) {
+                        if (tok[k] == old) { tok[k] = new; changed = have = 1 }
+                        else if (index(tok[k], old ".") == 1) {
+                            tok[k] = new substr(tok[k], length(old) + 1); changed = 1
+                        }
+                    }
+                    if (changed) L[ip[j]] = build()
+                }
+            }
+            if (!have && nip) {
+                parse(L[ip[1]])
+                if (n < 2) { sep[1] = "\t\t"; tok[1] = new; n = 2 }
+                else if (index(tok[1], new ".") == 1) tok[1] = tok[1] " " new
+                else tok[1] = new
+                L[ip[1]] = build(); have = 1
+            }
+            for (i = 1; i <= NR; i++) print L[i]
+            if (!have) printf "127.0.1.1\t\t%s\n", new
+        }' "$HOSTS_FILE" > "$SYNC_TMP" || ! hosts_maps "$new" "$SYNC_TMP"; then
+        err_report "($SCRIPT_NAME) Could not map $new in $HOSTS_FILE, left it unchanged (please edit manually)"
+        exit 1
+    fi
+
+    if ! { chmod --reference="$HOSTS_FILE" "$SYNC_TMP" &&
+           chown --reference="$HOSTS_FILE" "$SYNC_TMP" &&
+           mv -f "$SYNC_TMP" "$HOSTS_FILE"; }; then
+        err_report "Failed to replace $HOSTS_FILE"
+        exit 1
+    fi
+    SYNC_TMP=
+    debugger "($SCRIPT_NAME) $HOSTS_FILE maps 127.0.1.1 to $new"
+}
+
 # set new hostname
 set_hostname() {
 
@@ -112,56 +203,45 @@ set_hostname() {
        exit 1
     fi
 
+    # One label: letters, digits and '-' (also keeps option-like names away from hostnamectl).
+    if ! [[ $new_hostname =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+        err_report "Cannot use: $new_hostname as it is not a valid hostname under RFC-952/RFC-1123 (letters, digits and '-' only, 1-63 chars, no leading or trailing '-')"
+        exit 1
+    fi
+
+    # check we have correct hosts filename
+    check_file_exists $HOSTS_FILE
+
     # check if current hostname is equal to new hostname
     if [ "$current_hostname" == "$new_hostname" ]; then
         debugger "($SCRIPT_NAME) Current and new hostnames are equal ($current_hostname) == ($new_hostname)"
+        # A reboot between hostnamectl and the hosts update leaves the old
+        # name in /etc/hosts; the next run repairs it here.
+        sync_hosts "$current_hostname" "$new_hostname"
         exit 0
     fi
 
     # check we have correct hostnamectl script filename
     check_file_exists $HOSTNAMECTL_SCRIPT
 
-    # check we have correct hosts filename
-    check_file_exists $HOSTS_FILE
-
-    if [[ $(echo ${new_hostname} | grep "_") ]]; then
-        err_report "Cannot use: $new_hostname as it contains a '_' character which is illegal under RFC-952"
-        exit 1
-    fi
-
     debugger "($SCRIPT_NAME) Setting hostname with hostname ctl cmd to: $new_hostname"
 
     # set hostname in /etc/hostname with hostnamectl commmand
-    err=$($HOSTNAMECTL_SCRIPT set-hostname $new_hostname 2>&1)
-    if [ "$?" != '0' ]; then
+    if ! err=$($HOSTNAMECTL_SCRIPT set-hostname "$new_hostname" 2>&1); then
         err_report "Hostname set command failed: $err"
         exit 1
-    else
-        debugger "($SCRIPT_NAME) Set hostname with hostnamectl to : $new_hostname"
     fi
+    debugger "($SCRIPT_NAME) Set hostname with hostnamectl to : $new_hostname"
 
-    debugger "($SCRIPT_NAME) Setting hostname in file $HOSTS_FILE"
-
-    # substitue the existing hostname in /etc/hosts (if it exists)
-    debugger "($SCRIPT_NAME) Swapping out existing name ($current_hostname) for new hostname ($new_hostname) in file: $HOSTS_FILE"
-    sed -i "s/${current_hostname}/${new_hostname}/g" $HOSTS_FILE
-
-    if ! [[ $(cat ${HOSTS_FILE} | grep ${new_hostname}) ]]; then
-        err_report "($SCRIPT_NAME) New hostname $new_hostname has not been set correctly in hosts file $HOSTS_FILE (please edit manually)"
-        exit 1
-    else
-        debugger "($SCRIPT_NAME) Swapped out hostname OK in $HOSTS_FILE to : $new_hostname"
-    fi
+    sync_hosts "$current_hostname" "$new_hostname"
 
     # restart avahi-daemon so that the new hostname takes effect
     debugger "($SCRIPT_NAME) Restart avahi-daemon"
-    $SYSTEMCTL_SCRIPT restart avahi-daemon > /dev/null 2>&1
-    if [ "$?" != '0' ]; then
+    if ! $SYSTEMCTL_SCRIPT restart avahi-daemon > /dev/null 2>&1; then
         err_report "Failed to restart avahi-daemon"
         exit 1
-    else
-        debugger "($SCRIPT_NAME) avahi-daemon restarted"
     fi
+    debugger "($SCRIPT_NAME) avahi-daemon restarted"
 
     debugger "($SCRIPT_NAME) Hostname set OK"
     exit 0
