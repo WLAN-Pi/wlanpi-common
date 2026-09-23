@@ -1,3 +1,10 @@
+wlanpi-common (1.1.56) unstable; urgency=medium
+
+  * Apply the conditional PCIe 32-bit DMA workaround to WLAN Pi Pro so
+    supported MediaTek and QCA adapters can initialize on CM4.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 22 Sep 2026 22:15:00 -0400
+
 wlanpi-common (1.1.55) unstable; urgency=medium
 
   * Migrate GPIO utilities from raspi-gpio to pinctrl and restore unprivileged

@@ -71,6 +71,28 @@ usb_device_count() {
     find /sys/bus/usb/devices -maxdepth 1 -mindepth 1 ! -name "*:*" 2>/dev/null | wc -l
 }
 
+# BCM2711 needs a constrained inbound PCIe window for adapters with a 32-bit
+# DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
+configure_pcie_32bit_dma() {
+    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+        if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+            debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
+            if sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
+                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" "$CONFIG_FILE"
+            else
+                sed -i "s/\[cm4\]/&\n# Allows PCIe adapters with 32-bit DMA masks to work\ndtoverlay=pcie-32bit-dma\n/" "$CONFIG_FILE"
+            fi
+            REQUIRES_REBOOT=1
+        else
+            debugger "pcie-32bit-dma overlay is already enabled, no action needed"
+        fi
+    elif sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
+        debugger "pcie-32bit-dma is enabled but no matching PCIe adapter is present, disabling it now"
+        sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" "$CONFIG_FILE"
+        REQUIRES_REBOOT=1
+    fi
+}
+
 # Set baud rate for WLAN Pi Go discover port
 stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 
@@ -93,6 +115,10 @@ mv -- "$MODEL_CACHE_TMP" /etc/wlanpi-model
 trap - EXIT
 
 debugger "Detected WLAN Pi board: $BOARD"
+
+case "$BOARD" in
+    "Mcuzone M4" | "Mcuzone M4+" | "WLAN Pi Pro") configure_pcie_32bit_dma ;;
+esac
 
 ########## R4 ##########
 
@@ -203,27 +229,6 @@ if [[ "$BOARD" == "Mcuzone M4" ]]; then
         debugger "USB mode is already set to host mode, no action needed"
     fi
 
-    # Enable pcie-32bit-dma overlay for MediaTek and QCA M.2 Wi-Fi adapters to work
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
-        if ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
-            debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
-            if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
-                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
-            else
-                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" $CONFIG_FILE
-            fi
-            REQUIRES_REBOOT=1
-        else
-            debugger "pcie-32bit-dma overlay is already enabled, no action needed"
-        fi
-    else
-        if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
-            debugger "pcie-32bit-dma is enabled but non-MediaTek M.2 adapter is used, disabling 32-bit DMA overlay now"
-            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
-            REQUIRES_REBOOT=1
-        fi
-    fi
-
     # Disable RTC
     if grep -q -E "^\s*dtoverlay=i2c-rtc,pcf85063a,addr=0x51" $CONFIG_FILE; then
         debugger "RTC is enabled, disabling it now"
@@ -293,27 +298,6 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
         REQUIRES_REBOOT=1
     else
         debugger "Fan controller is already disabled, no action needed"
-    fi
-
-    # Enable pcie-32bit-dma overlay for MediaTek and QCA M.2 Wi-Fi adapters to work
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
-        if ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
-            debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
-            if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
-                sed -i "s/^\s*#dtoverlay=pcie-32bit-dma/dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
-            else
-                sed -i "s/\[cm4\]/&\n# Allows MT7921K adapter to work with 64-bit kernel\ndtoverlay=pcie-32bit-dma\n/" $CONFIG_FILE
-            fi
-            REQUIRES_REBOOT=1
-        else
-            debugger "pcie-32bit-dma overlay is already enabled, no action needed"
-        fi
-    else
-        if sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
-            debugger "pcie-32bit-dma is enabled but non-MediaTek/QCA M.2 adapter is used, disabling 32-bit DMA overlay now"
-            sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" $CONFIG_FILE
-            REQUIRES_REBOOT=1
-        fi
     fi
 
     # Disable RTC
