@@ -1,3 +1,10 @@
+wlanpi-common (1.1.57) unstable; urgency=medium
+
+  * Drop IPv6 multicast in ufw without logging it, so discovery traffic
+    such as UniFi on UDP 10001 no longer floods dmesg with [UFW BLOCK].
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Wed, 23 Sep 2026 00:58:35 -0400
+
 wlanpi-common (1.1.56) unstable; urgency=medium
 
   * Apply the conditional PCIe 32-bit DMA workaround to WLAN Pi Pro so
