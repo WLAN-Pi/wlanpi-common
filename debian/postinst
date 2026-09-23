@@ -10,7 +10,7 @@ if id wlanpi >/dev/null 2>&1; then
 fi
 if command -v udevadm >/dev/null && ! ischroot; then
     udevadm control --reload-rules || true
-    udevadm trigger --subsystem-match=gpio --subsystem-match=spidev || true
+    udevadm trigger --subsystem-match=gpio --subsystem-match=gpiomem --subsystem-match=spidev || true
 fi
 
 # Migrate the image-created override now that the package owns the setting.

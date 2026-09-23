@@ -1,3 +1,10 @@
+wlanpi-common (1.1.55) unstable; urgency=medium
+
+  * Migrate GPIO utilities from raspi-gpio to pinctrl and restore unprivileged
+    gpiomem access after package installation.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 22 Sep 2026 21:15:00 -0400
+
 wlanpi-common (1.1.54) unstable; urgency=medium
 
   * Restore LLDP/CDP discovery at service startup, follow kernel link events
