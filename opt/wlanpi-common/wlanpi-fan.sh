@@ -41,7 +41,7 @@ version(){
 
 # Turns fan on
 fan_on(){
-    /usr/bin/raspi-gpio set 26 op pd dh
+    /usr/bin/pinctrl set 26 op pd dh
 }
 
 # Turns fan off
@@ -51,7 +51,7 @@ fan_off(){
     read -p "Are you a WLAN Pi developer? (Yes/No): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     sleep 5
     read -p "Turn the fan off now? (Yes/No): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-    /usr/bin/raspi-gpio set 26 op pd dl
+    /usr/bin/pinctrl set 26 op pd dl
 }
 
 #-------------

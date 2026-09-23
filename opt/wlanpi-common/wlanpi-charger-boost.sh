@@ -42,12 +42,12 @@ version(){
 
 # Turns charger boost on
 boost_on(){
-    /usr/bin/raspi-gpio set 21 op pd dh
+    /usr/bin/pinctrl set 21 op pd dh
 }
 
 # Turns charger boost off
 boost_off(){
-    /usr/bin/raspi-gpio set 21 op pd dl
+    /usr/bin/pinctrl set 21 op pd dl
 }
 
 #-------------
