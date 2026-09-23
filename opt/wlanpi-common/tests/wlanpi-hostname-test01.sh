@@ -79,6 +79,38 @@ check_systemctl () { info "Checking systemctl running: $1"; if [[ `systemctl sta
 
 must_be_root () { info "Checking we must be root to run script"; check "$(/usr/bin/su -c "${SCRIPT_NAME}" wlanpi | grep root)"; }
 
+# Pass if the command exits 0 (its output is ignored).
+check_ok () { if "$@" >/dev/null 2>&1; then pass; else fail; fi; }
+
+# Pass if a hostname is rejected: non-zero exit, RFC message, /etc/hosts unchanged.
+check_rejected () {
+  local before out
+  before=$(sha256sum /etc/hosts)
+  if out=$($SCRIPT_NAME set "$1" 2>&1); then fail
+  elif [[ $out == *RFC* ]] && [ "$before" == "$(sha256sum /etc/hosts)" ]; then pass
+  else fail; fi
+}
+
+# Succeed if a 127.0.1.1 line lists $1 as a name (not in a comment).
+hosts_maps () {
+  NAME=$1 awk '/^[ \t]*127\.0\.1\.1([ \t#]|$)/ { sub(/#.*/, "")
+    for (i = 2; i <= NF; i++) if ($i == ENVIRON["NAME"]) found = 1 }
+    END { exit !found }' /etc/hosts
+}
+
+resolves_local () { getent ahostsv4 "$1" | awk '$1 == "127.0.1.1" { found = 1 } END { exit !found }'; }
+
+# Restore the hostname and /etc/hosts even if the suite aborts.
+cleanup () {
+  local rc=$?
+  set +e
+  hostnamectl set-hostname "$ORIG_HOSTNAME"
+  cp -p "$HOSTS_BACKUP" /etc/hosts
+  rm -f "$HOSTS_BACKUP"
+  systemctl restart avahi-daemon
+  exit $rc
+}
+
 ########################################
 # Test rig overview
 ########################################
@@ -87,8 +119,8 @@ echo "\
 =======================================================
 Test rig description:
 
-  1. Script installed on WLAN Pi Pro (default config 
-     with hostname = wlanpi)
+  1. Script installed on a WLAN Pi (any hostname; the test
+     restores the hostname and /etc/hosts when it finishes)
   2. CLI access to the WLAN Pi Pro (using wlanpi account)
   3. Run this script using sudo
 =======================================================" | tee $LOG_FILE
@@ -109,23 +141,59 @@ run_tests () {
 
   must_be_root
 
-  info "Checking hostname is wlanpi"
-  check "$($SCRIPT_NAME get | grep ^wlanpi$)"
+  # Work on the real hostname and /etc/hosts, then put both back.
+  ORIG_HOSTNAME=$($SCRIPT_NAME get)
+  if ! [[ $ORIG_HOSTNAME =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+    comment "Hostname $ORIG_HOSTNAME is not a single RFC-1123 label; rename the device before running this test"
+    exit 1
+  fi
+  HOSTS_BACKUP=$(mktemp)
+  cp -p /etc/hosts "$HOSTS_BACKUP"
+  trap cleanup EXIT
+  grep -q "wlanpi\.local" /etc/hosts || echo "127.0.0.1 wlanpi.local" >> /etc/hosts
+  LOCAL_LINES=$(grep "wlanpi\.local" /etc/hosts)
+  comment "Original hostname: $ORIG_HOSTNAME"
 
   info "Hostname set test - setting to : keith"
-  check "$($SCRIPT_NAME set keith; echo $?)"
+  check_ok $SCRIPT_NAME set keith
 
   info "Checking new hostname set to keith"
-  check "$($SCRIPT_NAME get | grep ^keith$)"
+  check "$($SCRIPT_NAME get | grep -x keith)"
 
-  info "Changing hostname back to wlanpi"
-  check "$($SCRIPT_NAME set wlanpi; echo $?)"
+  info "Checking 127.0.1.1 line maps to keith"
+  check_ok hosts_maps keith
 
-  info "Checking hostname back to wlanpi"
-  check "$($SCRIPT_NAME get | grep ^wlanpi$)"
+  info "Checking old hostname no longer on the 127.0.1.1 line"
+  check_not "$(hosts_maps "$ORIG_HOSTNAME" && echo yes)"
 
-  info "Checking underscore not allowed in hostname"
-  check "$($SCRIPT_NAME set keith_is_great | grep RFC)"
+  info "Checking wlanpi.local line survives a rename"
+  check "$([ "$(grep "wlanpi\.local" /etc/hosts)" == "$LOCAL_LINES" ] && echo ok)"
+
+  info "Changing hostname back to $ORIG_HOSTNAME"
+  check_ok $SCRIPT_NAME set "$ORIG_HOSTNAME"
+
+  info "Checking hostname back to $ORIG_HOSTNAME"
+  check "$($SCRIPT_NAME get | grep -xF "$ORIG_HOSTNAME")"
+
+  info "Repairing stale 127.0.1.1 line when hostname is already set"
+  sed -i -E 's/^127\.0\.1\.1[[:space:]].*/127.0.1.1\t\twlanpi-stale/' /etc/hosts
+  check_ok $SCRIPT_NAME set "$ORIG_HOSTNAME"
+
+  info "Checking stale 127.0.1.1 line now maps to $ORIG_HOSTNAME"
+  check "$(hosts_maps "$ORIG_HOSTNAME" && ! grep -q wlanpi-stale /etc/hosts && echo ok)"
+
+  info "Checking a repeat run leaves /etc/hosts untouched"
+  before=$(stat -c '%i %y %z %s' /etc/hosts)
+  $SCRIPT_NAME set "$ORIG_HOSTNAME" >/dev/null 2>&1 || true
+  check "$([ "$before" == "$(stat -c '%i %y %z %s' /etc/hosts)" ] && echo ok)"
+
+  info "Checking own hostname resolves to 127.0.1.1"
+  check_ok resolves_local "$ORIG_HOSTNAME"
+
+  for bad in keith_is_great 'a/b' 'a&b' '-ab' 'ab-' 'a.b'; do
+    info "Checking invalid hostname rejected: $bad"
+    check_rejected "$bad"
+  done
 
   # Print test run results summary
   summary

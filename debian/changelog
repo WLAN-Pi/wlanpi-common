@@ -1,3 +1,13 @@
+wlanpi-common (1.1.58) unstable; urgency=medium
+
+  * Keep the 127.0.1.1 line in /etc/hosts in sync with the hostname.
+    wlanpi-hostname now edits only that line (keeping other names on it),
+    replaces the file atomically, repairs the line on the next boot when a
+    rename was interrupted (e.g. by a first-boot reboot), and rejects
+    invalid hostnames.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Wed, 23 Sep 2026 01:11:35 -0400
+
 wlanpi-common (1.1.57) unstable; urgency=medium
 
   * Drop IPv6 multicast in ufw without logging it, so discovery traffic
