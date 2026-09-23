@@ -65,7 +65,7 @@ jobs:
           echo "Pushing ${DEB_PACKAGE} to ${target}"
           out=$(package_cloud push "${target}" "${DEB_PACKAGE}" 2>&1) || true
           echo "${out}"
-          echo "${out}" | grep -q "success!"
+          echo "${out}" | grep -q "Pushing .*success!"
 
   slack-workflow-status:
     if: ${{ always() && github.repository_owner == 'WLAN-Pi' && ! github.event.pull_request.head.repo.fork }}
