@@ -53,6 +53,17 @@ else
     echo "Warning: Failed to create udev rule file" >&2
 fi
 
+# Drop IPv6 multicast (e.g. UniFi discovery to ff02::1) without logging it,
+# the IPv6 counterpart of ufw's IPv4 broadcast rule in after.rules.
+UFW_AFTER6=/etc/ufw/after6.rules
+UFW_MCAST_RULE='-A ufw6-after-input -m addrtype --dst-type MULTICAST -j ufw6-skip-to-policy-input'
+if [ -f "$UFW_AFTER6" ] && ! grep -qxF -- "$UFW_MCAST_RULE" "$UFW_AFTER6"; then
+    sed -i "/^COMMIT\$/i $UFW_MCAST_RULE" "$UFW_AFTER6"
+    if ! ischroot && command -v ufw >/dev/null; then
+        ufw reload >/dev/null || true
+    fi
+fi
+
 # Fails during apt install wlanpi-common due to apt lock conflict
 #echo "Running apt update"
 #apt update 1> /dev/null 2>& 1
