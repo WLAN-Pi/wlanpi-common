@@ -15,7 +15,7 @@
 set -u
 
 SCRIPT=${1:-"$(dirname "$0")/../wlanpi-config-at-startup.sh"}
-TMP=$(mktemp -d)
+TMP=$(mktemp -d) || exit 2
 trap 'rm -rf "$TMP"' EXIT
 sed -n '/^configure_pcie_32bit_dma()/,/^}/p' "$SCRIPT" > "$TMP/function.sh"
 [ -s "$TMP/function.sh" ] || { echo "configure_pcie_32bit_dma not found in $SCRIPT" >&2; exit 2; }
@@ -55,15 +55,19 @@ kernel=wlanpi-kernel8.img
 EOF
 }
 
-# Devices are "domain:bus:slot.fn=vendor:device/class"; "/class" may be left
-# out to model a half-enumerated device (no class file, class 0000 in lspci).
+# Devices are "domain:bus:slot.fn=vendor:device/class[!missing]". "/class"
+# may be left out (no class file, class 0000 in lspci), and "!vendor" or
+# "!device" leaves that sysfs file out (a device vanishing mid-read); lspci,
+# which reads config space, still lists it.
 hardware() {
-    local lspci=$1 entry slot ids vendor device class
+    local lspci=$1 entry slot ids vendor device class missing
     shift
     rm -rf "$TMP/pci"
     mkdir -p "$TMP/pci"
     : > "$TMP/lspci.out"
     for entry in "$@"; do
+        missing=""
+        case $entry in *!*) missing=${entry#*!}; entry=${entry%%!*} ;; esac
         slot=${entry%%=*}
         ids=${entry#*=}
         vendor=${ids%%:*}
@@ -72,8 +76,8 @@ hardware() {
         class=""
         [ "$ids" = "$device" ] || class=${ids#*/}
         mkdir -p "$TMP/pci/$slot"
-        echo "0x$vendor" > "$TMP/pci/$slot/vendor"
-        echo "0x$device" > "$TMP/pci/$slot/device"
+        [ "$missing" = vendor ] || echo "0x$vendor" > "$TMP/pci/$slot/vendor"
+        [ "$missing" = device ] || echo "0x$device" > "$TMP/pci/$slot/device"
         [ -z "$class" ] || echo "$class" > "$TMP/pci/$slot/class"
         c=${class:-0x000000}
         echo "${slot#0000:} Device class [${c:2:4}]: Vendor Device [$vendor:$device]" >> "$TMP/lspci.out"
@@ -175,6 +179,11 @@ check "Pro, no radio cards, overlay on [changed]" on     yes 0 on     $pro
 check "no lspci, M4 WCN785x, overlay on [changed]" on    no  0 on     $root 0000:01:00.0=$qca
 check "no lspci, M4 WCN785x, absent [changed]"    absent no  1 on     $root 0000:01:00.0=$qca
 check "no lspci, M4+ BE200, overlay on"           on     no  1 off    $root 0000:01:00.0=$be200
+check "PCIe USB card in M4 (0x0c03), overlay on"  on     yes 1 off    $root 0000:01:00.0=1912:0014/0x0c0330
+check "Pro BE200 x2 + onboard VL805 only, on"     on     yes 1 off    $pro 0000:04:00.0=$be200 0000:05:00.0=$be200
+check "WCN785x vendor file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!vendor"
+check "WCN785x device file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!device"
+check "no PCI devices at all, overlay on [changed]" on   yes 0 on
 }
 
 [ "$fails" -eq 0 ] && echo "pcie-32bit-dma: all cases passed ($SCRIPT)" || echo "pcie-32bit-dma: $fails case(s) failed ($SCRIPT)"

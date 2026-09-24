@@ -76,14 +76,19 @@ usb_device_count() {
 # IDs come from sysfs, the same files lspci reads: pciutils is not a
 # dependency of this package, and without it every card looked unmatched.
 configure_pcie_32bit_dma() {
-    local dev class ids="" card=0 match=0
+    local dev vendor device class id ids="" card=0 match=0
     for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
-        [ -r "$dev/vendor" ] && [ -r "$dev/device" ] || continue
-        ids="$ids $(cut -c3- "$dev/vendor"):$(cut -c3- "$dev/device")"
-        # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard USB
-        # controller are always there; anything else is a fitted card.
+        # Each read is guarded: a device can vanish mid-loop (a failing link),
+        # and an unguarded failure would abort this set -e script.
+        vendor=$(cat "$dev/vendor" 2>/dev/null) || continue
+        device=$(cat "$dev/device" 2>/dev/null) || continue
         class=$(cat "$dev/class" 2>/dev/null) || class=""
-        case "$class" in 0x0604* | 0x0c03*) ;; *) card=1 ;; esac
+        id="${vendor#0x}:${device#0x}"
+        ids="$ids $id"
+        # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard
+        # VL805 USB controller are always there; anything else is a card.
+        case "$class" in 0x0604*) continue ;; esac
+        [ "$id" = "1106:3483" ] || card=1
     done
     if echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
         match=1
