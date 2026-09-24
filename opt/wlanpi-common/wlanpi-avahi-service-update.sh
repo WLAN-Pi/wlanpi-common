@@ -1,9 +1,9 @@
 #!/bin/bash
 
-WLANPI_MODEL_CMD="/usr/bin/wlanpi-model"
-WLANPI_MODEL_CACHE="/etc/wlanpi-model"
-WLANPI_RELEASE_FILE="/etc/wlanpi-release"
-SERVICE_FILE="/etc/avahi/services/wlanpi_announce.service"
+WLANPI_MODEL_CMD="${WLANPI_MODEL_CMD:-/usr/bin/wlanpi-model}"
+WLANPI_MODEL_CACHE="${WLANPI_MODEL_CACHE:-/etc/wlanpi-model}"
+WLANPI_RELEASE_FILE="${WLANPI_RELEASE_FILE:-/etc/wlanpi-release}"
+SERVICE_FILE="${SERVICE_FILE:-/etc/avahi/services/wlanpi_announce.service}"
 
 for req in "$WLANPI_MODEL_CMD" "$WLANPI_RELEASE_FILE" "$SERVICE_FILE"; do
     if [ ! -f "$req" ]; then
@@ -27,7 +27,7 @@ if [ -z "$MODEL" ]; then
     exit 1
 fi
 
-if ! VERSION=$(sed 's/^VERSION=//' "$WLANPI_RELEASE_FILE"); then
+if ! VERSION=$(sed -n 's/^VERSION=//p' "$WLANPI_RELEASE_FILE"); then
     echo "Error: Failed to read version file" >&2
     exit 1
 fi
