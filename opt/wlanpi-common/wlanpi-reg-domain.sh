@@ -24,10 +24,6 @@
 # fail on script errors
 set -e
 
-# Define ANSI colour codes
-RED='\033[0;31m'
-NO_COLOUR='\033[0m'
-
 # Persist the domain via a cfg80211 module option. cfg80211 reads
 # ieee80211_regdom when it loads, which replaces the old crda mechanism.
 REGDOMAIN_MODPROBE_FILE="/etc/modprobe.d/wlanpi-regdomain.conf"
@@ -36,7 +32,7 @@ WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
 SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
 VERSION=0.2.0
 DOMAIN=$2
-NO_PROMPT=$3
+# $3 may be --no-prompt (FPMS, wlanpi-core); still accepted, nothing prompts now.
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
@@ -182,20 +178,6 @@ set_domain () {
 
     if ! grep -q "classic" /etc/wlanpi-state; then
         echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
-    fi
-
-    # only show reboot prompt in interactive mode (when --no-prompt was not used)
-    if [ "$NO_PROMPT" != "--no-prompt" ]; then
-        while true; do
-            read -p "A reboot is required. Reboot now? (Y/n) " yn
-            case $yn in
-                [yY]|"" ) reboot;
-                    break;;
-                [nN] ) echo -e "${RED}Warning: Wi-Fi might not work fully until you reboot!${NO_COLOUR}";
-                       exit 0;;
-                * ) echo "Error: Invalid response";;
-            esac
-        done
     fi
 }
 
