@@ -19,6 +19,7 @@ fi
 # echo "Using interface: $INTERFACE"
 
 ETHLEASES="/var/lib/dhcp/dhclient.${INTERFACE}.leases"
+RESOLV_CONF="${RESOLV_CONF:-/etc/resolv.conf}"
 ACTIVEIP=$(ip a | grep "$INTERFACE" | grep "inet" | grep -v "secondary" | head -n1 | cut -d '/' -f1 | cut -d ' ' -f6)
 SUBNET=$(ip a | grep "$INTERFACE" | grep "inet" | grep -v "secondary" | head -n1 | cut -d ' ' -f6 | tail -c 4)
 
@@ -61,7 +62,9 @@ else
     DUPLEX="Disconnected"
 fi
 MACADDRESS=$(sed 's/://g' /sys/class/net/$INTERFACE/address)
-DNSSERVERS=$(grep "nameserver" /etc/resolv.conf | sed 's/nameserver/DNS:/g')
+# Only real nameserver lines: NetworkManager writes "# NOTE: ... nameservers."
+# comments after the third server, and those must not show up as DNS entries
+DNSSERVERS=$(awk '$1 == "nameserver" {print "DNS: " $2}' "$RESOLV_CONF")
 MTU=$(cat /sys/class/net/$INTERFACE/mtu)
 
 echo "IP: $ACTIVEIP"
