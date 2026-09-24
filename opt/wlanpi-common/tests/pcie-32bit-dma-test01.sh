@@ -116,7 +116,9 @@ check() {
         CONFIG_FILE="$TMP/config.txt"
         PCI_DEVICES_DIR="$TMP/pci"
         REQUIRES_REBOOT=0
-        export CONFIG_FILE PCI_DEVICES_DIR REQUIRES_REBOOT
+        # Only the Pro has the Pericom switch (12d8:2404)
+        case " $* " in *=12d8:2404/*) BOARD="WLAN Pi Pro" ;; *) BOARD="Mcuzone M4" ;; esac
+        export CONFIG_FILE PCI_DEVICES_DIR REQUIRES_REBOOT BOARD
         debugger() { :; }
         log_reason() { return 1; } # logger can fail early in boot; must not abort
         # shellcheck source=/dev/null
@@ -180,6 +182,7 @@ check "no lspci, M4 WCN785x, overlay on [changed]" on    no  0 on     $root 0000
 check "no lspci, M4 WCN785x, absent [changed]"    absent no  1 on     $root 0000:01:00.0=$qca
 check "no lspci, M4+ BE200, overlay on"           on     no  1 off    $root 0000:01:00.0=$be200
 check "PCIe USB card in M4 (0x0c03), overlay on"  on     yes 1 off    $root 0000:01:00.0=1912:0014/0x0c0330
+check "VL805 USB card in M4, overlay on"          on     yes 1 off    $root 0000:01:00.0=1106:3483/0x0c0330
 check "Pro BE200 x2 + onboard VL805 only, on"     on     yes 1 off    $pro 0000:04:00.0=$be200 0000:05:00.0=$be200
 check "WCN785x vendor file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!vendor"
 check "WCN785x device file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!device"

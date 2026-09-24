@@ -88,7 +88,9 @@ configure_pcie_32bit_dma() {
         # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard
         # VL805 USB controller are always there; anything else is a card.
         case "$class" in 0x0604*) continue ;; esac
-        [ "$id" = "1106:3483" ] || card=1
+        if [ "$id" != "1106:3483" ] || [ "${BOARD:-}" != "WLAN Pi Pro" ]; then
+            card=1
+        fi
     done
     if echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
         match=1
