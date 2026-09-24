@@ -68,14 +68,17 @@ run_case 1 'dtoverlay=pcie-32bit-dma' $'[cm4]\n#dtoverlay=pcie-32bit-dma\n[all]'
 # One matching card among others keeps the overlay
 run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" \
     0000:04:00.0=8086:272b/0x028000 0000:05:00.0=14c3:0608/0x028000
-# A device without a class file is ignored, alone or next to a real card
-run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=14c3:0608
+# A device without a class file: a listed ID still matches, an unlisted one
+# does not count as a network card
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" 0000:01:00.0=14c3:0608
+run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=10ec:8125
 [ "$(cat "$CONFIG_FILE")" = "$enabled_config" ]
 run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" \
     0000:01:00.0=8086:272b 0000:02:00.0=17cb:1107/0x028000
 # IDs match whatever the class: only 14c3:0608 and 17cb:1107 were checked on
 # hardware (both 0x028000), so a listed card with another network class counts
 run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" 0000:01:00.0=14c3:0616/0x020000
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" 0000:01:00.0=14c3:7925/0x020000
 # and so does an unlisted network card of that class
 run_case 1 '#dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=10ec:8125/0x020000
 echo "pcie-32bit-dma tests passed"
