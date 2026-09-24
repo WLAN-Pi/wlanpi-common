@@ -73,8 +73,22 @@ usb_device_count() {
 
 # BCM2711 needs a constrained inbound PCIe window for adapters with a 32-bit
 # DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
+# IDs come from sysfs: lspci (pciutils) is not a dependency of this package.
 configure_pcie_32bit_dma() {
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+    local dev wifi=""
+    for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
+        case "$(cat "$dev/class" 2>/dev/null)" in
+            0x0280*) wifi="$wifi $(cut -c3- "$dev/vendor"):$(cut -c3- "$dev/device")" ;;
+        esac
+    done
+    # An empty slot and a fitted card whose PCIe link failed look the same, and
+    # neither needs the overlay changed. Toggling it here only added a reboot.
+    # A card that stopped linking needs a power cycle; a reboot keeps it powered.
+    if [ -z "$wifi" ]; then
+        log_reason "no PCIe Wi-Fi adapter found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it"
+        return
+    fi
+    if echo "$wifi" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
             if sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then

@@ -6,24 +6,33 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 sed -n '/^configure_pcie_32bit_dma()/,/^}/p' "$SCRIPT" > "$TMP/function.sh"
 
-cat > "$TMP/lspci" <<'EOF'
-#!/bin/sh
-printf '%s\n' "$PCI_DEVICES"
-EOF
-chmod +x "$TMP/lspci"
+# Build a fake /sys/bus/pci/devices from "slot=vendor:device/class" entries.
+fake_pci() {
+    rm -rf "$TMP/pci"; mkdir -p "$TMP/pci"
+    local entry slot ids
+    for entry in "$@"; do
+        slot=${entry%%=*}; ids=${entry#*=}
+        mkdir -p "$TMP/pci/$slot"
+        echo "0x${ids%%:*}" > "$TMP/pci/$slot/vendor"
+        ids=${ids#*:}
+        echo "0x${ids%%/*}" > "$TMP/pci/$slot/device"
+        echo "${ids#*/}" > "$TMP/pci/$slot/class"
+    done
+}
 
 run_case() {
     expected_reboot=$1
     expected_line=$2
-    pci_devices=$3
-    config=$4
+    config=$3
+    shift 3
+    fake_pci "$@"
     printf '%s\n' "$config" > "$TMP/config.txt"
     CONFIG_FILE="$TMP/config.txt"
     REQUIRES_REBOOT=0
-    PCI_DEVICES="$pci_devices"
-    export CONFIG_FILE REQUIRES_REBOOT PCI_DEVICES
-    PATH="$TMP:$PATH"
+    PCI_DEVICES_DIR="$TMP/pci"
+    export CONFIG_FILE REQUIRES_REBOOT PCI_DEVICES_DIR
     debugger() { :; }
+    log_reason() { :; }
     # shellcheck source=/dev/null
     source "$TMP/function.sh"
     configure_pcie_32bit_dma
@@ -33,8 +42,22 @@ run_case() {
 
 base_config=$'[cm4]\notg_mode=0\n[all]'
 enabled_config=$'[cm4]\ndtoverlay=pcie-32bit-dma\n[all]'
+root=0000:00:00.0=14e4:2711/0x060400
 
-run_case 1 'dtoverlay=pcie-32bit-dma' '04:00.0 0280: 14c3:0608' "$base_config"
-run_case 0 'dtoverlay=pcie-32bit-dma' '04:00.0 0280: 14c3:0608' "$enabled_config"
-run_case 1 '#dtoverlay=pcie-32bit-dma' '04:00.0 0280: 8086:272b' "$enabled_config"
-run_case 0 'otg_mode=0' '04:00.0 0280: 8086:272b' "$base_config"
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" 0000:01:00.0=14c3:0608/0x028000
+run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=14c3:0608/0x028000
+run_case 1 '#dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=8086:272b/0x028000
+run_case 0 'otg_mode=0' "$base_config" "$root" 0000:01:00.0=8086:272b/0x028000
+# M4 with the WCN785x fitted (ath12k)
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" 0000:01:00.0=17cb:1107/0x028000
+# Empty slot or a card whose link failed: leave the overlay alone, no reboot
+run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root"
+run_case 0 'otg_mode=0' "$base_config" "$root"
+# Pro: switch and USB controller on the bus; only Wi-Fi functions count
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" \
+    0000:01:00.0=12d8:2404/0x060400 0000:03:00.0=1106:3483/0x0c0330 \
+    0000:04:00.0=14c3:0608/0x028000 0000:05:00.0=14c3:0608/0x028000
+run_case 1 '#dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" \
+    0000:01:00.0=12d8:2404/0x060400 0000:03:00.0=1106:3483/0x0c0330 \
+    0000:04:00.0=8086:272b/0x028000 0000:05:00.0=8086:272b/0x028000
+echo "pcie-32bit-dma tests passed"
