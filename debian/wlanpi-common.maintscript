@@ -1,0 +1,1 @@
+rm_conffile /etc/avahi/services/wlanpi_announce.service 1.1.59~
