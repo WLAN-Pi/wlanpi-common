@@ -3,6 +3,5 @@ usr/bin/wlanpi-stats usr/bin/
 etc/profile.d/wlanpi-stats.sh etc/profile.d/
 etc/systemd/system/isc-dhcp-server.service.d/* etc/systemd/system/isc-dhcp-server.service.d/
 etc/systemd/system/avahi-daemon.service.d/* etc/systemd/system/avahi-daemon.service.d/
-etc/avahi/services/wlanpi_announce.service etc/avahi/services/
 etc/apt/apt.conf.d/80wlanpi etc/apt/apt.conf.d/
 usr/lib/systemd/system/irtt.service.d/wlanpi-common.conf usr/lib/systemd/system/irtt.service.d/
