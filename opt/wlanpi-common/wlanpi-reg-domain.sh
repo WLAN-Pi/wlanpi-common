@@ -24,19 +24,16 @@
 # fail on script errors
 set -e
 
-# Define ANSI colour codes
-RED='\033[0;31m'
-NO_COLOUR='\033[0m'
-
 # Persist the domain via a cfg80211 module option. cfg80211 reads
 # ieee80211_regdom when it loads, which replaces the old crda mechanism.
 REGDOMAIN_MODPROBE_FILE="/etc/modprobe.d/wlanpi-regdomain.conf"
 HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
 WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
 SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
+PROFILER_UNIT="wlanpi-profiler"
 VERSION=0.2.0
 DOMAIN=$2
-NO_PROMPT=$3
+# $3 may be --no-prompt (FPMS, wlanpi-core); still accepted, nothing prompts now.
 SCRIPT_NAME=$(echo ${0##*/})
 DEBUG=0
 
@@ -180,22 +177,20 @@ set_domain () {
     update_hostapd_country "$WCONSOLE_FILE" "Wi-Fi Console mode"
     update_hostapd_country "$SERVER_FILE" "Server mode"
 
-    if ! grep -q "classic" /etc/wlanpi-state; then
-        echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
+    # The profiler reads the domain once at start to build its hostapd config,
+    # so restart it if it is running. wpa_supplicant follows regulatory change
+    # events by itself and needs no restart. --no-block returns at once, so
+    # FPMS, wlanpi-core and the webui aren't held up for the ~10 s restart.
+    # ponytail: only the systemd unit; a profiler started by wlanpi-core's
+    # /profiler/start or by hand keeps the old domain until it is restarted.
+    if systemctl is-active --quiet "$PROFILER_UNIT" 2>/dev/null; then
+        echo "Restarting the profiler to apply the new domain"
+        systemctl try-restart --no-block "$PROFILER_UNIT" ||
+            err_report "Could not restart $PROFILER_UNIT; restart it to apply $DOMAIN"
     fi
 
-    # only show reboot prompt in interactive mode (when --no-prompt was not used)
-    if [ "$NO_PROMPT" != "--no-prompt" ]; then
-        while true; do
-            read -p "A reboot is required. Reboot now? (Y/n) " yn
-            case $yn in
-                [yY]|"" ) reboot;
-                    break;;
-                [nN] ) echo -e "${RED}Warning: Wi-Fi might not work fully until you reboot!${NO_COLOUR}";
-                       exit 0;;
-                * ) echo "Error: Invalid response";;
-            esac
-        done
+    if ! grep -q "classic" /etc/wlanpi-state; then
+        echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
     fi
 }
 
