@@ -14,22 +14,10 @@ function cleanup () {
 trap cleanup EXIT
 DEFAULTGATEWAY=$(ip route | grep "default" | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | head -n1)
 DGINTERFACE=$(ip route | grep "default" | head -n1 | cut -d ' ' -f5)
-DNSSERVERCOUNT=$(cat /etc/resolv.conf | grep "nameserver" | cut -d ' ' -f2 | wc -l)
-
-if [ "$DNSSERVERCOUNT" -eq 1 ]; then
-  DNSSERVER1=$(cat /etc/resolv.conf | grep "nameserver" -m1 | cut -d ' ' -f2)
-fi
-
-if [ "$DNSSERVERCOUNT" -eq 2 ]; then
-  DNSSERVER1=$(cat /etc/resolv.conf | grep "nameserver" -m1 | cut -d ' ' -f2)
-  DNSSERVER2=$(cat /etc/resolv.conf | grep "nameserver" | head -2 | tail -1 | cut -d ' ' -f2)
-fi
-
-if [ "$DNSSERVERCOUNT" -gt 2 ]; then
-  DNSSERVER1=$(cat /etc/resolv.conf | grep "nameserver" -m1 | cut -d ' ' -f2)
-  DNSSERVER2=$(cat /etc/resolv.conf | grep "nameserver" | head -2 | tail -1 | cut -d ' ' -f2)
-  DNSSERVER3=$(cat /etc/resolv.conf | grep "nameserver" | head -3 | tail -1 | cut -d ' ' -f2)
-fi
+RESOLV_CONF="${RESOLV_CONF:-/etc/resolv.conf}"
+# First three real nameserver lines; NetworkManager's "# NOTE: ... nameservers."
+# comments and commented-out servers are skipped
+read -r DNSSERVER1 DNSSERVER2 DNSSERVER3 _ < <(awk '$1 == "nameserver" {printf "%s ", $2}' "$RESOLV_CONF")
 
 # --- Checks ---
 #Prevent multiple instances of the script to run at the same time
