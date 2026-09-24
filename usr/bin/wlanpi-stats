@@ -136,7 +136,7 @@ if command -v wlanpi-reg-domain >/dev/null 2>&1; then
         else
             echo "=== Warning: No RF regulatory domain has been configured ==="
         fi
-        echo "Configure one using \"sudo wlanpi-reg-domain set XX\", followed by \"sudo reboot\". XX represents the country code."
+        echo "Configure one using \"sudo wlanpi-reg-domain set XX\", where XX is the country code. It takes effect immediately."
         echo
     fi
 fi
