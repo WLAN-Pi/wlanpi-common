@@ -1,3 +1,18 @@
+wlanpi-common (1.1.59) unstable; urgency=medium
+
+  * Advertise _http._tcp on port 80 again, alongside _https._tcp on
+    31415, so WiFi Explorer, Airtool and the WLAN Pi app find the WLAN
+    Pi with its model and version instead of only its hostname (#113).
+  * Generate the mDNS service file at avahi start instead of shipping it
+    as a conffile the boot script rewrote, so upgrades that change it no
+    longer stop at a conffile prompt. A locally modified old file is kept
+    as wlanpi_announce.service.dpkg-bak.
+  * Advertise only the VERSION line of /etc/wlanpi-release, so an image
+    that also records its CODENAME there keeps a correct version in
+    mDNS.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Thu, 24 Sep 2026 13:00:34 -0400
+
 wlanpi-common (1.1.58) unstable; urgency=medium
 
   * Keep the 127.0.1.1 line in /etc/hosts in sync with the hostname.
