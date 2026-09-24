@@ -73,25 +73,28 @@ usb_device_count() {
 
 # BCM2711 needs a constrained inbound PCIe window for adapters with a 32-bit
 # DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
-# IDs come from sysfs: lspci (pciutils) is not a dependency of this package.
+# IDs come from sysfs, the same files lspci reads: pciutils is not a
+# dependency of this package, and without it every card looked unmatched.
 configure_pcie_32bit_dma() {
-    local dev ids="" network=0 match=0
+    local dev class ids="" card=0 match=0
     for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
-        [ -r "$dev/vendor" ] || continue
-        # IDs are matched on every device, as lspci -nn was; the class only
-        # tells whether any network card is on the bus (the Pro's switch and
-        # USB controller are not).
-        ids="$ids $(cut -c3- "$dev/vendor" 2>/dev/null):$(cut -c3- "$dev/device" 2>/dev/null)"
-        case "$(cat "$dev/class" 2>/dev/null)" in 0x02*) network=1 ;; esac
+        [ -r "$dev/vendor" ] && [ -r "$dev/device" ] || continue
+        ids="$ids $(cut -c3- "$dev/vendor"):$(cut -c3- "$dev/device")"
+        # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard USB
+        # controller are always there; anything else is a fitted card.
+        class=$(cat "$dev/class" 2>/dev/null) || class=""
+        case "$class" in 0x0604* | 0x0c03*) ;; *) card=1 ;; esac
     done
-    echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107" && match=1
-    if [ "$match" -eq 0 ] && [ "$network" -eq 0 ]; then
+    if echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+        match=1
+    fi
+    if [ "$match" -eq 0 ] && [ "$card" -eq 0 ]; then
         # An empty slot and a fitted card whose PCIe link failed look the same,
         # and neither needs the overlay changed; toggling it only added a
         # reboot. A card that stopped linking needs a power cycle, since a
         # reboot keeps it powered.
-        log_reason "no PCIe network adapter found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it"
-        return
+        log_reason "no PCIe card found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it" || true
+        return 0
     fi
     if [ "$match" -eq 1 ]; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
