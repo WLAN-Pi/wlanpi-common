@@ -16,7 +16,8 @@ fake_pci() {
         echo "0x${ids%%:*}" > "$TMP/pci/$slot/vendor"
         ids=${ids#*:}
         echo "0x${ids%%/*}" > "$TMP/pci/$slot/device"
-        echo "${ids#*/}" > "$TMP/pci/$slot/class"
+        # No "/class" part: leave the class file out (half-enumerated device)
+        [ "$ids" = "${ids#*/}" ] || echo "${ids#*/}" > "$TMP/pci/$slot/class"
     done
 }
 
@@ -60,4 +61,16 @@ run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" \
 run_case 1 '#dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" \
     0000:01:00.0=12d8:2404/0x060400 0000:03:00.0=1106:3483/0x0c0330 \
     0000:04:00.0=8086:272b/0x028000 0000:05:00.0=8086:272b/0x028000
+# Commented overlay is uncommented, not duplicated
+run_case 1 'dtoverlay=pcie-32bit-dma' $'[cm4]\n#dtoverlay=pcie-32bit-dma\n[all]' "$root" \
+    0000:01:00.0=14c3:0608/0x028000
+[ "$(grep -c 'dtoverlay=pcie-32bit-dma' "$CONFIG_FILE")" -eq 1 ]
+# One matching card among others keeps the overlay
+run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" \
+    0000:04:00.0=8086:272b/0x028000 0000:05:00.0=14c3:0608/0x028000
+# A device without a class file is ignored, alone or next to a real card
+run_case 0 'dtoverlay=pcie-32bit-dma' "$enabled_config" "$root" 0000:01:00.0=14c3:0608
+[ "$(cat "$CONFIG_FILE")" = "$enabled_config" ]
+run_case 1 'dtoverlay=pcie-32bit-dma' "$base_config" "$root" \
+    0000:01:00.0=8086:272b 0000:02:00.0=17cb:1107/0x028000
 echo "pcie-32bit-dma tests passed"
