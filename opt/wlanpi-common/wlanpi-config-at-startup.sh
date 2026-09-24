@@ -75,20 +75,25 @@ usb_device_count() {
 # DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
 # IDs come from sysfs: lspci (pciutils) is not a dependency of this package.
 configure_pcie_32bit_dma() {
-    local dev wifi=""
+    local dev ids="" network=0 match=0
     for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
-        case "$(cat "$dev/class" 2>/dev/null)" in
-            0x0280*) wifi="$wifi $(cut -c3- "$dev/vendor"):$(cut -c3- "$dev/device")" ;;
-        esac
+        [ -r "$dev/vendor" ] || continue
+        # IDs are matched on every device, as lspci -nn was; the class only
+        # tells whether any network card is on the bus (the Pro's switch and
+        # USB controller are not).
+        ids="$ids $(cut -c3- "$dev/vendor" 2>/dev/null):$(cut -c3- "$dev/device" 2>/dev/null)"
+        case "$(cat "$dev/class" 2>/dev/null)" in 0x02*) network=1 ;; esac
     done
-    # An empty slot and a fitted card whose PCIe link failed look the same, and
-    # neither needs the overlay changed. Toggling it here only added a reboot.
-    # A card that stopped linking needs a power cycle; a reboot keeps it powered.
-    if [ -z "$wifi" ]; then
-        log_reason "no PCIe Wi-Fi adapter found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it"
+    echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107" && match=1
+    if [ "$match" -eq 0 ] && [ "$network" -eq 0 ]; then
+        # An empty slot and a fitted card whose PCIe link failed look the same,
+        # and neither needs the overlay changed; toggling it only added a
+        # reboot. A card that stopped linking needs a power cycle, since a
+        # reboot keeps it powered.
+        log_reason "no PCIe network adapter found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it"
         return
     fi
-    if echo "$wifi" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+    if [ "$match" -eq 1 ]; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
             if sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
