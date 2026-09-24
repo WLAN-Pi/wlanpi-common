@@ -30,6 +30,7 @@ REGDOMAIN_MODPROBE_FILE="/etc/modprobe.d/wlanpi-regdomain.conf"
 HOTSPOT_FILE="/etc/wlanpi-hotspot/conf/hostapd.conf"
 WCONSOLE_FILE="/etc/wlanpi-wconsole/conf/hostapd.conf"
 SERVER_FILE="/etc/wlanpi-server/conf/hostapd.conf"
+PROFILER_UNIT="wlanpi-profiler"
 VERSION=0.2.0
 DOMAIN=$2
 # $3 may be --no-prompt (FPMS, wlanpi-core); still accepted, nothing prompts now.
@@ -175,6 +176,18 @@ set_domain () {
     update_hostapd_country "$HOTSPOT_FILE" "Hotspot mode"
     update_hostapd_country "$WCONSOLE_FILE" "Wi-Fi Console mode"
     update_hostapd_country "$SERVER_FILE" "Server mode"
+
+    # The profiler reads the domain once at start to build its hostapd config,
+    # so restart it if it is running. wpa_supplicant follows regulatory change
+    # events by itself and needs no restart. --no-block returns at once, so
+    # FPMS, wlanpi-core and the webui aren't held up for the ~10 s restart.
+    # ponytail: only the systemd unit; a profiler started by wlanpi-core's
+    # /profiler/start or by hand keeps the old domain until it is restarted.
+    if systemctl is-active --quiet "$PROFILER_UNIT" 2>/dev/null; then
+        echo "Restarting the profiler to apply the new domain"
+        systemctl try-restart --no-block "$PROFILER_UNIT" ||
+            err_report "Could not restart $PROFILER_UNIT; restart it to apply $DOMAIN"
+    fi
 
     if ! grep -q "classic" /etc/wlanpi-state; then
         echo "Please switch your WLAN Pi to the Classic mode for the Hotspot and Wi-Fi Console new country code to take effect."
