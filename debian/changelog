@@ -1,3 +1,28 @@
+wlanpi-common (1.1.60) unstable; urgency=medium
+
+  * Stop toggling pcie-32bit-dma when no PCIe card is on the bus. An
+    empty M.2 slot, or a card whose PCIe link failed until power was
+    removed, used to disable the overlay and reboot, and then re-enable
+    it and reboot again (#118).
+  * Read PCIe IDs from sysfs instead of lspci. pciutils is not a
+    dependency, and without it every card looked unmatched, so the
+    overlay was switched off even for cards that need it (#118).
+  * Ship behaviour, parity and on-device boot tests for pcie-32bit-dma
+    under /opt/wlanpi-common/tests. The device test reboots the device;
+    it warns and waits 10 seconds for Ctrl-C first (#118).
+  * wlanpi-reg-domain set no longer asks to reboot. The domain already
+    applies immediately. A profiler running as the wlanpi-profiler
+    service is restarted so it picks up the new country code; one started
+    through wlanpi-core or by hand keeps the old code until restarted
+    (#117).
+  * Show only real nameserver lines in the eth0 IP config. The resolver
+    comment NetworkManager adds after a third DNS server no longer
+    appears as a DNS entry in FPMS, the webui and the API (#116).
+  * The reachability check no longer tests a commented-out nameserver
+    line as the primary DNS, and handles tab-separated entries (#116).
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 25 Sep 2026 03:29:02 -0400
+
 wlanpi-common (1.1.59) unstable; urgency=medium
 
   * Advertise _http._tcp on port 80 again, alongside _https._tcp on
