@@ -68,16 +68,23 @@ done
 
 mkdir -p "$T/fake" "$T/none"
 printf '#!/bin/sh\ncat "%s"\n' "$T/lspci.out" > "$T/fake/lspci"
-printf '#!/bin/sh\necho "lspci: command not found" >&2\nexit 127\n' > "$T/none/lspci"
-chmod +x "$T/fake/lspci" "$T/none/lspci"
+chmod +x "$T/fake/lspci"
+# A PATH with every command except lspci, so it is really absent
+IFS=: read -r -a dirs <<< "$PATH"
+for d in "${dirs[@]}"; do
+    for f in "$d"/*; do
+        [ "${f##*/}" = lspci ] || [ -e "$T/none/${f##*/}" ] || ln -s "$f" "$T/none/" 2> /dev/null
+    done
+done
+[ ! -e "$T/none/lspci" ] && [ -e "$T/none/sed" ] || die "could not build a PATH without lspci"
 
-# run FN OUT BIN: FN's configure_pcie_32bit_dma on a copy of start.txt, with
-# BIN (if set) first in PATH; prints "exit-code reboot-flag"
+# run FN OUT PATH: FN's configure_pcie_32bit_dma on a copy of start.txt with
+# the given PATH; prints "exit-code reboot-flag"
 run() {
     cp "$T/start.txt" "$T/$2"
     (
         set -e
-        [ -z "$3" ] || PATH="$3:$PATH"
+        PATH=$3
         CONFIG_FILE="$T/$2" PCI_DEVICES_DIR=$PCI REQUIRES_REBOOT=0
         export CONFIG_FILE PCI_DEVICES_DIR REQUIRES_REBOOT
         debugger() { :; }
@@ -123,13 +130,13 @@ facts() {
 
 n=0 fails=0 identical=0
 declare -A why
-# check LABEL: one case for BOARD, DEVS, PCI, LSPCI_BIN and start.txt
+# check LABEL: one case for BOARD, DEVS, PCI, WITH_LSPCI (a PATH) and start.txt
 check() {
     local s p c c2 bad="" reason=""
     n=$((n + 1))
-    s=$(run shipped out.s "$LSPCI_BIN")
-    p=$(run previous out.p "$LSPCI_BIN")
-    c=$(run candidate out.c "$LSPCI_BIN")
+    s=$(run shipped out.s "$WITH_LSPCI")
+    p=$(run previous out.p "$WITH_LSPCI")
+    c=$(run candidate out.c "$WITH_LSPCI")
     c2=$(run candidate out.c2 "$T/none")
     facts
     same "$c" "$c2" out.c out.c2 || bad="$bad I2"
@@ -162,7 +169,7 @@ check() {
 
 if [ "${1:-}" = --live ]; then
     [ "$(id -u)" -eq 0 ] || die "--live needs root: wlanpi-model reads i2c to tell the M4+"
-    LIVE=1 PCI=/sys/bus/pci/devices LSPCI_BIN=""
+    LIVE=1 PCI=/sys/bus/pci/devices WITH_LSPCI=$PATH
     BOARD=$(wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs)
     DEVS=()
     for d in "$PCI"/*; do
@@ -190,7 +197,7 @@ if [ "${1:-}" = --live ]; then
         check "$CV"
     done
 else
-    PCI=$T/pci LSPCI_BIN=$T/fake
+    PCI=$T/pci WITH_LSPCI=$T/fake:$PATH
     conf() {
         local pre='arm_64bit=1\n\n[pi4]\nkernel=wlanpi-kernel8.img\n\n' post='otg_mode=0\ndtoverlay=dwc2,dr_mode=otg\n\n[pi5]\nkernel=wlanpi-kernel8.img\n\n[all]\n'
         local c='# Allows PCIe adapters with 32-bit DMA masks to work\n'
@@ -205,6 +212,8 @@ else
             in-all) printf "${pre}[cm4]\n${post}dtoverlay=pcie-32bit-dma\n" ;;
             no-cm4) printf "${pre}otg_mode=0\n\n[all]\n" ;;
             no-cm4-on) printf "${pre}[all]\ndtoverlay=pcie-32bit-dma\n" ;;
+            params) printf "${pre}[cm4]\ndtoverlay=pcie-32bit-dma,foo\n${post}" ;;
+            last-no-eol) printf "${pre}[all]\n[cm4]\ndtoverlay=pcie-32bit-dma" ;;
         esac
     }
     bus() {
@@ -227,25 +236,32 @@ else
     root="0000:00:00.0=14e4:2711/0x060400"
     # Pro: PCIe switch and onboard VL805, as on the hardware; cards at 04 and 05
     pro="$root 0000:01:00.0=12d8:2404/0x060400 0000:02:01.0=12d8:2404/0x060400 0000:02:02.0=12d8:2404/0x060400 0000:02:03.0=12d8:2404/0x060400 0000:03:00.0=1106:3483/0x0c0330"
-    sets=("")
+    # Buses: none at all; the root port or the Pro tree with 0, 1 or 2 cards
+    # from the pool; and a few shapes the pool does not cover
+    buses=("")
+    extras=("")
     for ((i = 0; i < ${#pool[@]}; i++)); do
-        sets+=("${pool[i]}")
-        for ((j = i; j < ${#pool[@]}; j++)); do sets+=("${pool[i]} ${pool[j]}"); done
+        extras+=("${pool[i]}")
+        for ((j = i; j < ${#pool[@]}; j++)); do extras+=("${pool[i]} ${pool[j]}"); done
     done
-    for base in none root pro; do
-        for extra in "${sets[@]}"; do
-            [ $base = none ] && [ -n "$extra" ] && continue
-            DEVS=()
-            # shellcheck disable=SC2206 # device lists split on spaces
-            case $base in root) DEVS=($root) ;; pro) DEVS=($pro) ;; esac
-            k=4
-            for x in $extra; do DEVS+=("0000:0$k:00.0=$x"); k=$((k + 1)); done
-            bus "${DEVS[@]}"
-            for BOARD in "Mcuzone M4" "Mcuzone M4+" "WLAN Pi Pro"; do
-                for CV in absent on off dup indent indent-off off-and-on in-all no-cm4 no-cm4-on; do
-                    conf "$CV" > "$T/start.txt"
-                    check "$CV"
-                done
+    for base in "$root" "$pro"; do
+        for extra in "${extras[@]}"; do
+            b=$base k=4
+            for x in $extra; do b="$b 0000:0$k:00.0=$x"; k=$((k + 1)); done
+            buses+=("$b")
+        done
+    done
+    buses+=("0001:00:00.0=14e4:2711/0x060400 0001:01:00.0=14c3:0608/0x028000"
+        "$root 0000:04:00.0=8086:272b/0x028000 0000:05:00.0=10ec:8125/0x020000 0000:06:00.0=14c3:0616/0x028000"
+        "$root 0000:04:00.0=8086:272b/0x028000 0000:05:00.0=10ec:8125/0x020000 0000:06:00.0=144d:a808/0x010802")
+    for b in "${buses[@]}"; do
+        # shellcheck disable=SC2206 # device lists split on spaces
+        DEVS=($b)
+        bus "${DEVS[@]}"
+        for BOARD in "Mcuzone M4" "Mcuzone M4+" "WLAN Pi Pro"; do
+            for CV in absent on off dup indent indent-off off-and-on in-all no-cm4 no-cm4-on params last-no-eol; do
+                conf "$CV" > "$T/start.txt"
+                check "$CV"
             done
         done
     done
