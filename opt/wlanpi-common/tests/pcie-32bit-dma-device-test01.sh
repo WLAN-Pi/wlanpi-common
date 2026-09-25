@@ -13,7 +13,8 @@
 # password, sent on stdin. SCRIPT must define configure_pcie_32bit_dma.
 #
 # Disruptive: installs SCRIPT over the packaged script, edits config.txt and
-# reboots. The first run backs both up to /root/pcie-dma-test, installs a
+# reboots; it prints a warning and waits 10 seconds for Ctrl-C first. The
+# first run backs both up to /root/pcie-dma-test, installs a
 # guard unit that restores them if a state takes more than MAX_BOOTS boots
 # (a boot loop), and makes a volatile journal persistent so boots can be
 # counted. --restore puts all of it back and reboots. Do not upgrade
@@ -211,7 +212,22 @@ reboot_and_settle() {
     echo "FAIL: $HOST did not come back"; return 1
 }
 
+# Not a prompt, so unattended runs still work; the pause is the chance to cancel
+warn() {
+    cat >&2 << EOF
+
+  ************************************************************************
+  *  WARNING: this test REBOOTS $HOST, possibly several times,
+  *  and $1.
+  *  Press Ctrl-C within 10 seconds to cancel. Nothing has been changed yet.
+  ************************************************************************
+
+EOF
+    sleep 10
+}
+
 if [ "$1" = --restore ]; then
+    warn "restores its startup script and config.txt"
     remote restore && reboot_and_settle
     exit
 fi
@@ -221,6 +237,7 @@ SCRIPT=$1; shift
 for want in "$@"; do
     case $want in keep | on | off | absent) ;; *) echo "unknown state: $want"; usage ;; esac
 done
+warn "replaces its startup script and edits config.txt until --restore"
 fails=0
 for want in "$@"; do
     echo "== $HOST $(basename "$SCRIPT") from $want"
