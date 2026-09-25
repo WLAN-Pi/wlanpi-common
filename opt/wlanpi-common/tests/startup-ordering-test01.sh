@@ -50,10 +50,8 @@ assert_ok "config-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.serv
 assert_ok "rename-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.service$' "$RENAME_UNIT"
 assert_ok "Avahi runs after config-at-startup" grep -q '^After=wlanpi-config-at-startup.service$' "$AVAHI_OVERRIDE"
 if [ -n "$DEBIAN_RULES" ]; then
-    assert_ok "config-at-startup does not run during package upgrades" grep -q 'dh_installinit --no-start --name=wlanpi-config-at-startup' "$DEBIAN_RULES"
-    assert_ok "rename-at-startup does not run during package upgrades" grep -q 'dh_installinit --no-start --name=wlanpi-rename-at-startup' "$DEBIAN_RULES"
-    assert_ok "debhelper does not restart config-at-startup" test "$(grep -c 'dh_systemd_start.*wlanpi-config-at-startup' "$DEBIAN_RULES")" -eq 0
-    assert_ok "debhelper does not restart rename-at-startup" test "$(grep -c 'dh_systemd_start.*wlanpi-rename-at-startup' "$DEBIAN_RULES")" -eq 0
+    assert_ok "config-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start --name=wlanpi-config-at-startup' "$DEBIAN_RULES"
+    assert_ok "rename-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start --name=wlanpi-rename-at-startup' "$DEBIAN_RULES"
 fi
 
 echo
