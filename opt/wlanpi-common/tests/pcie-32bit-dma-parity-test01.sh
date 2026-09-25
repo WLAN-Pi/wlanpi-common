@@ -177,7 +177,9 @@ if [ "${1:-}" = --live ]; then
         c=$(cat "$d/class" 2>/dev/null) || c=-
         DEVS+=("${d##*/}=$(sed 's/^0x//' "$d/vendor"):$(sed 's/^0x//' "$d/device")/$c")
     done
-    cfg=${CONFIG_FILE:-/boot/firmware/config.txt}
+    # Same choice as wlanpi-config-at-startup.sh
+    if [ -d /boot/firmware ]; then cfg=/boot/firmware/config.txt; else cfg=/boot/config.txt; fi
+    cfg=${CONFIG_FILE:-$cfg}
     echo "board: $BOARD | bus: ${DEVS[*]:-empty} | config: $cfg"
     case "$BOARD" in
         "Mcuzone M4" | "Mcuzone M4+" | "WLAN Pi Pro") ;;

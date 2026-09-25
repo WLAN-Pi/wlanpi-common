@@ -83,6 +83,7 @@ dev_prep() { # SCRIPT STATE
         systemctl daemon-reload && systemctl enable -q "$GUARD" || { echo "FAIL: could not install $GUARD"; return 1; }
     echo 0 > "$B/boots"
     if [ ! -e "$B/journal" ] && [ "$(systemd-analyze cat-config systemd/journald.conf | grep '^Storage=' | tail -1)" != Storage=persistent ]; then
+        [ ! -e "$DROPIN" ] || { echo "FAIL: $DROPIN already exists"; return 1; }
         if [ -d "/var/log/journal/$(cat /etc/machine-id)" ]; then echo existed > "$B/journal"; else echo added > "$B/journal"; fi
         mkdir -p "${DROPIN%/*}" && printf '[Journal]\nStorage=persistent\n' > "$DROPIN" &&
             systemctl restart systemd-journald && journalctl --flush || { echo "FAIL: could not make the journal persistent"; return 1; }
@@ -136,7 +137,8 @@ dev_check() {
     ok [ "$(systemctl show wlanpi-config-at-startup -p Result --value)" = success ]
     while read -r s; do systemctl is-active -q "$s" || down="$down $s"; done < "$B/active"
     label="active before the test, still active: $(tr '\n' ' ' < "$B/active")${down:+(down:$down)}"; ok [ -z "$down" ]
-    new=$(comm -13 "$B/failed" <(failed_units) | grep -vx "$GUARD" | tr '\n' ' ')
+    label="$GUARD: $(systemctl show "$GUARD" -p Result --value)"; ok [ "$(systemctl show "$GUARD" -p Result --value)" = success ]
+    new=$(comm -13 "$B/failed" <(failed_units) | tr '\n' ' ')
     label="no newly failed units ${new:+($new)}"; ok [ -z "$new" ]
     echo "  info: wifi ifaces=$(/usr/sbin/iw dev 2>/dev/null | grep -c Interface)"
     [ "$fails" -eq 0 ]
@@ -148,13 +150,12 @@ dev_restore() {
     cp -a "$B/startup.sh" "$S" && cmp -s "$B/startup.sh" "$S" || { echo "FAIL: could not restore $S; backup kept in $B"; return 1; }
     put_config "$B/config.txt" && cmp -s "$B/config.txt" "$C" || { echo "FAIL: could not restore $C; backup kept in $B"; return 1; }
     systemctl disable -q "$GUARD" 2> /dev/null
-    rm -f "/etc/systemd/system/$GUARD"
-    systemctl daemon-reload
+    rm -f "/etc/systemd/system/$GUARD" && systemctl daemon-reload || { echo "FAIL: could not remove $GUARD; backup kept in $B"; return 1; }
     if [ -e "$B/journal" ]; then
-        rm -f "$DROPIN"
-        rmdir --ignore-fail-on-non-empty "${DROPIN%/*}" 2> /dev/null
-        systemctl restart systemd-journald
-        [ "$(cat "$B/journal")" = existed ] || rm -rf "/var/log/journal/$(cat /etc/machine-id)"
+        # Remove the journal files first, so the restarted journald does not reopen them
+        rm -f "$DROPIN" && rmdir --ignore-fail-on-non-empty "${DROPIN%/*}" &&
+            { [ "$(cat "$B/journal")" = existed ] || rm -rf "/var/log/journal/$(cat /etc/machine-id)"; } &&
+            systemctl restart systemd-journald || { echo "FAIL: could not restore journald; backup kept in $B"; return 1; }
     fi
     rm -rf "$B"
     echo "restored startup script and config.txt"
@@ -194,8 +195,9 @@ sh_() { "${SSH_CMD[@]}" -o ConnectTimeout=5 -- "$HOST" "$@"; }
 remote() {
     local d
     d=$(sh_ 'mktemp -d') && [ -n "$d" ] || return 1
-    sh_ "cat > '$d/test.sh'" < "$0" || return 1
-    [ -z "${SCRIPT:-}" ] || sh_ "cat > '$d/candidate.sh'" < "$SCRIPT" || return 1
+    if ! { sh_ "cat > '$d/test.sh'" < "$0" && { [ -z "${SCRIPT:-}" ] || sh_ "cat > '$d/candidate.sh'" < "$SCRIPT"; }; }; then
+        sh_ "rm -rf '$d'"; return 1
+    fi
     sh_ "sudo -S -p '' bash '$d/test.sh' --device ${*//@D@/$d}; rc=\$?; rm -rf '$d'; exit \$rc" <<< "${SUDO_PASS:-}"
 }
 reboot_and_settle() {
