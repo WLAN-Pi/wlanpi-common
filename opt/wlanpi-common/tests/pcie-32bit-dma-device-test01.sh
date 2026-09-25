@@ -17,14 +17,14 @@
 # first run backs both up to /root/pcie-dma-test, installs a
 # guard unit that restores them if a state takes more than MAX_BOOTS boots
 # (a boot loop), and makes a volatile journal persistent so boots can be
-# counted. --restore puts all of it back and reboots. Do not upgrade
-# wlanpi-common in between: --restore would put back the older script.
+# counted. --restore puts all of it back and reboots. Run --restore before
+# upgrading wlanpi-common: restoring puts back the older startup script.
 #
 # For each state, once the device has been up SETTLE seconds (default 75):
 #   - boots taken = 1 + the reboot the function predicted, and the last boot
 #     asked for no reboot
 #   - the overlay ends in the predicted state
-#   - config.txt changed only in pcie-32bit-dma and blank lines; board unchanged
+#   - config.txt changed only in the managed [cm4] lines (below); board unchanged
 #   - wlanpi-config-at-startup succeeded; services active before the test are
 #     active; no newly failed units
 set -u
@@ -37,6 +37,10 @@ GUARD=pcie-dma-test-guard.service
 MAX_BOOTS=4
 SERVICES="wlanpi-core wlanpi-fpms wlanpi-webui"
 ins='# Allows PCIe adapters with 32-bit DMA masks to work\n'
+# The lines the startup script manages, and the only ones this test edits or
+# lets change, inside [cm4]: the overlay, active or commented, and the
+# comment inserted with it (current or legacy text)
+MANAGED='^[[:space:]]*#?dtoverlay=pcie-32bit-dma[[:space:]]*$|^# Allows (PCIe adapters with 32-bit DMA masks to work|MT7921K adapter to work with 64-bit kernel)$'
 
 # ---- device side, run as root ----
 board() { wlanpi-model | grep "Main board:" | cut -d ":" -f2 | xargs; }
@@ -50,18 +54,32 @@ state() {
     else echo absent
     fi
 }
-without_overlay() { grep -v 'pcie-32bit-dma\|Allows .* to work' "$1"; }
-# The enable path inserts a blank line with the overlay
-significant() { without_overlay "$1" | grep -v '^[[:space:]]*$'; }
+# FILE without the managed [cm4] lines, and without the blank line the
+# startup script inserts after the overlay; everything else byte for byte
+unmanaged() {
+    awk -v re="$MANAGED" '
+        /^\[/ { s = ($0 == "[cm4]") }
+        s && $0 ~ re { drop = 1; next }
+        drop && /^[[:space:]]*$/ { drop = 0; next }
+        { drop = 0; print }' "$1"
+}
 failed_units() { systemctl --failed --no-legend --plain | awk '{print $1}' | sort; }
 active_services() {
     local s
     for s in $SERVICES; do systemctl is-active -q "$s" && echo "$s"; done
     return 0
 }
-# Replace config.txt from a file, via a temporary file on the same filesystem
-put_config() {
-    [ -s "$1" ] && cp "$1" "$C.pcie-dma-test" && mv -f "$C.pcie-dma-test" "$C" && sync
+# Replace DEST with SRC through a verified temporary file next to it, so an
+# interrupt leaves the old file or the new one, never a partial one. MODE is
+# optional: the vfat boot partition takes none.
+put_file() { # SRC DEST [MODE]
+    local tmp="$2.pcie-dma-test"
+    if [ -s "$1" ] && cp "$1" "$tmp" && { [ -z "${3:-}" ] || chmod "$3" "$tmp"; } &&
+        cmp -s "$1" "$tmp" && mv -f "$tmp" "$2" && sync; then
+        return 0
+    fi
+    rm -f "$tmp"
+    return 1
 }
 
 dev_prep() { # SCRIPT STATE
@@ -89,15 +107,15 @@ dev_prep() { # SCRIPT STATE
         mkdir -p "${DROPIN%/*}" && printf '[Journal]\nStorage=persistent\n' > "$DROPIN" &&
             systemctl restart systemd-journald && journalctl --flush || { echo "FAIL: could not make the journal persistent"; return 1; }
     fi
-    install -m755 "$script" "$S" && cmp -s "$script" "$S" || { echo "FAIL: could not install $script"; return 1; }
+    put_file "$script" "$S" 755 || { echo "FAIL: could not install $script"; return 1; }
     case $want in
         keep) cp "$C" "$B/want.txt" ;;
-        absent) without_overlay "$B/config.txt" > "$B/want.txt" ;;
-        on) without_overlay "$B/config.txt" | sed "s/^\[cm4\]$/&\n${ins}dtoverlay=pcie-32bit-dma/" > "$B/want.txt" ;;
-        off) without_overlay "$B/config.txt" | sed "s/^\[cm4\]$/&\n${ins}#dtoverlay=pcie-32bit-dma/" > "$B/want.txt" ;;
+        absent) unmanaged "$B/config.txt" > "$B/want.txt" ;;
+        on) unmanaged "$B/config.txt" | sed "s/^\[cm4\]$/&\n${ins}dtoverlay=pcie-32bit-dma/" > "$B/want.txt" ;;
+        off) unmanaged "$B/config.txt" | sed "s/^\[cm4\]$/&\n${ins}#dtoverlay=pcie-32bit-dma/" > "$B/want.txt" ;;
     esac
     [ "$want" = keep ] || [ "$(state "$B/want.txt")" = "$want" ] || { echo "FAIL: could not build start state $want"; return 1; }
-    put_config "$B/want.txt" && cmp -s "$B/want.txt" "$C" || { echo "FAIL: could not write $C"; return 1; }
+    put_file "$B/want.txt" "$C" || { echo "FAIL: could not write $C"; return 1; }
     cp "$C" "$B/start.txt"
     board > "$B/board"
     # What the installed function does on this bus with this config.txt
@@ -132,7 +150,7 @@ dev_check() {
     label="boots: $n, predicted $((1 + pr))"; ok [ "$n" -eq $((1 + pr)) ]
     label="last boot asked for no reboot"; ok [ "$last" -eq 0 ]
     label="overlay: $(state "$C"), predicted $ps"; ok [ "$(state "$C")" = "$ps" ]
-    label="config.txt changed only in pcie-32bit-dma and blank lines"; ok cmp -s <(significant "$B/start.txt") <(significant "$C")
+    label="config.txt changed only in the managed [cm4] lines"; ok cmp -s <(unmanaged "$B/start.txt") <(unmanaged "$C")
     label="board: $(board)"; ok [ "$(board)" = "$(cat "$B/board")" ]
     label="wlanpi-config-at-startup: $(systemctl show wlanpi-config-at-startup -p Result --value)"
     ok [ "$(systemctl show wlanpi-config-at-startup -p Result --value)" = success ]
@@ -145,21 +163,22 @@ dev_check() {
     [ "$fails" -eq 0 ]
 }
 
-# Everything or nothing: the backup is kept unless both files are back
+# Everything or nothing: the backup is kept unless every step succeeds, and
+# every step is safe to repeat, so a failed restore can be run again
 dev_restore() {
     [ -d "$B" ] || { echo "nothing to restore"; return 0; }
-    cp -a "$B/startup.sh" "$S" && cmp -s "$B/startup.sh" "$S" || { echo "FAIL: could not restore $S; backup kept in $B"; return 1; }
-    put_config "$B/config.txt" && cmp -s "$B/config.txt" "$C" || { echo "FAIL: could not restore $C; backup kept in $B"; return 1; }
+    put_file "$B/startup.sh" "$S" "$(stat -c %a "$B/startup.sh")" || { echo "FAIL: could not restore $S; backup kept in $B"; return 1; }
+    put_file "$B/config.txt" "$C" || { echo "FAIL: could not restore $C; backup kept in $B"; return 1; }
     systemctl disable -q "$GUARD" 2> /dev/null
     rm -f "/etc/systemd/system/$GUARD" && systemctl daemon-reload || { echo "FAIL: could not remove $GUARD; backup kept in $B"; return 1; }
     if [ -e "$B/journal" ]; then
         # Remove the journal files first, so the restarted journald does not reopen them
-        rm -f "$DROPIN" && rmdir --ignore-fail-on-non-empty "${DROPIN%/*}" &&
+        rm -f "$DROPIN" && { [ ! -d "${DROPIN%/*}" ] || rmdir --ignore-fail-on-non-empty "${DROPIN%/*}"; } &&
             { [ "$(cat "$B/journal")" = existed ] || rm -rf "/var/log/journal/$(cat /etc/machine-id)"; } &&
             systemctl restart systemd-journald || { echo "FAIL: could not restore journald; backup kept in $B"; return 1; }
     fi
     rm -rf "$B"
-    echo "restored startup script and config.txt"
+    echo "restore complete"
 }
 
 # Runs before wlanpi-config-at-startup on every boot while the test is set up
@@ -214,12 +233,14 @@ reboot_and_settle() {
 
 # Not a prompt, so unattended runs still work; the pause is the chance to cancel
 warn() {
+    local extra=""
+    [ -z "${2:-}" ] || extra="  *  $2"$'\n'
     cat >&2 << EOF
 
   ************************************************************************
   *  WARNING: this test REBOOTS $HOST, possibly several times,
   *  and $1.
-  *  Press Ctrl-C within 10 seconds to cancel. Nothing has been changed yet.
+${extra}  *  Press Ctrl-C within 10 seconds to cancel. Nothing has been changed yet.
   ************************************************************************
 
 EOF
@@ -237,7 +258,8 @@ SCRIPT=$1; shift
 for want in "$@"; do
     case $want in keep | on | off | absent) ;; *) echo "unknown state: $want"; usage ;; esac
 done
-warn "replaces its startup script and edits config.txt until --restore"
+warn "replaces its startup script and edits config.txt until --restore" \
+    "Run --restore before upgrading wlanpi-common."
 fails=0
 for want in "$@"; do
     echo "== $HOST $(basename "$SCRIPT") from $want"

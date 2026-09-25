@@ -11,7 +11,8 @@
 # /sys/bus/pci/devices tree and a fake `lspci -nn` built from one device list.
 # The function runs under `set -e`, as it does at boot. Cases tagged [changed]
 # are where the sysfs version intentionally differs from the lspci one
-# (1.1.59); run against that version, exactly those fail.
+# (1.1.59); run against that version, exactly those fail. Cases run with
+# LOGS=1 must log the no-card reason exactly once; all others log nothing.
 set -u
 
 SCRIPT=${1:-"$(dirname "$0")/../wlanpi-config-at-startup.sh"}
@@ -105,11 +106,12 @@ state() {
 fails=0
 # check NAME OVERLAY LSPCI WANT_REBOOT WANT_STATE DEVICE...
 check() {
-    local name=$1 overlay=$2 lspci=$3 want_reboot=$4 want_state=$5 got_reboot got_state rc note=""
+    local name=$1 overlay=$2 lspci=$3 want_reboot=$4 want_state=$5 got_reboot got_state rc note="" logs=0
     shift 5
     hardware "$lspci" "$@"
     config "$overlay" > "$TMP/config.txt"
     cp "$TMP/config.txt" "$TMP/before.txt"
+    rm -f "$TMP/log"
     got_reboot=$(
         set -e
         PATH="$TMP/bin:$PATH"
@@ -120,7 +122,8 @@ check() {
         case " $* " in *=12d8:2404/*) BOARD="WLAN Pi Pro" ;; *) BOARD="Mcuzone M4" ;; esac
         export CONFIG_FILE PCI_DEVICES_DIR REQUIRES_REBOOT BOARD
         debugger() { :; }
-        log_reason() { return 1; } # logger can fail early in boot; must not abort
+        # logger can fail early in boot; must not abort
+        log_reason() { echo "$1" >> "$TMP/log"; return 1; }
         # shellcheck source=/dev/null
         source "$TMP/function.sh"
         configure_pcie_32bit_dma
@@ -131,12 +134,15 @@ check() {
     rc=$?
     [ "$rc" -eq 0 ] || got_reboot="aborted(rc=$rc)"
     got_state=$(state "$TMP/config.txt")
+    [ -f "$TMP/log" ] && logs=$(grep -c . "$TMP/log")
     # Nothing outside [cm4] may change; a no-op must leave the file untouched.
     if ! diff -q <(awk '/^\[/{s=($0=="[cm4]")} !s' "$TMP/before.txt") \
         <(awk '/^\[/{s=($0=="[cm4]")} !s' "$TMP/config.txt") >/dev/null; then
         note=" (changed outside [cm4])"
     elif [ "$got_reboot" = 0 ] && ! cmp -s "$TMP/before.txt" "$TMP/config.txt"; then
         note=" (file changed without a reboot)"
+    elif [ "$logs" -ne "${LOGS:-0}" ] || { [ "$logs" -eq 1 ] && ! grep -q '^no PCIe card found' "$TMP/log"; }; then
+        note=" (logged $logs reason(s): $(cat "$TMP/log" 2> /dev/null | tr '\n' ';'), want ${LOGS:-0} no-card reason)"
     fi
     if [ "$got_reboot" = "$want_reboot" ] && [ "$got_state" = "$want_state" ] && [ -z "$note" ]; then
         printf 'PASS  %-52s reboot=%s overlay=%s\n' "$name" "$got_reboot" "$got_state"
@@ -174,19 +180,19 @@ check "unlisted NIC (0x0200), overlay on"         on     yes 1 off    $root 0000
 check "NVMe (0x0108), overlay on"                 on     yes 1 off    $root 0000:01:00.0=144d:a808/0x010802
 check "listed ID without class file, absent"      absent yes 1 on     $root 0000:01:00.0=17cb:1107
 check "unlisted ID without class file, on"        on     yes 1 off    $root 0000:01:00.0=10ec:8125
-check "M.2 empty or link down, overlay on [changed]" on  yes 0 on     $root
-check "M.2 empty or link down, overlay commented" off    yes 0 off    $root
-check "M.2 empty or link down, overlay absent"    absent yes 0 absent $root
-check "Pro, no radio cards, overlay on [changed]" on     yes 0 on     $pro
+LOGS=1 check "M.2 empty or link down, overlay on [changed]" on  yes 0 on     $root
+LOGS=1 check "M.2 empty, overlay commented [changed]" off  yes 0 off    $root
+LOGS=1 check "M.2 empty, overlay absent [changed]"    absent yes 0 absent $root
+LOGS=1 check "Pro, no radio cards, overlay on [changed]" on     yes 0 on     $pro
 check "no lspci, M4 WCN785x, overlay on [changed]" on    no  0 on     $root 0000:01:00.0=$qca
 check "no lspci, M4 WCN785x, absent [changed]"    absent no  1 on     $root 0000:01:00.0=$qca
 check "no lspci, M4+ BE200, overlay on"           on     no  1 off    $root 0000:01:00.0=$be200
 check "PCIe USB card in M4 (0x0c03), overlay on"  on     yes 1 off    $root 0000:01:00.0=1912:0014/0x0c0330
 check "VL805 USB card in M4, overlay on"          on     yes 1 off    $root 0000:01:00.0=1106:3483/0x0c0330
 check "Pro BE200 x2 + onboard VL805 only, on"     on     yes 1 off    $pro 0000:04:00.0=$be200 0000:05:00.0=$be200
-check "WCN785x vendor file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!vendor"
-check "WCN785x device file unreadable, on"        on     yes 0 on     $root "0000:01:00.0=$qca!device"
-check "no PCI devices at all, overlay on [changed]" on   yes 0 on
+LOGS=1 check "WCN785x vendor unreadable, on [changed]"  on     yes 0 on     $root "0000:01:00.0=$qca!vendor"
+LOGS=1 check "WCN785x device unreadable, on [changed]"  on     yes 0 on     $root "0000:01:00.0=$qca!device"
+LOGS=1 check "no PCI devices at all, overlay on [changed]" on   yes 0 on
 }
 
 [ "$fails" -eq 0 ] && echo "pcie-32bit-dma: all cases passed ($SCRIPT)" || echo "pcie-32bit-dma: $fails case(s) failed ($SCRIPT)"
