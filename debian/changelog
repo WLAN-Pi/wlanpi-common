@@ -1,3 +1,16 @@
+wlanpi-common (1.1.61) unstable; urgency=medium
+
+  * Stop renaming the Intel BE200 v92 firmware
+    (iwlwifi-gl-c0-fm-c0-92.ucode) at boot. The trixie kernels load
+    c102-c106 for the BE200 and never ask for v92, so the udev rule did
+    nothing except make `dpkg --verify` report wlanpi-linux-firmware as
+    modified. Upgrading removes the rule and puts the firmware file back
+    (#129).
+  * Remove the wlanpi-iwlwifi-ucode-92 command, which only managed that
+    rule (#129).
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Fri, 25 Sep 2026 11:32:31 -0400
+
 wlanpi-common (1.1.60) unstable; urgency=medium
 
   * Stop toggling pcie-32bit-dma when no PCIe card is on the bus. An
