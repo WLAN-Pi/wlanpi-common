@@ -6,6 +6,10 @@ set -eu
 [ "$(grep -c '^# BEGIN iwlwifi v92 cleanup$' debian/postinst)" = 1 ] &&
     [ "$(grep -c '^# END iwlwifi v92 cleanup$' debian/postinst)" = 1 ] ||
     { echo "FAIL: v92 cleanup markers missing or repeated in debian/postinst"; exit 1; }
+# The cleanup must run before postinst reloads udev rules, or udevd keeps the old rule.
+awk '/^# END iwlwifi v92 cleanup$/ {e = NR} /udevadm control --reload-rules/ {r = NR; exit}
+     END {exit !(e && r && e < r)}' debian/postinst ||
+    { echo "FAIL: v92 cleanup must come before udevadm control --reload-rules"; exit 1; }
 block=$(sed -n '/^# BEGIN iwlwifi v92 cleanup$/,/^# END iwlwifi v92 cleanup$/p' debian/postinst)
 ! grep -q 'RUN+=.*92.ucode.disabled' debian/postinst
 ! grep -q 'ucode-92' debian/wlanpi-common.links
