@@ -40,17 +40,16 @@ if ! ischroot; then
     fi
 fi
 
-# Install udev rule to disable iwlwifi ucode 92 at boot
-echo "Installing udev rule to disable iwlwifi ucode 92 at boot..."
-
-UDEV_RULE_FILE="/etc/udev/rules.d/50-iwlwifi-disable-v92.rules"
-UDEV_RULE_CONTENT='# Disable iwlwifi v92 firmware at boot - Intel BE200
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x272b", RUN+="/bin/sh -c '\''test -f /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode && mv /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode /lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode.disabled'\''"'
-
-if echo "$UDEV_RULE_CONTENT" > "$UDEV_RULE_FILE"; then
-    echo "Udev rule installed. Will take effect on next boot."
-else
-    echo "Warning: Failed to create udev rule file" >&2
+# Undo the Intel BE200 v92 firmware workaround from earlier versions (#129).
+# iwlwifi on the 7.x kernels only loads c102-c106 for the BE200 and never asks
+# for v92, so the udev rule that renamed it only made dpkg --verify fail.
+V92=/lib/firmware/iwlwifi-gl-c0-fm-c0-92.ucode
+rm -f /etc/udev/rules.d/50-iwlwifi-disable-v92.rules
+if [ ! -e "$V92" ] && [ -f "$V92.disabled" ]; then
+    mv "$V92.disabled" "$V92" || echo "Warning: could not restore $V92" >&2
+fi
+if [ -e "$V92" ]; then
+    rm -f "$V92.disabled" "$V92.original"
 fi
 
 # Drop IPv6 multicast (e.g. UniFi discovery to ff02::1) without logging it,
