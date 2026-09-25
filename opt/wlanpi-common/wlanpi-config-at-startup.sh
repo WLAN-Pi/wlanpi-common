@@ -73,8 +73,37 @@ usb_device_count() {
 
 # BCM2711 needs a constrained inbound PCIe window for adapters with a 32-bit
 # DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
+# IDs come from sysfs, the same files lspci reads: pciutils is not a
+# dependency of this package, and without it every card looked unmatched.
 configure_pcie_32bit_dma() {
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+    local dev vendor device class id ids="" card=0 match=0
+    for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
+        # Each read is guarded: a device can vanish mid-loop (a failing link),
+        # and an unguarded failure would abort this set -e script.
+        vendor=$(cat "$dev/vendor" 2>/dev/null) || continue
+        device=$(cat "$dev/device" 2>/dev/null) || continue
+        class=$(cat "$dev/class" 2>/dev/null) || class=""
+        id="${vendor#0x}:${device#0x}"
+        ids="$ids $id"
+        # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard
+        # VL805 USB controller are always there; anything else is a card.
+        case "$class" in 0x0604*) continue ;; esac
+        if [ "$id" != "1106:3483" ] || [ "${BOARD:-}" != "WLAN Pi Pro" ]; then
+            card=1
+        fi
+    done
+    if echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+        match=1
+    fi
+    if [ "$match" -eq 0 ] && [ "$card" -eq 0 ]; then
+        # An empty slot and a fitted card whose PCIe link failed look the same,
+        # and neither needs the overlay changed; toggling it only added a
+        # reboot. A card that stopped linking needs a power cycle, since a
+        # reboot keeps it powered.
+        log_reason "no PCIe card found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it" || true
+        return 0
+    fi
+    if [ "$match" -eq 1 ]; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
             if sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
