@@ -1,3 +1,13 @@
+wlanpi-common (1.1.63) unstable; urgency=medium
+
+  * Simplify the shared SSH host key check added in 1.1.62. It now reads
+    only the public key files, and it moves each new private key before
+    its public key, so a failed replacement leaves the shipped key in
+    place to be found on the next upgrade. postinst passes
+    SSH_DIR=/etc/ssh explicitly.
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 29 Sep 2026 00:52:11 -0400
+
 wlanpi-common (1.1.62) unstable; urgency=medium
 
   * Replace SSH host keys that were shipped inside the published full
