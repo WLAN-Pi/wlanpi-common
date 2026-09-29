@@ -1,3 +1,15 @@
+wlanpi-common (1.1.62) unstable; urgency=medium
+
+  * Replace SSH host keys that were shipped inside the published full
+    images 26.10-dev.3, 26.10-dev.4, 26.10-dev.5, 26.10-dev.6 and
+    26.10-rc.1. Every device flashed from one of those images shared its
+    host keys. On upgrade, a device whose host keys match a shipped key
+    gets new keys and sshd is restarted; SSH clients will warn once that
+    the host key changed. Devices with their own keys are not touched
+    (#134).
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Mon, 28 Sep 2026 22:16:34 -0400
+
 wlanpi-common (1.1.61) unstable; urgency=medium
 
   * Stop renaming the Intel BE200 v92 firmware
