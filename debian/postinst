@@ -48,7 +48,7 @@ else
 fi
 
 if ! ischroot; then
-    /opt/wlanpi-common/wlanpi-rotate-shared-host-keys.sh
+    SSH_DIR=/etc/ssh /opt/wlanpi-common/wlanpi-rotate-shared-host-keys.sh
     case $? in
         10) deb-systemd-invoke try-restart ssh.service || true ;;
         0) ;;

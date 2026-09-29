@@ -31,19 +31,14 @@ SHA256:f8bQk/OmRFlI/gxBhj6gd43DJXcwAtjjK+Elp5rPP/Y
 SHA256:OLbHxeyErgAAxH+KEY3eop10kczER2BBM53ZsvZiiWw
 "
 
-has_shipped_key() {
-    local f fp
-    for f in "$SSH_DIR"/ssh_host_*_key.pub; do
-        [ -f "$f" ] || continue
-        fp=$(ssh-keygen -lf "$f" 2>/dev/null | cut -d' ' -f2)
-        if [ -n "$fp" ] && printf '%s\n' "$SHIPPED_FINGERPRINTS" | grep -qxF -- "$fp"; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-has_shipped_key || exit 0
+shipped=
+for f in "$SSH_DIR"/ssh_host_*_key.pub; do
+    fp=$(ssh-keygen -lf "$f" 2>/dev/null | cut -d' ' -f2)
+    if [ -n "$fp" ] && printf '%s\n' "$SHIPPED_FINGERPRINTS" | grep -qxF -- "$fp"; then
+        shipped=1
+    fi
+done
+[ -n "$shipped" ] || exit 0
 
 echo "SSH host keys on this device were shipped in a published image; generating new ones."
 
@@ -60,8 +55,11 @@ for type in rsa ecdsa ed25519; do
     fi
 done
 
+# The .pub goes last: detection reads it, so a failed move leaves the shipped
+# .pub behind for the next run to find.
 for type in rsa ecdsa ed25519; do
-    mv -f "$new/etc/ssh/ssh_host_${type}_key" "$new/etc/ssh/ssh_host_${type}_key.pub" "$SSH_DIR/" || {
+    { mv -f "$new/etc/ssh/ssh_host_${type}_key" "$SSH_DIR/" &&
+        mv -f "$new/etc/ssh/ssh_host_${type}_key.pub" "$SSH_DIR/"; } || {
         echo "Failed to replace $SSH_DIR/ssh_host_${type}_key" >&2
         exit 1
     }
