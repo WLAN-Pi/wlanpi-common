@@ -71,11 +71,16 @@ check "keygen fails: exit status" "$rc" 1
 check "keygen fails: keys unchanged" "$(fps)" "$before"
 check "keygen fails: no temp dir left" "$(find "$D" -name '.rotate-host-keys.*' | wc -l)" 0
 
-# Read-only /etc/ssh: nothing can be replaced, current keys stay.
-chmod 555 "$D"
-check "read-only dir: exit status" "$(run "$T/rotate.sh")" 1
-check "read-only dir: keys unchanged" "$(fps)" "$before"
-chmod 755 "$D"
+# Read-only /etc/ssh: nothing can be replaced, current keys stay. Root ignores
+# the mode, so this case only runs as a normal user.
+if [ "$(id -u)" != 0 ]; then
+    chmod 555 "$D"
+    check "read-only dir: exit status" "$(run "$T/rotate.sh")" 1
+    check "read-only dir: keys unchanged" "$(fps)" "$before"
+    chmod 755 "$D"
+else
+    echo "skip - read-only dir (running as root)"
+fi
 
 # No keys at all: nothing to do.
 rm -f "$D"/ssh_host_*
