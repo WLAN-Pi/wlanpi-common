@@ -8,6 +8,7 @@ set -eu
 S=$PWD/opt/wlanpi-common/wlanpi-rotate-shared-host-keys.sh
 FIX=$PWD/tests/fixtures/shipped-host-keys.pub
 REAL_KEYGEN=$(command -v ssh-keygen)
+REAL_MV=$(command -v mv)
 
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
@@ -17,7 +18,9 @@ check() {
     if [ "$2" = "$3" ]; then echo "ok   - $1"; else echo "FAIL - $1 (got '$2', want '$3')"; fail=1; fi
 }
 fresh() { rm -rf "$D"; mkdir -p "$D"; ssh-keygen -q -A -f "$T/"; }
-fps() { for k in rsa ecdsa ed25519; do ssh-keygen -lf "$D/ssh_host_${k}_key" | cut -d' ' -f2; done; }
+# Private key fingerprints (-lf on a private key would read its .pub instead).
+fps() { for k in rsa ecdsa ed25519; do ssh-keygen -yf "$D/ssh_host_${k}_key" | ssh-keygen -lf - | cut -d' ' -f2; done; }
+pubfp() { ssh-keygen -lf "$D/ssh_host_rsa_key.pub" | cut -d' ' -f2; }
 # run [dir]: run the script, with fake commands from dir first in PATH.
 run() { rc=0; PATH="${1:+$1:}$PATH" SSH_DIR=$D bash "$S" >/dev/null 2>&1 || rc=$?; echo "$rc"; }
 tmpdirs() { find "$D" -name '.rotate-host-keys.*' | wc -l; }
@@ -59,11 +62,22 @@ check "keygen fails: exit status" "$(run "$T/keygen")" 1
 check "keygen fails: keys unchanged" "$(fps)" "$before"
 check "keygen fails: no temp dir left" "$(tmpdirs)" 0
 
-# mv fails: exit 1 so postinst doesn't restart sshd, current keys stay.
-printf '#!/bin/sh\nexit 1\n' > "$T/mv/mv"; chmod +x "$T/mv/mv"
+# Moving a private key fails (a .pub would still move): exit 1 so postinst
+# doesn't restart sshd, and the shipped .pub stays for the next run to find.
+cat > "$T/mv/mv" <<EOF
+#!/bin/bash
+rc=0
+for src in "\${@:1:\$#-1}"; do
+    case \$src in -f) ;; *_key) rc=1 ;; *) $REAL_MV -f "\$src" "\${!#}" || rc=1 ;; esac
+done
+exit \$rc
+EOF
+chmod +x "$T/mv/mv"
 check "mv fails: exit status" "$(run "$T/mv")" 1
 check "mv fails: keys unchanged" "$(fps)" "$before"
+check "mv fails: shipped .pub kept" "$(pubfp)" "$(head -n1 "$FIX" | ssh-keygen -lf - | cut -d' ' -f2)"
 check "mv fails: no temp dir left" "$(tmpdirs)" 0
+check "mv fails: next run replaces" "$(run)" 10
 
 # No keys at all: nothing to do.
 rm -f "$D"/ssh_host_*
