@@ -62,12 +62,6 @@ log_reason() {
     debugger "$1"
 }
 
-# A reboot from here stops the first-boot units running beside this service
-# (root resize, ufw setup) mid-write. Queue it until multi-user.target is up.
-reboot_after_startup() {
-    systemd-run --no-block --property=After=multi-user.target systemctl reboot
-}
-
 # Count USB devices from sysfs instead of lsusb: lsusb reads the
 # string-descriptor attributes (e.g. /sys/bus/usb/devices/*/product) which
 # block for tens of seconds while a hub port retries enumeration. The sysfs
@@ -380,7 +374,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                     # DWC2 must be in otg mode (not host) so it can take the
                     # peripheral role selected by the M4+ hardware switch
                     sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
-                    reboot_after_startup
+                    REQUIRES_REBOOT=1
                 fi
         elif ! grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
                 log_reason "OTG mode is enabled in configuration but not working; switching to host mode and rebooting"
@@ -394,7 +388,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                 sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=otg/dtoverlay=dwc2,dr_mode=host/" $CONFIG_FILE
                 debugger "Creating force host mode file"
                 touch /etc/wlanpi-stay-in-host-mode
-                reboot_after_startup
+                REQUIRES_REBOOT=1
         fi
     else
         # More than one USB device means the hub is enumerated, so host mode
@@ -463,5 +457,7 @@ fi
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
     log_reason "Reboot required to apply configuration changes; rebooting once startup finishes"
     echo "Reboot required, rebooting once startup finishes"
-    reboot_after_startup
+    # Rebooting now would stop the first-boot units running beside this
+    # service (root resize, ufw setup) mid-write; wait for multi-user.target.
+    systemd-run --no-block --property=After=multi-user.target systemctl reboot
 fi
