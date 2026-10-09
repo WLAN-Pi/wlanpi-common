@@ -460,4 +460,7 @@ if [ "$REQUIRES_REBOOT" -gt 0 ]; then
     # Rebooting now would stop the first-boot units running beside this
     # service (root resize, ufw setup) mid-write; wait for multi-user.target.
     systemd-run --no-block --property=After=multi-user.target systemctl reboot
+    # Boot oneshots have no start timeout, so one that hangs would hold
+    # multi-user.target, and the reboot, forever. Reboot anyway after 10 min.
+    systemd-run --no-block --on-active=10min systemctl reboot
 fi

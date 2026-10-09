@@ -45,8 +45,9 @@ assert_ok "model cache uses a temporary file in /etc" grep -q 'mktemp /etc/.wlan
 assert_ok "model cache is readable by unprivileged consumers" grep -q 'chmod 0644 "$MODEL_CACHE_TMP"' "$CONFIG_SCRIPT"
 assert_ok "model cache is published atomically" test -n "$cache_line"
 assert_ok "model cache precedes reboot" test "$cache_line" -lt "$first_reboot_line"
-assert_ok "config-at-startup reboots from one place" test "$(grep -c 'reboot$' "$CONFIG_SCRIPT")" -eq 1
+assert_ok "config-at-startup reboots only from the final block" test "$(grep -c 'reboot$' "$CONFIG_SCRIPT")" -eq 2
 assert_ok "reboot waits for multi-user.target" grep -q '^[[:space:]]*systemd-run --no-block --property=After=multi-user.target systemctl reboot$' "$CONFIG_SCRIPT"
+assert_ok "reboot has a fallback if startup hangs" grep -q '^[[:space:]]*systemd-run --no-block --on-active=10min systemctl reboot$' "$CONFIG_SCRIPT"
 assert_ok "config-at-startup does not restart FPMS" test "$(grep -c 'restart wlanpi-fpms.service' "$CONFIG_SCRIPT")" -eq 0
 assert_ok "config-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.service$' "$CONFIG_UNIT"
 assert_ok "rename-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.service$' "$RENAME_UNIT"
