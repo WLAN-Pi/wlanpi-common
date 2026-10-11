@@ -142,7 +142,7 @@ dev_check() {
     for b in $boots; do
         n=$((n + 1))
         log=$(journalctl -b "$b" -u wlanpi-config-at-startup -o cat --no-pager)
-        last=0; grep -q 'rebooting now' <<< "$log" && last=1
+        last=0; grep -q 'Reboot required' <<< "$log" && last=1
         echo "  boot $n (${b:0:8}): $(grep -m1 '^Applying' <<< "$log" || echo 'no Applying line') | reboot requested: $last"
     done
     read -r pr ps < "$B/predict"
