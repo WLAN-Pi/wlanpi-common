@@ -15,7 +15,7 @@ DEBUG=0
 # Show full output by default
 BRIEF_OUTPUT=0
 
-# Brief output mode only returns the WLAN Pi model - R4, M4, M4+, Pro, Unknown platform
+# Brief output mode only returns the WLAN Pi model - R4, R5, M4, M4+, Pro, Unknown platform
 brief_output(){
     BRIEF_OUTPUT=1
 }
@@ -60,6 +60,9 @@ debugger() {
 # tested.
 USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr_mode}"
 USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
+
+# Overridable so the model branches can be tested
+CPUINFO="${CPUINFO:-/proc/cpuinfo}"
 
 usb_mode() {
     local dr_mode usb_devices
@@ -107,27 +110,36 @@ if [ "$EARLY_BOOT" -eq 1 ] && [ -s /etc/wlanpi-model ]; then
 fi
 
 # Is it Raspberry Pi 3? It isn't officially supported but let's pretend it is R4.
-if grep -q "Raspberry Pi 3 Model B Rev 1.2" /proc/cpuinfo; then
+if grep -q "Raspberry Pi 3 Model B Rev 1.2" "$CPUINFO"; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R4"
     else
         echo "Main board:           Raspberry Pi 4"
     fi
     debugger "End script now. Platform is Raspberry Pi 3 pretending to be Raspberry Pi 4."
-fi
 
 # Is it Raspberry Pi 4?
-if grep -q "Raspberry Pi 4 Model B" /proc/cpuinfo; then
+elif grep -q "Raspberry Pi 4 Model B" "$CPUINFO"; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R4"
     else
         echo "Model:                WLAN Pi R4"
-        echo "Main board:           $(grep "Raspberry Pi 4 Model B" /proc/cpuinfo | cut -d " " -f2-)"
+        echo "Main board:           $(grep "Raspberry Pi 4 Model B" "$CPUINFO" | cut -d " " -f2-)"
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
 
+# Is it Raspberry Pi 5?
+elif grep -q "Raspberry Pi 5 Model B" "$CPUINFO"; then
+    if [ "$BRIEF_OUTPUT" -ne 0 ];then
+        echo "R5"
+    else
+        echo "Model:                WLAN Pi R5"
+        echo "Main board:           $(grep "Raspberry Pi 5 Model B" "$CPUINFO" | cut -d " " -f2-)"
+    fi
+    debugger "End script now. Platform is Raspberry Pi 5."
+
 # Is it powered by CM4?
-elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
+elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
     debugger "Powered by CM4"
 
     # Sleep is only required at boot time for PCIe and i2c battery fuel gauge to initialise
@@ -212,6 +224,11 @@ elif grep -q "Raspberry Pi Compute Module 4" /proc/cpuinfo; then
         fi
         debugger "End script now. Platform is M4."
     fi
+
+# Unknown platform: not Pi 3, Pi 4, Pi 5 nor CM4
+else
+    echo "Unknown platform"
+    debugger "End script now. Platform is unknown."
 fi
 # List installed adapters. Skipped in brief mode and when SKIP_PROBES is set
 # (early boot with a cached model): these USB/PCIe probes block for tens of
