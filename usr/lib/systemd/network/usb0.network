@@ -1,0 +1,19 @@
+# USB OTG networking on the R4, Pro and M4+. On the Go, wlanpi-usb-ethernet's
+# /etc/systemd/network/usb0.network overrides this file.
+[Match]
+Name=usb0
+
+[Network]
+Address=198.18.42.1/24
+DHCPServer=yes
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+
+[Link]
+RequiredForOnline=no
+
+[DHCPServer]
+PoolOffset=9
+PoolSize=11
+EmitDNS=no
+EmitRouter=no

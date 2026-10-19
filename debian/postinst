@@ -26,6 +26,10 @@ fi
 if command -v udevadm >/dev/null && ! ischroot; then
     udevadm control --reload-rules || true
     udevadm trigger --subsystem-match=gpio --subsystem-match=gpiomem --subsystem-match=spidev || true
+    # Bring up USB OTG without a reboot: networkd must know usb0.network
+    # before the udc trigger loads g_ether and usb0 appears.
+    networkctl reload 2>/dev/null || true
+    udevadm trigger --action=add --subsystem-match=udc || true
 fi
 
 # Migrate the image-created override now that the package owns the setting.
