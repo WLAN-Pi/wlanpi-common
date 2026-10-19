@@ -122,6 +122,34 @@ configure_pcie_32bit_dma() {
     fi
 }
 
+# The Pi 4's onboard Wi-Fi (brcmfmac) has no monitor mode. Left on, it takes
+# wlan0 and the USB adapter the WLAN Pi apps default to becomes wlan1. The
+# bullseye images disabled it under [pi4]; later images shipped without that.
+# A commented-out line keeps the onboard radio on.
+disable_r4_onboard_wifi() {
+    # Never create config.txt: later R4 edits would find no [cm4] and queue
+    # a reboot on every boot.
+    [ -f "$CONFIG_FILE" ] || return 0
+    # ponytail: tracks only the latest filter line, so [tryboot] then [pi4]
+    # reads as unconditional (and [pi4] then [tryboot] as absent). Track
+    # filter types if a config ever relies on combined filters.
+    if awk '
+        BEGIN { on = 1 }
+        /^[ \t]*\[/ { on = ($0 ~ /^[ \t]*\[(all|pi4)\][ \t]*$/); next }
+        on && /^[ \t]*(#[ \t]*)?dtoverlay=disable-wifi[ \t]*$/ { found = 1 }
+        END { exit !found }
+    ' "$CONFIG_FILE"; then
+        debugger "dtoverlay=disable-wifi is set or commented out for [pi4], no action needed"
+        return 0
+    fi
+    log_reason "disabling the Pi 4's onboard Wi-Fi so the USB adapter is wlan0" || true
+    # Appended after the kernel package's marked block, which it deletes and
+    # re-appends on upgrade; the trailing [all] keeps anything appended later
+    # unfiltered.
+    printf '\n[pi4]\n# Onboard Wi-Fi has no monitor mode. Comment out to keep it on.\ndtoverlay=disable-wifi\n[all]\n' >> "$CONFIG_FILE"
+    REQUIRES_REBOOT=1
+}
+
 # Set baud rate for WLAN Pi Go discover port
 stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 
@@ -154,6 +182,8 @@ esac
 # Apply RPi4 platform specific settings
 if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
     echo "Applying WLAN Pi R4 settings"
+
+    disable_r4_onboard_wifi
 
     # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
     if [ ! -f "/etc/modprobe.d/blacklist-btusb.conf" ]; then
