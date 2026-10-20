@@ -61,7 +61,6 @@ debugger() {
 USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr_mode}"
 USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
 
-# Overridable so the model branches can be tested
 CPUINFO="${CPUINFO:-/proc/cpuinfo}"
 
 usb_mode() {
@@ -128,7 +127,6 @@ elif grep -q "Raspberry Pi 4 Model B" "$CPUINFO"; then
     fi
     debugger "End script now. Platform is Raspberry Pi 4."
 
-# Is it Raspberry Pi 5?
 elif grep -q "Raspberry Pi 5 Model B" "$CPUINFO"; then
     if [ "$BRIEF_OUTPUT" -ne 0 ];then
         echo "R5"
@@ -225,7 +223,6 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
         debugger "End script now. Platform is M4."
     fi
 
-# Unknown platform: not Pi 3, Pi 4, Pi 5 nor CM4
 else
     echo "Unknown platform"
     debugger "End script now. Platform is unknown."
