@@ -73,8 +73,37 @@ usb_device_count() {
 
 # BCM2711 needs a constrained inbound PCIe window for adapters with a 32-bit
 # DMA mask. Apply the same conditional policy to every CM4-based WLAN Pi.
+# IDs come from sysfs, the same files lspci reads: pciutils is not a
+# dependency of this package, and without it every card looked unmatched.
 configure_pcie_32bit_dma() {
-    if lspci -nn | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+    local dev vendor device class id ids="" card=0 match=0
+    for dev in "${PCI_DEVICES_DIR:-/sys/bus/pci/devices}"/*; do
+        # Each read is guarded: a device can vanish mid-loop (a failing link),
+        # and an unguarded failure would abort this set -e script.
+        vendor=$(cat "$dev/vendor" 2>/dev/null) || continue
+        device=$(cat "$dev/device" 2>/dev/null) || continue
+        class=$(cat "$dev/class" 2>/dev/null) || class=""
+        id="${vendor#0x}:${device#0x}"
+        ids="$ids $id"
+        # Bridges (root port, the Pro's PCIe switch) and the Pro's onboard
+        # VL805 USB controller are always there; anything else is a card.
+        case "$class" in 0x0604*) continue ;; esac
+        if [ "$id" != "1106:3483" ] || [ "${BOARD:-}" != "WLAN Pi Pro" ]; then
+            card=1
+        fi
+    done
+    if echo "$ids" | grep -q -E "14c3:0608|14c3:0616|14c3:7925|17cb:1107"; then
+        match=1
+    fi
+    if [ "$match" -eq 0 ] && [ "$card" -eq 0 ]; then
+        # An empty slot and a fitted card whose PCIe link failed look the same,
+        # and neither needs the overlay changed; toggling it only added a
+        # reboot. A card that stopped linking needs a power cycle, since a
+        # reboot keeps it powered.
+        log_reason "no PCIe card found, leaving pcie-32bit-dma unchanged; if an M.2 radio is fitted, remove power to reset it" || true
+        return 0
+    fi
+    if [ "$match" -eq 1 ]; then
         if ! sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*dtoverlay=pcie-32bit-dma"; then
             debugger "pcie-32bit-dma overlay not enabled in cm4 config section, enabling it now"
             if sed -n '/\[cm4\]/,/\[*\]/p' "$CONFIG_FILE" | grep -q "^\s*#dtoverlay=pcie-32bit-dma"; then
@@ -91,6 +120,56 @@ configure_pcie_32bit_dma() {
         sed -i "s/^\s*dtoverlay=pcie-32bit-dma/#dtoverlay=pcie-32bit-dma/" "$CONFIG_FILE"
         REQUIRES_REBOOT=1
     fi
+}
+
+# The Pi 4's onboard Wi-Fi (brcmfmac) has no monitor mode. Left on, it takes
+# wlan0 and the USB adapter the WLAN Pi apps default to becomes wlan1. The
+# bullseye images disabled it under [pi4]; later images shipped without that.
+# A commented-out line keeps the onboard radio on.
+disable_r4_onboard_wifi() {
+    # Never create config.txt: later R4 edits would find no [cm4] and queue
+    # a reboot on every boot.
+    [ -f "$CONFIG_FILE" ] || return 0
+    # ponytail: tracks only the latest filter line, so [tryboot] then [pi4]
+    # reads as unconditional (and [pi4] then [tryboot] as absent). Track
+    # filter types if a config ever relies on combined filters.
+    if awk '
+        BEGIN { on = 1 }
+        /^[ \t]*\[/ { on = ($0 ~ /^[ \t]*\[(all|pi4)\][ \t]*$/); next }
+        on && /^[ \t]*(#[ \t]*)?dtoverlay=disable-wifi[ \t]*$/ { found = 1 }
+        END { exit !found }
+    ' "$CONFIG_FILE"; then
+        debugger "dtoverlay=disable-wifi is set or commented out for [pi4], no action needed"
+        return 0
+    fi
+    log_reason "disabling the Pi 4's onboard Wi-Fi so the USB adapter is wlan0" || true
+    # Appended after the kernel package's marked block, which it deletes and
+    # re-appends on upgrade; the trailing [all] keeps anything appended later
+    # unfiltered.
+    printf '\n[pi4]\n# Onboard Wi-Fi has no monitor mode. Comment out to keep it on.\ndtoverlay=disable-wifi\n[all]\n' >> "$CONFIG_FILE"
+    REQUIRES_REBOOT=1
+}
+
+# USB OTG networking on the Pi 4B's USB-C port needs the dwc2 controller in
+# peripheral mode. The bullseye images set it under [pi4]; later images shipped
+# without it. [pi4] also matches the CM4 boards, whose USB mode is set under
+# [cm4], so the block filters on the 4B's board type. A commented-out line
+# keeps it off.
+enable_r4_usb_otg() {
+    [ -f "$CONFIG_FILE" ] || return 0
+    # ponytail: same single-filter tracking as disable_r4_onboard_wifi.
+    if awk '
+        BEGIN { on = 1 }
+        /^[ \t]*\[/ { on = ($0 ~ /^[ \t]*\[(all|pi4|board-type=0x11)\][ \t]*$/); next }
+        on && /^[ \t]*(#[ \t]*)?dtoverlay=dwc2([ \t,]|$)/ { found = 1 }
+        END { exit !found }
+    ' "$CONFIG_FILE"; then
+        debugger "dtoverlay=dwc2 is set or commented out for the Pi 4B, no action needed"
+        return 0
+    fi
+    log_reason "enabling USB OTG networking on the Pi 4's USB-C port" || true
+    printf '\n[board-type=0x11]\n# USB OTG networking on the USB-C port. Comment out to turn it off.\ndtoverlay=dwc2,dr_mode=peripheral\n[all]\n' >> "$CONFIG_FILE"
+    REQUIRES_REBOOT=1
 }
 
 # Set baud rate for WLAN Pi Go discover port
@@ -126,6 +205,8 @@ esac
 if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
     echo "Applying WLAN Pi R4 settings"
 
+    disable_r4_onboard_wifi
+
     # Disable Bluetooth on USB adapters, use RPi4 Bluetooth built into the SoC instead, prevents hci0 and hci1 confusion
     if [ ! -f "/etc/modprobe.d/blacklist-btusb.conf" ]; then
         echo "blacklist btusb" > /etc/modprobe.d/blacklist-btusb.conf
@@ -157,22 +238,7 @@ if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
         REQUIRES_REBOOT=1
     fi
 
-    # Set USB mode to OTG mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" $CONFIG_FILE | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
-    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
-        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
-        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
-        debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
-        REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
-        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" $CONFIG_FILE
-        REQUIRES_REBOOT=1
-    else
-        debugger "USB mode is already set to OTG mode, no action needed"
-    fi
+    enable_r4_usb_otg
 
 fi
 
@@ -345,7 +411,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                     # DWC2 must be in otg mode (not host) so it can take the
                     # peripheral role selected by the M4+ hardware switch
                     sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
-                    reboot
+                    REQUIRES_REBOOT=1
                 fi
         elif ! grep -q -E "^\s*otg_mode=1" $CONFIG_FILE ; then
                 log_reason "OTG mode is enabled in configuration but not working; switching to host mode and rebooting"
@@ -359,7 +425,7 @@ if [[ "$BOARD" == "Mcuzone M4+" ]]; then
                 sed -i "/\[cm4\]/,/^\[/ s/^\s*dtoverlay=dwc2,dr_mode=otg/dtoverlay=dwc2,dr_mode=host/" $CONFIG_FILE
                 debugger "Creating force host mode file"
                 touch /etc/wlanpi-stay-in-host-mode
-                reboot
+                REQUIRES_REBOOT=1
         fi
     else
         # More than one USB device means the hub is enumerated, so host mode
@@ -426,7 +492,12 @@ fi
 
 # Reboot if required
 if [ "$REQUIRES_REBOOT" -gt 0 ]; then
-    log_reason "Reboot required to apply configuration changes; rebooting now"
-    echo "Reboot required, rebooting now"
-    reboot
+    log_reason "Reboot required to apply configuration changes; rebooting once startup finishes"
+    echo "Reboot required, rebooting once startup finishes"
+    # Rebooting now would stop the first-boot units running beside this
+    # service (root resize, ufw setup) mid-write; wait for multi-user.target.
+    systemd-run --no-block --property=After=multi-user.target systemctl reboot
+    # Boot oneshots have no start timeout, so one that hangs would hold
+    # multi-user.target, and the reboot, forever. Reboot anyway after 10 min.
+    systemd-run --no-block --on-active=10min systemctl reboot
 fi

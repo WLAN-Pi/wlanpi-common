@@ -271,7 +271,8 @@ if [ "$BRIEF_OUTPUT" -eq 0 ] && [ "$SKIP_PROBES" -eq 0 ]; then
         done
     else
         if command -v hciconfig &> /dev/null; then
-            if timeout 3 hciconfig | grep -q "hci0"; then
+            # Any adapter: numbers follow probe order, so the onboard one can be hci1
+            if timeout 3 hciconfig | grep -q "^hci[0-9]"; then
                 # Built-in Bluetooth adapter is present on Raspberry Pi
                 echo "Bluetooth adapter:    Built-in"
             else

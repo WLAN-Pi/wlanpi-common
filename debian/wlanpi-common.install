@@ -5,3 +5,5 @@ etc/systemd/system/isc-dhcp-server.service.d/* etc/systemd/system/isc-dhcp-serve
 etc/systemd/system/avahi-daemon.service.d/* etc/systemd/system/avahi-daemon.service.d/
 etc/apt/apt.conf.d/80wlanpi etc/apt/apt.conf.d/
 usr/lib/systemd/system/irtt.service.d/wlanpi-common.conf usr/lib/systemd/system/irtt.service.d/
+usr/lib/systemd/network/usb0.network usr/lib/systemd/network/
+usr/lib/udev/rules.d/90-wlanpi-usb-otg.rules usr/lib/udev/rules.d/

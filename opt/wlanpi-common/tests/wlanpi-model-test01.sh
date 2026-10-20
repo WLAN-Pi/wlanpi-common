@@ -3,7 +3,8 @@
 # Description:
 #
 #  Test suite for wlanpi-model.sh usb_mode() M4+ USB mode reporting
-#  (device tree dr_mode, with the USB device count as the fallback)
+#  (device tree dr_mode, with the USB device count as the fallback) and
+#  Bluetooth adapter detection
 #
 ###########################################################
 
@@ -12,7 +13,7 @@
 # shellcheck disable=SC2034
 MODULE=wlanpi-model.sh
 VERSION=1.0.0
-COMMENTS="wlanpi-model.sh test suite to validate M4+ USB mode reporting"
+COMMENTS="wlanpi-model.sh test suite to validate M4+ USB mode and Bluetooth reporting"
 SCRIPT_NAME="$(dirname "$0")/../$MODULE"
 
 # wlanpi-model.sh runs its detection at the top level, so extract just the
@@ -73,6 +74,27 @@ printf 'host\0' > "$TMPROOT/dt-host/dr_mode"
 USB_DR_MODE_GLOB="$TMPROOT/dt-host/dr_mode"
 USB_DEVICES_PATH="$TMPROOT/usb"
 assert_eq "$HOST" "$(usb_mode)" "issue #91 case reports host"
+
+# --- Bluetooth: the whole script, with lsusb, lspci and hciconfig stubbed ---
+# No USB Bluetooth in lsusb, so the result comes from hciconfig.
+mkdir -p "$TMPROOT/bin"
+printf '#!/bin/sh\n' > "$TMPROOT/bin/lsusb"
+printf '#!/bin/sh\n' > "$TMPROOT/bin/lspci"
+printf '#!/bin/sh\ncat "$HCICONFIG_OUT"\n' > "$TMPROOT/bin/hciconfig"
+chmod +x "$TMPROOT/bin/"*
+bluetooth_line() {
+    HCICONFIG_OUT="$TMPROOT/hciconfig.out" PATH="$TMPROOT/bin:$PATH" \
+        bash "$SCRIPT_NAME" | grep -E "^(No )?Bluetooth adapter"
+}
+
+printf 'hci0:\tType: Primary  Bus: UART\n\tBD Address: B8:27:EB:00:00:01  ACL MTU: 1021:8  SCO MTU: 64:1\n' > "$TMPROOT/hciconfig.out"
+assert_eq "Bluetooth adapter:    Built-in" "$(bluetooth_line)" "hci0 reports built-in Bluetooth"
+
+printf 'hci1:\tType: Primary  Bus: UART\n\tBD Address: B8:27:EB:00:00:01  ACL MTU: 1021:8  SCO MTU: 64:1\n' > "$TMPROOT/hciconfig.out"
+assert_eq "Bluetooth adapter:    Built-in" "$(bluetooth_line)" "only hci1 reports built-in Bluetooth"
+
+: > "$TMPROOT/hciconfig.out"
+assert_eq "No Bluetooth adapter" "$(bluetooth_line)" "no adapter reports none"
 
 echo
 echo "Tests passed: $tests_passed, failed: $tests_failed"
