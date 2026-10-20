@@ -150,6 +150,28 @@ disable_r4_onboard_wifi() {
     REQUIRES_REBOOT=1
 }
 
+# USB OTG networking on the Pi 4B's USB-C port needs the dwc2 controller in
+# peripheral mode. The bullseye images set it under [pi4]; later images shipped
+# without it. [pi4] also matches the CM4 boards, whose USB mode is set under
+# [cm4], so the block filters on the 4B's board type. A commented-out line
+# keeps it off.
+enable_r4_usb_otg() {
+    [ -f "$CONFIG_FILE" ] || return 0
+    # ponytail: same single-filter tracking as disable_r4_onboard_wifi.
+    if awk '
+        BEGIN { on = 1 }
+        /^[ \t]*\[/ { on = ($0 ~ /^[ \t]*\[(all|pi4|board-type=0x11)\][ \t]*$/); next }
+        on && /^[ \t]*(#[ \t]*)?dtoverlay=dwc2([ \t,]|$)/ { found = 1 }
+        END { exit !found }
+    ' "$CONFIG_FILE"; then
+        debugger "dtoverlay=dwc2 is set or commented out for the Pi 4B, no action needed"
+        return 0
+    fi
+    log_reason "enabling USB OTG networking on the Pi 4's USB-C port" || true
+    printf '\n[board-type=0x11]\n# USB OTG networking on the USB-C port. Comment out to turn it off.\ndtoverlay=dwc2,dr_mode=peripheral\n[all]\n' >> "$CONFIG_FILE"
+    REQUIRES_REBOOT=1
+}
+
 # Set baud rate for WLAN Pi Go discover port
 stty -F /dev/ttyAMA0 115200 2>/dev/null || true
 
@@ -216,22 +238,7 @@ if [[ "$BOARD" =~ "Raspberry Pi 4" ]]; then
         REQUIRES_REBOOT=1
     fi
 
-    # Set USB mode to OTG mode
-    CM4_LINE_NUMBER=$(grep -n "\[cm4\]" $CONFIG_FILE | cut -d ":" -f1)
-    LINES_BELOW_CM4=$(sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -n "dtoverlay=dwc2,dr_mode=host" | cut -d ":" -f1)
-    if [[ $CM4_LINE_NUMBER -gt 0 ]] && [[ $LINES_BELOW_CM4 -gt 0 ]]; then
-        DR_MODE_LINE_NUMBER=$(($CM4_LINE_NUMBER + $LINES_BELOW_CM4 - 1))
-        debugger "Found \"dtoverlay=dwc2,dr_mode=host\" CM4 config on line $DR_MODE_LINE_NUMBER"
-        debugger "Setting CM4 USB to otg mode"
-        sed -i "${DR_MODE_LINE_NUMBER}s/.*/dtoverlay=dwc2,dr_mode=otg/" $CONFIG_FILE
-        REQUIRES_REBOOT=1
-    elif ! sed -n '/\[cm4\]/,/\[*\]/p' $CONFIG_FILE | grep -q "^\s*dtoverlay=dwc2,dr_mode=otg"; then
-        debugger "USB mode setting not found in config file, creating a new line in CM4 section"
-        sed -i "s/\[cm4\]/&\ndtoverlay=dwc2,dr_mode=otg\n/" $CONFIG_FILE
-        REQUIRES_REBOOT=1
-    else
-        debugger "USB mode is already set to OTG mode, no action needed"
-    fi
+    enable_r4_usb_otg
 
 fi
 

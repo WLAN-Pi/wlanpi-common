@@ -1,0 +1,4 @@
+# Load the USB Ethernet gadget once a USB device controller appears (R4, Pro,
+# M4+ in OTG mode). The Go's wlanpi-usb-ethernet builds its own gadget, which
+# cannot bind if g_ether has taken the controller.
+ACTION!="remove", SUBSYSTEM=="udc", TEST!="/usr/bin/usb-ethernet-gadget.sh", RUN{builtin}+="kmod load g_ether"

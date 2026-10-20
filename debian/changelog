@@ -1,3 +1,22 @@
+wlanpi-common (1.1.64) unstable; urgency=medium
+
+  * Bring back USB OTG networking on the R4, Pro and M4+
+    (WLAN-Pi/pi-gen#123). A udev rule loads g_ether when a USB device
+    controller appears, and usb0 serves DHCP from 198.18.42.1/24, the
+    Go's address (the bullseye images used 169.254.42.1). On the R4,
+    wlanpi-config-at-startup adds dwc2 in peripheral mode for the Pi 4B
+    once and reboots; commenting the line out turns OTG off. The Go is
+    unchanged: wlanpi-usb-ethernet keeps its own gadget and usb0
+    settings.
+  * On an R4, disable the onboard Wi-Fi once, so the USB adapter is
+    wlan0 again; a commented-out line keeps the onboard radio on (#139).
+  * wlanpi-config-at-startup queues its reboot until multi-user.target
+    is up, so first-boot units (root resize, ufw setup) are no longer
+    stopped mid-run, and reboots anyway after 10 minutes if startup
+    hangs (#137).
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 20 Oct 2026 00:42:14 -0400
+
 wlanpi-common (1.1.63) unstable; urgency=medium
 
   * Simplify the shared SSH host key check added in 1.1.62. It now reads
