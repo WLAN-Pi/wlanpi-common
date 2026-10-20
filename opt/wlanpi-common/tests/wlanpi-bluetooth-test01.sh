@@ -12,7 +12,7 @@ TMP=$(mktemp -d) || exit 2
 trap 'rm -rf "$TMP"' EXIT
 BIN="$TMP/bin"
 mkdir -p "$BIN"
-for tool in awk cat grep jq; do
+for tool in awk cat grep; do
     ln -s "$(command -v "$tool")" "$BIN/$tool" || exit 2
 done
 
@@ -21,43 +21,46 @@ stub() {
     chmod +x "$BIN/$1"
 }
 stub bt-adapter "printf '[hci9]\n  Name: x\n  Alias: wlanpi-test [rw]\n'"
-stub busctl 'cat "$FIXTURE"'
-stub bt-device 'echo Done'
 stub systemctl
 
-# GetManagedObjects as busctl --json=short prints it: a dongle on hci0 and the
+# BlueZ's objects as busctl tree --list prints them: a dongle on hci0 and the
 # onboard adapter on hci1, each with a paired device, plus an unpaired device
-# and a child object without Device1 on hci1.
-export FIXTURE="$TMP/objects.json"
-dev() {
-    printf '"/org/bluez/%s/dev_%s":{"org.bluez.Device1":{"Address":{"type":"s","data":"%s"},"Paired":{"type":"b","data":%s},"Adapter":{"type":"o","data":"/org/bluez/%s"}}}' \
-        "$1" "${2//:/_}" "$2" "$3" "$1"
+# and a device's child object on hci1. PAIRED_OBJECTS lists the paired ones.
+export TREE="$TMP/tree" PAIRED_OBJECTS="$TMP/paired"
+printf '%s\n' / /org /org/bluez /org/bluez/hci0 /org/bluez/hci0/dev_AA_00_00_00_00_01 \
+    /org/bluez/hci1 /org/bluez/hci1/dev_AA_00_00_00_00_02 /org/bluez/hci1/dev_AA_00_00_00_00_02/fd0 \
+    /org/bluez/hci1/dev_AA_00_00_00_00_03 > "$TREE"
+printf '%s\n' /org/bluez/hci0/dev_AA_00_00_00_00_01 /org/bluez/hci1/dev_AA_00_00_00_00_02 > "$PAIRED_OBJECTS"
+busctl_stub() {
+    stub busctl "case \$1 in
+    tree) ${1:-cat \"\$TREE\"} ;;
+    get-property) ${2:-grep -qx \"\$3\" \"\$PAIRED_OBJECTS\" && echo 'b true' || echo 'b false'} ;;
+    call) ${3:-:} ;;
+esac"
 }
-printf '{"type":"a{oa{sa{sv}}}","data":[{"/org/bluez":{"org.bluez.AgentManager1":{}},"/org/bluez/hci0":{"org.bluez.Adapter1":{}},"/org/bluez/hci1":{"org.bluez.Adapter1":{}},%s,%s,%s,"/org/bluez/hci1/dev_AA_00_00_00_00_02/fd0":{"org.bluez.MediaTransport1":{}}}]}\n' \
-    "$(dev hci0 AA:00:00:00:00:01 true)" \
-    "$(dev hci1 AA:00:00:00:00:02 true)" \
-    "$(dev hci1 AA:00:00:00:00:03 false)" > "$FIXTURE"
+busctl_stub
 
 export LOG="$TMP/calls.log"
 failed=0
 check() {
-    local name=$1 adapter=$2 mac=$3 out expected_out expected_log
+    local name=$1 adapter=$2 mac=$3 path out expected_out expected_log
+    path="/org/bluez/$adapter/dev_${mac//:/_}"
     : > "$LOG"
     out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
     expected_out="Removing previously paired Bluetooth devices: $mac
-Done
 Ready for you to connect:
 1. Open Bluetooth settings on your mobile device
 2. Connect to wlanpi-test in 30 seconds from now"
     expected_log="bt-adapter -a $adapter -i
-busctl --json=short call org.bluez / org.freedesktop.DBus.ObjectManager GetManagedObjects
-bt-device -a $adapter -r $mac
+busctl tree --list org.bluez
+$(grep "^/org/bluez/$adapter/dev_[^/]*$" "$TREE" | sed 's/^/busctl get-property org.bluez /; s/$/ org.bluez.Device1 Paired/' |
+        sed "\#$path #a busctl call org.bluez /org/bluez/$adapter org.bluez.Adapter1 RemoveDevice o $path")
 systemctl start bt-timedpair"
     if [ "$out" = "$expected_out" ] && [ "$(cat "$LOG")" = "$expected_log" ]; then
         echo "PASS: $name"
     else
         echo "FAIL: $name"
-        printf -- '--- output\n%s\n--- calls\n%s\n' "$out" "$(cat "$LOG")"
+        printf -- '--- output\n%s\n--- calls\n%s\n--- expected calls\n%s\n' "$out" "$(cat "$LOG")" "$expected_log"
         failed=1
     fi
 }
@@ -76,13 +79,15 @@ check "no adapter from wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00
 rm "$BIN/wlanpi-bt-adapter"
 check "missing wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00:01
 
-# A failed lookup or removal must stop before the pairing window opens.
+# A failed lookup or removal must stop before the pairing window opens, and a
+# failed window must not report ready.
 check_fails() {
-    local name=$1 out rc
+    local name=$1 error=$2 window=${3:-0} out rc
     : > "$LOG"
     out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
     rc=$?
-    if [ "$rc" != 0 ] && [[ $out == *Error:* ]] && ! grep -q '^systemctl' "$LOG"; then
+    if [ "$rc" != 0 ] && [[ $out == *"Error: $error"* ]] && [[ $out != *Ready* ]] &&
+        [ "$(grep -c '^systemctl' "$LOG")" = "$window" ]; then
         echo "PASS: $name"
     else
         echo "FAIL: $name (rc=$rc)"
@@ -91,25 +96,14 @@ check_fails() {
     fi
 }
 
-stub busctl 'exit 1'
-check_fails "busctl failure stops"
-stub busctl 'echo not json'
-check_fails "unreadable GetManagedObjects stops"
-stub busctl 'cat "$FIXTURE"'
-stub bt-device 'exit 1'
-check_fails "bt-device removal failure stops"
-stub bt-device 'echo Done'
-
+busctl_stub 'exit 1'
+check_fails "busctl tree failure stops" "could not list Bluetooth devices"
+busctl_stub "" 'exit 1'
+check_fails "unreadable device stops" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
+busctl_stub "" "" 'exit 1'
+check_fails "removal failure stops" "could not remove AA:00:00:00:00:01"
+busctl_stub
 stub systemctl 'exit 1'
-: > "$LOG"
-out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
-rc=$?
-if [ "$rc" != 0 ] && [[ $out == *"Error: could not make Bluetooth discoverable"* ]] && [[ $out != *Ready* ]]; then
-    echo "PASS: bt-timedpair start failure is reported"
-else
-    echo "FAIL: bt-timedpair start failure is reported (rc=$rc)"
-    printf -- '--- output\n%s\n' "$out"
-    failed=1
-fi
+check_fails "bt-timedpair start failure is reported" "could not make Bluetooth discoverable" 1
 
 exit "$failed"

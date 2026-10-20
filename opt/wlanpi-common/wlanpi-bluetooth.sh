@@ -11,19 +11,25 @@ ADAPTER=${ADAPTER:-hci0}
 
 ALIAS=$(bt-adapter -a "$ADAPTER" -i | grep Alias | awk '{ print $2 }')
 
-# Remove previously paired Bluetooth device to enhance security. Ask BlueZ for
-# this adapter's paired devices: bluetoothctl only sees the default controller,
-# and bt-device -l also lists unpaired ones.
-# Never open the pairing window with an old pairing left in place.
-if ! OBJECTS=$(busctl --json=short call org.bluez / org.freedesktop.DBus.ObjectManager GetManagedObjects) ||
-    ! PAIRED=$(jq -r --arg adapter "/org/bluez/$ADAPTER" '.data[0][]["org.bluez.Device1"] // empty | select(.Adapter.data == $adapter and .Paired.data) | .Address.data' <<< "$OBJECTS"); then
-    echo "Error: could not list paired Bluetooth devices" >&2
+# Remove previously paired Bluetooth device to enhance security, and never open
+# the pairing window with one left in place. bluetoothctl only sees the default
+# controller, and busctl --json can't print GetManagedObjects while BlueZ holds
+# a nearby device's ManufacturerData (a{qv}), so check each device object.
+if ! TREE=$(busctl tree --list org.bluez); then
+    echo "Error: could not list Bluetooth devices" >&2
     exit 1
 fi
-for DEVICE in $PAIRED; do
-    echo "Removing previously paired Bluetooth devices: $DEVICE"
-    if ! bt-device -a "$ADAPTER" -r "$DEVICE"; then
-        echo "Error: could not remove $DEVICE" >&2
+for DEVICE in $(grep -E "^/org/bluez/$ADAPTER/dev_[0-9A-F_]+$" <<< "$TREE"); do
+    if ! PAIRED=$(busctl get-property org.bluez "$DEVICE" org.bluez.Device1 Paired); then
+        echo "Error: could not read $DEVICE" >&2
+        exit 1
+    fi
+    [ "$PAIRED" = "b true" ] || continue
+    MAC=${DEVICE##*/dev_}
+    MAC=${MAC//_/:}
+    echo "Removing previously paired Bluetooth devices: $MAC"
+    if ! busctl call org.bluez "/org/bluez/$ADAPTER" org.bluez.Adapter1 RemoveDevice o "$DEVICE"; then
+        echo "Error: could not remove $MAC" >&2
         exit 1
     fi
 done
