@@ -4,12 +4,20 @@
 
 # Author: Jiri Brejcha, jirka@jiribrejcha.net, @jiribrejcha
 
-ALIAS=$(bt-adapter -a hci0 -i | grep Alias | awk '{ print $2 }')
+# hci0 can be a USB dongle, so use the adapter bt-agent set up. wlanpi-bluetooth
+# releases without wlanpi-bt-adapter use hci0.
+ADAPTER=$(wlanpi-bt-adapter 2>/dev/null)
+ADAPTER=${ADAPTER:-hci0}
 
-# Remove previously paired Bluetooth device to enhance security
-for DEVICE in $(bluetoothctl -- paired-devices | grep -iv 'no default controller' | cut -d " " -f2); do
+ALIAS=$(bt-adapter -a "$ADAPTER" -i | grep Alias | awk '{ print $2 }')
+
+# Remove previously paired Bluetooth device to enhance security. Ask BlueZ for
+# this adapter's paired devices: bluetoothctl only sees the default controller,
+# and bt-device -l also lists unpaired ones.
+for DEVICE in $(busctl --json=short call org.bluez / org.freedesktop.DBus.ObjectManager GetManagedObjects |
+    jq -r --arg adapter "/org/bluez/$ADAPTER" '.data[0][]["org.bluez.Device1"] // empty | select(.Adapter.data == $adapter and .Paired.data) | .Address.data'); do
     echo "Removing previously paired Bluetooth devices: $DEVICE"
-    bluetoothctl -- remove "$DEVICE"
+    bt-device -a "$ADAPTER" -r "$DEVICE"
 done
 
 # Make WLAN Pi Bluetooth PAN network discoverable for 30 seconds and allow a new Bluetooth device to pair
