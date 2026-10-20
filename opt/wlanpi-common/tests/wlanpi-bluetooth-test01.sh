@@ -74,11 +74,7 @@ adapter_stub() {
 adapter_stub 'echo hci1'
 check "wlanpi-bt-adapter picks hci1" hci1 AA:00:00:00:00:02
 
-adapter_stub 'exit 1'
-check "no adapter from wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00:01
-
-rm "$BIN/wlanpi-bt-adapter"
-check "missing wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00:01
+adapter_stub 'echo hci1'
 
 # A failed lookup or removal must stop before the pairing window opens, and a
 # failed window must not report ready.
@@ -97,12 +93,26 @@ check_fails() {
     fi
 }
 
+# Only a missing selector means hci0; a failing one may mean another adapter.
+for selector in 'exit 1' 'echo' 'echo "hci1|."'; do
+    adapter_stub "$selector"
+    check_fails "wlanpi-bt-adapter '$selector' stops" "no Bluetooth adapter"
+done
+adapter_stub 'echo hci2'
+check_fails "adapter BlueZ has not registered stops" "could not list Bluetooth devices"
+rm "$BIN/wlanpi-bt-adapter"
+check "missing wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00:01
+
 busctl_stub 'exit 1'
 check_fails "busctl tree failure stops" "could not list Bluetooth devices"
 busctl_stub "" 'exit 1'
 check_fails "unreadable device stops" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
 busctl_stub "[ -e \"\$TREE_FILE.once\" ] && exit 1; : > \"\$TREE_FILE.once\"; cat \"\$TREE_FILE\"" 'exit 1'
 check_fails "unreadable device stops when BlueZ can't be listed again" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
+busctl_stub "[ -e \"\$TREE_FILE.twice\" ] && { echo /; echo /org/bluez; exit 0; }; : > \"\$TREE_FILE.twice\"; cat \"\$TREE_FILE\"" 'exit 1'
+check_fails "unreadable device stops when BlueZ drops the adapter" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
+busctl_stub "" "echo 'b maybe'"
+check_fails "unexpected Paired value stops" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
 busctl_stub "" "" 'exit 1'
 check_fails "removal failure stops" "could not remove AA:00:00:00:00:01"
 busctl_stub
