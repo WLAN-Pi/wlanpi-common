@@ -29,7 +29,10 @@ for DEVICE in $PAIRED; do
 done
 
 # Make WLAN Pi Bluetooth PAN network discoverable for 30 seconds and allow a new Bluetooth device to pair
-systemctl start bt-timedpair
+if ! systemctl start bt-timedpair; then
+    echo "Error: could not make Bluetooth discoverable" >&2
+    exit 1
+fi
 echo "Ready for you to connect:"
 echo "1. Open Bluetooth settings on your mobile device"
 echo "2. Connect to $ALIAS in 30 seconds from now"

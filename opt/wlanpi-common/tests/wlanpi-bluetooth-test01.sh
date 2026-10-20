@@ -98,5 +98,18 @@ check_fails "unreadable GetManagedObjects stops"
 stub busctl 'cat "$FIXTURE"'
 stub bt-device 'exit 1'
 check_fails "bt-device removal failure stops"
+stub bt-device 'echo Done'
+
+stub systemctl 'exit 1'
+: > "$LOG"
+out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
+rc=$?
+if [ "$rc" != 0 ] && [[ $out == *"Error: could not make Bluetooth discoverable"* ]] && [[ $out != *Ready* ]]; then
+    echo "PASS: bt-timedpair start failure is reported"
+else
+    echo "FAIL: bt-timedpair start failure is reported (rc=$rc)"
+    printf -- '--- output\n%s\n' "$out"
+    failed=1
+fi
 
 exit "$failed"
