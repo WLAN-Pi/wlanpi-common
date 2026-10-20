@@ -26,14 +26,15 @@ stub systemctl
 # BlueZ's objects as busctl tree --list prints them: a dongle on hci0 and the
 # onboard adapter on hci1, each with a paired device, plus an unpaired device
 # and a device's child object on hci1. PAIRED_OBJECTS lists the paired ones.
-export TREE="$TMP/tree" PAIRED_OBJECTS="$TMP/paired"
+# Not TREE or PAIRED: the script under test sets those.
+export TREE_FILE="$TMP/tree" PAIRED_OBJECTS="$TMP/paired"
 printf '%s\n' / /org /org/bluez /org/bluez/hci0 /org/bluez/hci0/dev_AA_00_00_00_00_01 \
     /org/bluez/hci1 /org/bluez/hci1/dev_AA_00_00_00_00_02 /org/bluez/hci1/dev_AA_00_00_00_00_02/fd0 \
-    /org/bluez/hci1/dev_AA_00_00_00_00_03 > "$TREE"
+    /org/bluez/hci1/dev_AA_00_00_00_00_03 > "$TREE_FILE"
 printf '%s\n' /org/bluez/hci0/dev_AA_00_00_00_00_01 /org/bluez/hci1/dev_AA_00_00_00_00_02 > "$PAIRED_OBJECTS"
 busctl_stub() {
     stub busctl "case \$1 in
-    tree) ${1:-cat \"\$TREE\"} ;;
+    tree) ${1:-cat \"\$TREE_FILE\"} ;;
     get-property) ${2:-grep -qx \"\$3\" \"\$PAIRED_OBJECTS\" && echo 'b true' || echo 'b false'} ;;
     call) ${3:-:} ;;
 esac"
@@ -53,7 +54,7 @@ Ready for you to connect:
 2. Connect to wlanpi-test in 30 seconds from now"
     expected_log="bt-adapter -a $adapter -i
 busctl tree --list org.bluez
-$(grep "^/org/bluez/$adapter/dev_[^/]*$" "$TREE" | sed 's/^/busctl get-property org.bluez /; s/$/ org.bluez.Device1 Paired/' |
+$(grep "^/org/bluez/$adapter/dev_[^/]*$" "$TREE_FILE" | sed 's/^/busctl get-property org.bluez /; s/$/ org.bluez.Device1 Paired/' |
         sed "\#$path #a busctl call org.bluez /org/bluez/$adapter org.bluez.Adapter1 RemoveDevice o $path")
 systemctl start bt-timedpair"
     if [ "$out" = "$expected_out" ] && [ "$(cat "$LOG")" = "$expected_log" ]; then
@@ -100,10 +101,29 @@ busctl_stub 'exit 1'
 check_fails "busctl tree failure stops" "could not list Bluetooth devices"
 busctl_stub "" 'exit 1'
 check_fails "unreadable device stops" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
+busctl_stub "[ -e \"\$TREE_FILE.once\" ] && exit 1; : > \"\$TREE_FILE.once\"; cat \"\$TREE_FILE\"" 'exit 1'
+check_fails "unreadable device stops when BlueZ can't be listed again" "could not read /org/bluez/hci0/dev_AA_00_00_00_00_01"
 busctl_stub "" "" 'exit 1'
 check_fails "removal failure stops" "could not remove AA:00:00:00:00:01"
 busctl_stub
 stub systemctl 'exit 1'
 check_fails "bt-timedpair start failure is reported" "could not make Bluetooth discoverable" 1
+stub systemctl
+
+# A device BlueZ drops between the listing and the read is skipped.
+DROPPED=/org/bluez/hci0/dev_AA_00_00_00_00_09
+busctl_stub "[ -e \"\$TREE_FILE.listed\" ] || { : > \"\$TREE_FILE.listed\"; echo $DROPPED; }; cat \"\$TREE_FILE\"" \
+    "[ \"\$3\" = $DROPPED ] && exit 1; grep -qx \"\$3\" \"\$PAIRED_OBJECTS\" && echo 'b true' || echo 'b false'"
+: > "$LOG"
+out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
+rc=$?
+if [ "$rc" = 0 ] && [[ $out == *"devices: AA:00:00:00:00:01"*Ready* ]] &&
+    [ "$(grep -c '^busctl tree' "$LOG")" = 2 ] && grep -q '^systemctl start bt-timedpair$' "$LOG"; then
+    echo "PASS: device dropped since the listing is skipped"
+else
+    echo "FAIL: device dropped since the listing is skipped (rc=$rc)"
+    printf -- '--- output\n%s\n--- calls\n%s\n' "$out" "$(cat "$LOG")"
+    failed=1
+fi
 
 exit "$failed"

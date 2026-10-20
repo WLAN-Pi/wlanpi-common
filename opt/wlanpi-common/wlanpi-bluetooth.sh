@@ -21,6 +21,11 @@ if ! TREE=$(busctl tree --list org.bluez); then
 fi
 for DEVICE in $(grep -E "^/org/bluez/$ADAPTER/dev_[0-9A-F_]+$" <<< "$TREE"); do
     if ! PAIRED=$(busctl get-property org.bluez "$DEVICE" org.bluez.Device1 Paired); then
+        # BlueZ drops a device it only saw nearby soon after a scan, maybe
+        # since the listing. Paired devices are never dropped.
+        if NOW=$(busctl tree --list org.bluez) && ! grep -qx "$DEVICE" <<< "$NOW"; then
+            continue
+        fi
         echo "Error: could not read $DEVICE" >&2
         exit 1
     fi
