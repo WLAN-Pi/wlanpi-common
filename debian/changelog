@@ -1,3 +1,15 @@
+wlanpi-common (1.1.65) unstable; urgency=medium
+
+  * wlanpi-bluetooth uses the adapter wlanpi-bluetooth chose
+    (wlanpi-bt-adapter), falling back to hci0 only on older wlanpi-bluetooth.
+    It removes old pairings by BlueZ object path; bluetoothctl paired-devices
+    was removed in BlueZ 5.65, so old pairings were never removed. If any step
+    fails it prints Error and exits 1 without opening the pairing window
+    (#142).
+  * wlanpi-model reports Bluetooth when the only adapter is not hci0 (#142).
+
+ -- Josh Schmelzle <josh@joshschmelzle.com>  Tue, 20 Oct 2026 05:23:31 -0400
+
 wlanpi-common (1.1.64) unstable; urgency=medium
 
   * Bring back USB OTG networking on the R4, Pro and M4+
