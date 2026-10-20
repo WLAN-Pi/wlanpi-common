@@ -14,10 +14,18 @@ ALIAS=$(bt-adapter -a "$ADAPTER" -i | grep Alias | awk '{ print $2 }')
 # Remove previously paired Bluetooth device to enhance security. Ask BlueZ for
 # this adapter's paired devices: bluetoothctl only sees the default controller,
 # and bt-device -l also lists unpaired ones.
-for DEVICE in $(busctl --json=short call org.bluez / org.freedesktop.DBus.ObjectManager GetManagedObjects |
-    jq -r --arg adapter "/org/bluez/$ADAPTER" '.data[0][]["org.bluez.Device1"] // empty | select(.Adapter.data == $adapter and .Paired.data) | .Address.data'); do
+# Never open the pairing window with an old pairing left in place.
+if ! OBJECTS=$(busctl --json=short call org.bluez / org.freedesktop.DBus.ObjectManager GetManagedObjects) ||
+    ! PAIRED=$(jq -r --arg adapter "/org/bluez/$ADAPTER" '.data[0][]["org.bluez.Device1"] // empty | select(.Adapter.data == $adapter and .Paired.data) | .Address.data' <<< "$OBJECTS"); then
+    echo "Error: could not list paired Bluetooth devices" >&2
+    exit 1
+fi
+for DEVICE in $PAIRED; do
     echo "Removing previously paired Bluetooth devices: $DEVICE"
-    bt-device -a "$ADAPTER" -r "$DEVICE"
+    if ! bt-device -a "$ADAPTER" -r "$DEVICE"; then
+        echo "Error: could not remove $DEVICE" >&2
+        exit 1
+    fi
 done
 
 # Make WLAN Pi Bluetooth PAN network discoverable for 30 seconds and allow a new Bluetooth device to pair

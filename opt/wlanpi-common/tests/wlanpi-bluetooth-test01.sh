@@ -76,4 +76,27 @@ check "no adapter from wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00
 rm "$BIN/wlanpi-bt-adapter"
 check "missing wlanpi-bt-adapter falls back to hci0" hci0 AA:00:00:00:00:01
 
+# A failed lookup or removal must stop before the pairing window opens.
+check_fails() {
+    local name=$1 out rc
+    : > "$LOG"
+    out=$(PATH="$BIN" "$BASH" "$SCRIPT" 2>&1)
+    rc=$?
+    if [ "$rc" != 0 ] && [[ $out == *Error:* ]] && ! grep -q '^systemctl' "$LOG"; then
+        echo "PASS: $name"
+    else
+        echo "FAIL: $name (rc=$rc)"
+        printf -- '--- output\n%s\n--- calls\n%s\n' "$out" "$(cat "$LOG")"
+        failed=1
+    fi
+}
+
+stub busctl 'exit 1'
+check_fails "busctl failure stops"
+stub busctl 'echo not json'
+check_fails "unreadable GetManagedObjects stops"
+stub busctl 'cat "$FIXTURE"'
+stub bt-device 'exit 1'
+check_fails "bt-device removal failure stops"
+
 exit "$failed"
