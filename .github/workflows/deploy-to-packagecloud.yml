@@ -61,7 +61,7 @@ jobs:
             armhf) target="wlanpi/dev/raspbian/${{ matrix.distro }}" ;;
             *)     target="wlanpi/dev/debian/${{ matrix.distro }}" ;;
           esac
-          sudo gem install package_cloud
+          sudo gem install package_cloud -v 0.3.15
           echo "Pushing ${DEB_PACKAGE} to ${target}"
           out=$(package_cloud push "${target}" "${DEB_PACKAGE}" 2>&1) || true
           echo "${out}"
