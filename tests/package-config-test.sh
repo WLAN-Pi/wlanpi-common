@@ -13,3 +13,7 @@ grep -q '^usr/lib/udev/rules.d/90-wlanpi-usb-otg.rules ' debian/wlanpi-common.in
 grep -q 'TEST!="/usr/bin/usb-ethernet-gadget.sh"' usr/lib/udev/rules.d/90-wlanpi-usb-otg.rules
 grep -q '^Address=198.18.42.1/24$' usr/lib/systemd/network/usb0.network
 grep -q 'udevadm trigger --action=add --subsystem-match=udc' debian/postinst
+# networkd must know usb0.network before the trigger creates usb0.
+reload_line=$(grep -n 'networkctl reload' debian/postinst | cut -d: -f1)
+trigger_line=$(grep -n 'udevadm trigger --action=add --subsystem-match=udc' debian/postinst | cut -d: -f1)
+[ "$reload_line" -lt "$trigger_line" ]
