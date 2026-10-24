@@ -67,6 +67,13 @@ jobs:
           echo "${out}"
           echo "${out}" | grep -q "Pushing .*success!"
 
+  tag:
+    name: Tag the release
+    needs: sbuild
+    permissions:
+      contents: write
+    uses: WLAN-Pi/gh-workflows/.github/workflows/tag-release.yml@main
+
   slack-workflow-status:
     if: ${{ always() && github.repository_owner == 'WLAN-Pi' && ! github.event.pull_request.head.repo.fork }}
     name: Post Workflow Status to Slack
