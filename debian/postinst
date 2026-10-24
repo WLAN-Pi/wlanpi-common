@@ -32,6 +32,10 @@ if command -v udevadm >/dev/null && ! ischroot; then
     udevadm trigger --action=add --subsystem-match=udc || true
 fi
 
+if ! ischroot; then
+    /usr/lib/systemd/systemd-sysctl /usr/lib/sysctl.d/90-wlanpi.conf || true
+fi
+
 # Migrate the image-created override now that the package owns the setting.
 IRTT_OVERRIDE=/etc/systemd/system/irtt.service.d/override.conf
 if [ -f "$IRTT_OVERRIDE" ] && [ "$(cat "$IRTT_OVERRIDE")" = $'[Service]\nUser=wlanpi' ]; then
