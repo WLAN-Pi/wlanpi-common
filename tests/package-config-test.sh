@@ -17,7 +17,7 @@ grep -q 'udevadm trigger --action=add --subsystem-match=udc' debian/postinst
 reload_line=$(grep -n 'networkctl reload' debian/postinst | cut -d: -f1)
 trigger_line=$(grep -n 'udevadm trigger --action=add --subsystem-match=udc' debian/postinst | cut -d: -f1)
 [ "$reload_line" -lt "$trigger_line" ]
-grep -qx 'net.ipv4.conf.all.arp_ignore = 1' usr/lib/sysctl.d/90-wlanpi.conf
-grep -qx 'kernel.panic = 10' usr/lib/sysctl.d/90-wlanpi.conf
+grep -qx 'net.ipv4.conf.eth0.arp_ignore = 1' usr/lib/sysctl.d/90-wlanpi.conf
+grep -qx 'kernel.panic = 1' usr/lib/sysctl.d/90-wlanpi.conf
 grep -qx 'usr/lib/sysctl.d/90-wlanpi.conf usr/lib/sysctl.d/' debian/wlanpi-common.install
 grep -q '/usr/lib/systemd/systemd-sysctl /usr/lib/sysctl.d/90-wlanpi.conf' debian/postinst
