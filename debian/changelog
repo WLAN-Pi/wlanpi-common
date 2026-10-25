@@ -1,3 +1,17 @@
+wlanpi-common (1.1.66) unstable; urgency=medium
+
+  * Behavior change: ARP is now filtered on every interface, not just
+    eth0. Each interface answers ARP only for its own addresses
+    (net.ipv4.conf.all.arp_ignore = 1), so wlan0 and usb0 no longer
+    answer for eth0's address, and ARP requests use the sending
+    interface's address (net.ipv4.conf.all.arp_announce = 2, new).
+    kernel.panic = 1 is unchanged. These now ship in
+    /usr/lib/sysctl.d/90-wlanpi.conf and apply on upgrade, because
+    trixie no longer reads /etc/sysctl.conf, where images used to set
+    them (#148).
+
+ -- jsz <josh@joshschmelzle.com>  Sat, 24 Oct 2026 22:55:23 -0400
+
 wlanpi-common (1.1.65) unstable; urgency=medium
 
   * wlanpi-bluetooth uses the adapter wlanpi-bluetooth chose
