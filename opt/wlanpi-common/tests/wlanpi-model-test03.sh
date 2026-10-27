@@ -57,7 +57,7 @@ detect(){
 }
 
 serial_read(){
-    grep -q -- "$SILENT" "$TMPROOT/timeout.log" && echo read || echo skipped
+    grep -q -- '-E ^14,' "$TMPROOT/timeout.log" && echo read || echo skipped
 }
 
 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
@@ -86,6 +86,11 @@ SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" EEPROM=1 detect
 assert_eq "M4+" "$MODEL" "M4+ EEPROM reports M4+"
 assert_eq "skipped" "$(serial_read)" "M4+ EEPROM skips the serial read"
 
+SERIAL="$SILENT" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" EEPROM=1 detect
+assert_eq "M4+" "$MODEL" "M4+ EEPROM wins over moved Go storage"
+assert_eq "" "$(cat "$TMPROOT/stderr")" "M4+ with moved Go storage prints nothing on stderr"
+assert_eq "skipped" "$(serial_read)" "M4+ with moved Go storage skips the serial read"
+
 SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" CACHE="$TMPROOT/m4plus-cache" I2C="$NONE" detect
 assert_eq "M4+" "$MODEL" "unreadable I2C with an M4+ cache reports M4+"
 
@@ -94,6 +99,12 @@ assert_eq "Go" "$MODEL" "Go hardware wins over a moved M4+ cache"
 
 SERIAL="$SILENT" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" CACHE="$TMPROOT/m4plus-cache" I2C="$NONE" detect
 assert_eq "Unknown platform" "$MODEL" "Go storage wins over an M4+ cache"
+
+FULL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" UPTIME_FILE="$TMPROOT/uptime" \
+    PRO_BATTERY_PRESENT="$NONE" GO_SERIAL="$SILENT" GO_DEVICE_INFO="$TMPROOT/go-model" \
+    MAX3421_COMPATIBLE_GLOB="$WITH_OVERLAY" MODEL_CACHE="$NONE" I2C_DEV="$TMPROOT/readable-i2c" \
+    "$SCRIPT_NAME" 2>/dev/null)
+assert_eq "" "$(echo "$FULL" | grep -E '^(Model|Main board):')" "full output for moved Go storage has no Model line"
 
 echo
 echo "Tests passed: $tests_passed, failed: $tests_failed"
