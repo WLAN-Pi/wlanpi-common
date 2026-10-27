@@ -27,8 +27,7 @@ printf 'Model\t\t: Raspberry Pi Compute Module 4 Rev 1.1\n' > "$TMPROOT/cpuinfo"
 mkdir -p "$TMPROOT/dt/spi@7e204000/max3421@0" "$TMPROOT/dt/spi@7e204000/spidev@1"
 printf 'maxim,max3421\0' > "$TMPROOT/dt/spi@7e204000/max3421@0/compatible"
 printf 'spidev\0' > "$TMPROOT/dt/spi@7e204000/spidev@1/compatible"
-# A FIFO with no writer blocks the serial read until its 2 s timeout.
-mkfifo "$TMPROOT/silent-serial"
+mkfifo "$TMPROOT/blocking-serial-fifo"
 printf '14,1,0\n' > "$TMPROOT/go-serial"
 printf 'Go\n' > "$TMPROOT/go-model"
 
@@ -41,12 +40,12 @@ brief(){
     ELAPSED_MS=$(( ($(date +%s%N) - start) / 1000000 ))
 }
 
-brief "$TMPROOT/dt/spi@*/spidev@*/compatible" "$TMPROOT/silent-serial" "$TMPROOT/none"
+brief "$TMPROOT/dt/spi@*/spidev@*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/none"
 assert_eq "M4" "$MODEL" "no max3421 node reports M4"
 assert_eq "skipped" "$([ "$ELAPSED_MS" -lt 1500 ] && echo skipped || echo "waited ${ELAPSED_MS}ms")" \
     "no max3421 node skips the serial read"
 
-brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/silent-serial" "$TMPROOT/go-model"
+brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/go-model"
 assert_eq "Go" "$MODEL" "max3421 and device-info model report Go"
 assert_eq "skipped" "$([ "$ELAPSED_MS" -lt 1500 ] && echo skipped || echo "waited ${ELAPSED_MS}ms")" \
     "device-info model skips the serial read"
@@ -54,7 +53,7 @@ assert_eq "skipped" "$([ "$ELAPSED_MS" -lt 1500 ] && echo skipped || echo "waite
 brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/go-serial" "$TMPROOT/none"
 assert_eq "Go" "$MODEL" "max3421 and Go serial line report Go"
 
-brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/silent-serial" "$TMPROOT/none"
+brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/none"
 assert_eq "M4" "$MODEL" "max3421 without a Go answer falls back to M4"
 
 brief "$TMPROOT/dt/spi@*/spidev@*/compatible" "$TMPROOT/go-serial" "$TMPROOT/go-model"

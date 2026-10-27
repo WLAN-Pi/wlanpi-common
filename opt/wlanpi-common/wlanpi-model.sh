@@ -162,8 +162,7 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
     # It is powered by CM4 but it isn't Pro
 
 
-    # Is it Go? Only the Go image loads the max3421 USB host overlay, so
-    # other boards skip the 2 s serial read.
+    # Only the Go image loads the max3421 overlay, so other CM4 boards skip the 2 s serial read.
     elif grep -qs max3421 $MAX3421_COMPATIBLE_GLOB && { grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null || timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null; }; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
