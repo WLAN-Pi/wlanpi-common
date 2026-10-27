@@ -66,7 +66,6 @@ UPTIME_FILE="${UPTIME_FILE:-/proc/uptime}"
 MODEL_CACHE="${MODEL_CACHE:-/etc/wlanpi-model}"
 I2C_DEV="${I2C_DEV:-/dev/i2c-1}"
 PRO_BATTERY_PRESENT="${PRO_BATTERY_PRESENT:-/sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present}"
-MAX3421_BOUND_GLOB="${MAX3421_BOUND_GLOB:-/sys/bus/spi/drivers/max3421-hcd/spi*}"
 MAX3421_COMPATIBLE_GLOB="${MAX3421_COMPATIBLE_GLOB:-/sys/firmware/devicetree/base/soc/spi@*/*/compatible}"
 GO_DEVICE_INFO="${GO_DEVICE_INFO:-/home/.device-info/model}"
 GO_SERIAL="${GO_SERIAL:-/dev/ttyAMA0}"
@@ -164,7 +163,7 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
         fi
         debugger "End script now. Platform is WLAN Pi Pro."
 
-    # Is it M4+? The Go has nothing on I2C, so this runs before the Go checks.
+    # The Go has nothing on I2C, so this runs before the Go checks.
     elif timeout 3 i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
             debugger "Detected M4+ Mcuzone EEPROM"
             if [ "$BRIEF_OUTPUT" -ne 0 ]; then
@@ -176,10 +175,9 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
             fi
             debugger "End script now. Platform is M4+."
 
-    # Is it Go? Only the board answers these: the max3421 chip, or the Go's
-    # controller on the serial port. The overlay and device-info files travel
-    # with the storage.
-    elif compgen -G "$MAX3421_BOUND_GLOB" > /dev/null || timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null; then
+    # Only the Go board answers on the serial port; its overlay and device-info
+    # files move with the storage.
+    elif timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Go"
@@ -189,8 +187,7 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
         fi
         debugger "End script now. Platform is Go."
 
-    # Go storage on a board that isn't a Go: the lite image lacks what the
-    # other boards need, so fail instead of guessing.
+    # The Go lite image lacks packages other boards need, so fail instead of guessing.
     elif grep -qs max3421 $MAX3421_COMPATIBLE_GLOB || grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null; then
         echo "wlanpi-model: Go software without Go hardware" >&2
         echo "Unknown platform"

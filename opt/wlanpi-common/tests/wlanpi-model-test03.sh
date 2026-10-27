@@ -24,10 +24,10 @@ assert_eq(){
 
 printf 'Model\t\t: Raspberry Pi Compute Module 4 Rev 1.1\n' > "$TMPROOT/cpuinfo"
 printf '600.00 1200.00\n' > "$TMPROOT/uptime"
-mkdir -p "$TMPROOT/dt/spi@7e204000/max3421@0" "$TMPROOT/dt/spi@7e204000/spidev@1" "$TMPROOT/bound"
+mkdir -p "$TMPROOT/dt/spi@7e204000/max3421@0" "$TMPROOT/dt/spi@7e204000/spidev@1"
 printf 'maxim,max3421\0' > "$TMPROOT/dt/spi@7e204000/max3421@0/compatible"
 printf 'spidev\0' > "$TMPROOT/dt/spi@7e204000/spidev@1/compatible"
-touch "$TMPROOT/bound/spi0.0" "$TMPROOT/readable-i2c"
+touch "$TMPROOT/readable-i2c"
 mkfifo "$TMPROOT/blocking-serial-fifo"
 printf '14,1,0\n' > "$TMPROOT/go-serial"
 printf 'Go\n' > "$TMPROOT/go-model"
@@ -35,11 +35,11 @@ printf 'WLAN Pi M4+\n' > "$TMPROOT/m4plus-cache"
 
 WITH_OVERLAY="$TMPROOT/dt/spi@*/*/compatible"
 NO_OVERLAY="$TMPROOT/dt/spi@*/spidev@*/compatible"
-BOUND="$TMPROOT/bound/spi*"
 SILENT="$TMPROOT/blocking-serial-fifo"
 NONE="$TMPROOT/none"
 
-# Stubs keep host I2C, USB, and PCIe devices out of the detected model.
+# Stubs keep host I2C, USB, and PCIe devices out of the detected model;
+# i2cdetect finds the M4+ EEPROM only when $TMPROOT/eeprom exists.
 mkdir "$TMPROOT/bin"
 printf '#!/bin/sh\nexit 1\n' > "$TMPROOT/bin/lsusb"
 cp "$TMPROOT/bin/lsusb" "$TMPROOT/bin/lspci"
@@ -47,55 +47,54 @@ printf '#!/bin/sh\n[ -e "%s" ] && echo "50: 50 -- -- --"\nexit 0\n' "$TMPROOT/ee
 printf '#!/bin/sh\necho "$*" >> "%s"\nexec %s "$@"\n' "$TMPROOT/timeout.log" "$(command -v timeout)" > "$TMPROOT/bin/timeout"
 chmod +x "$TMPROOT/bin/"*
 
-# detect BOUND_GLOB SERIAL DEVICE_INFO OVERLAY_GLOB [EEPROM] [CACHE] [I2C_DEV]
+# Set SERIAL, INFO, and OVERLAY for each case; EEPROM=1, CACHE, and I2C are optional.
 detect(){
     : > "$TMPROOT/timeout.log"
     rm -f "$TMPROOT/eeprom"
-    [ "${5:-}" = eeprom ] && touch "$TMPROOT/eeprom"
+    [ "${EEPROM:-0}" = 1 ] && touch "$TMPROOT/eeprom"
     MODEL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" UPTIME_FILE="$TMPROOT/uptime" \
-        PRO_BATTERY_PRESENT="$NONE" MAX3421_BOUND_GLOB="$1" GO_SERIAL="$2" GO_DEVICE_INFO="$3" \
-        MAX3421_COMPATIBLE_GLOB="$4" MODEL_CACHE="${6:-$NONE}" I2C_DEV="${7:-$TMPROOT/readable-i2c}" \
-        "$SCRIPT_NAME" -b 2>"$TMPROOT/stderr")
+        PRO_BATTERY_PRESENT="$NONE" GO_SERIAL="$SERIAL" GO_DEVICE_INFO="$INFO" \
+        MAX3421_COMPATIBLE_GLOB="$OVERLAY" MODEL_CACHE="${CACHE:-$NONE}" \
+        I2C_DEV="${I2C:-$TMPROOT/readable-i2c}" "$SCRIPT_NAME" -b 2>"$TMPROOT/stderr")
 }
 
 serial_read(){
     grep -q -- "$SILENT" "$TMPROOT/timeout.log" && echo read || echo skipped
 }
 
-detect "$BOUND" "$SILENT" "$NONE" "$WITH_OVERLAY"
-assert_eq "Go" "$MODEL" "bound max3421 driver reports Go"
-assert_eq "skipped" "$(serial_read)" "bound max3421 driver skips the serial read"
+SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
+assert_eq "Go" "$MODEL" "Go storage on a Go reports Go"
 
-detect "$NONE" "$TMPROOT/go-serial" "$NONE" "$NO_OVERLAY"
+SERIAL="$TMPROOT/go-serial" INFO="$NONE" OVERLAY="$NO_OVERLAY" detect
 assert_eq "Go" "$MODEL" "Go serial answer reports Go without the overlay"
 
-detect "$NONE" "$SILENT" "$TMPROOT/go-model" "$WITH_OVERLAY"
+SERIAL="$SILENT" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
 assert_eq "Unknown platform" "$MODEL" "Go storage on another board reports Unknown platform"
 assert_eq "wlanpi-model: Go software without Go hardware" "$(cat "$TMPROOT/stderr")" \
     "Go storage on another board explains why on stderr"
 
-detect "$NONE" "$SILENT" "$NONE" "$WITH_OVERLAY"
+SERIAL="$SILENT" INFO="$NONE" OVERLAY="$WITH_OVERLAY" detect
 assert_eq "Unknown platform" "$MODEL" "Go overlay without Go hardware reports Unknown platform"
 
-detect "$NONE" "$SILENT" "$TMPROOT/go-model" "$NO_OVERLAY"
+SERIAL="$SILENT" INFO="$TMPROOT/go-model" OVERLAY="$NO_OVERLAY" detect
 assert_eq "Unknown platform" "$MODEL" "Go device-info without Go hardware reports Unknown platform"
 
-detect "$NONE" "$SILENT" "$NONE" "$NO_OVERLAY"
+SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" detect
 assert_eq "M4" "$MODEL" "no Go signals report M4"
 assert_eq "read" "$(serial_read)" "M4 reads the serial port"
 assert_eq "" "$(cat "$TMPROOT/stderr")" "M4 prints nothing on stderr"
 
-detect "$NONE" "$SILENT" "$NONE" "$NO_OVERLAY" eeprom
+SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" EEPROM=1 detect
 assert_eq "M4+" "$MODEL" "M4+ EEPROM reports M4+"
 assert_eq "skipped" "$(serial_read)" "M4+ EEPROM skips the serial read"
 
-detect "$NONE" "$SILENT" "$NONE" "$NO_OVERLAY" "" "$TMPROOT/m4plus-cache" "$NONE"
+SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" CACHE="$TMPROOT/m4plus-cache" I2C="$NONE" detect
 assert_eq "M4+" "$MODEL" "unreadable I2C with an M4+ cache reports M4+"
 
-detect "$NONE" "$TMPROOT/go-serial" "$NONE" "$NO_OVERLAY" "" "$TMPROOT/m4plus-cache" "$NONE"
+SERIAL="$TMPROOT/go-serial" INFO="$NONE" OVERLAY="$NO_OVERLAY" CACHE="$TMPROOT/m4plus-cache" I2C="$NONE" detect
 assert_eq "Go" "$MODEL" "Go hardware wins over a moved M4+ cache"
 
-detect "$NONE" "$SILENT" "$TMPROOT/go-model" "$WITH_OVERLAY" "" "$TMPROOT/m4plus-cache" "$NONE"
+SERIAL="$SILENT" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" CACHE="$TMPROOT/m4plus-cache" I2C="$NONE" detect
 assert_eq "Unknown platform" "$MODEL" "Go storage wins over an M4+ cache"
 
 echo
