@@ -31,8 +31,7 @@ mkfifo "$TMPROOT/blocking-serial-fifo"
 printf '14,1,0\n' > "$TMPROOT/go-serial"
 printf 'Go\n' > "$TMPROOT/go-model"
 
-# Stubs keep host I2C, USB, and PCIe devices out of the result and log every
-# timeout call, so a test can check whether the serial port was read.
+# Stubs keep host I2C, USB, and PCIe devices out of the detected model.
 mkdir "$TMPROOT/bin"
 for tool in i2cdetect lsusb lspci; do
     printf '#!/bin/sh\nexit 1\n' > "$TMPROOT/bin/$tool"
