@@ -43,7 +43,14 @@ mkdir "$TMPROOT/bin"
 printf '#!/bin/sh\nexit 1\n' > "$TMPROOT/bin/lsusb"
 cp "$TMPROOT/bin/lsusb" "$TMPROOT/bin/lspci"
 printf '#!/bin/sh\n[ -e "%s" ] && echo "50: 50 -- -- --"\nexit 0\n' "$TMPROOT/eeprom" > "$TMPROOT/bin/i2cdetect"
-printf '#!/bin/sh\necho "$*" >> "%s"\nexec %s "$@"\n' "$TMPROOT/timeout.log" "$(command -v timeout)" > "$TMPROOT/bin/timeout"
+cat > "$TMPROOT/bin/timeout" <<EOF
+#!/bin/sh
+echo "\$*" >> "$TMPROOT/timeout.log"
+case "\$*" in
+    *"-E ^14,"*) [ "\$(grep -c -- '-E ^14,' "$TMPROOT/timeout.log")" -le "\${SERIAL_MISSES:-0}" ] && exit 124 ;;
+esac
+exec $(command -v timeout) "\$@"
+EOF
 chmod +x "$TMPROOT/bin/"*
 
 detect(){
@@ -58,6 +65,10 @@ detect(){
 
 serial_read(){
     grep -q -- '-E ^14,' "$TMPROOT/timeout.log" && echo read || echo skipped
+}
+
+serial_reads(){
+    grep -c -- '-E ^14,' "$TMPROOT/timeout.log"
 }
 
 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
@@ -79,7 +90,7 @@ assert_eq "Unknown platform" "$MODEL" "Go device-info without Go hardware report
 
 SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" detect
 assert_eq "M4" "$MODEL" "no Go signals report M4"
-assert_eq "read" "$(serial_read)" "M4 reads the serial port"
+assert_eq "1" "$(serial_reads)" "M4 reads the serial port once"
 assert_eq "" "$(cat "$TMPROOT/stderr")" "M4 prints nothing on stderr"
 
 SERIAL="$SILENT" INFO="$NONE" OVERLAY="$NO_OVERLAY" EEPROM=1 detect
@@ -105,6 +116,17 @@ FULL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" UPTIME_FILE="$TMPROO
     MAX3421_COMPATIBLE_GLOB="$WITH_OVERLAY" MODEL_CACHE="$NONE" I2C_DEV="$TMPROOT/readable-i2c" \
     "$SCRIPT_NAME" 2>/dev/null)
 assert_eq "" "$(echo "$FULL" | grep -E '^(Model|Main board):')" "full output for moved Go storage has no Model line"
+
+SERIAL_MISSES=2 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
+assert_eq "Go" "$MODEL" "Go storage reports Go when the third serial read answers"
+
+SERIAL_MISSES=3 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
+assert_eq "Unknown platform" "$MODEL" "Go storage reports Unknown platform after three missed reads"
+assert_eq "3" "$(serial_reads)" "Go storage reads the serial port three times"
+
+SERIAL_MISSES=1 SERIAL="$TMPROOT/go-serial" INFO="$NONE" OVERLAY="$NO_OVERLAY" detect
+assert_eq "M4" "$MODEL" "without Go storage one missed read reports M4"
+assert_eq "1" "$(serial_reads)" "without Go storage the serial port is read once"
 
 echo
 echo "Tests passed: $tests_passed, failed: $tests_failed"
