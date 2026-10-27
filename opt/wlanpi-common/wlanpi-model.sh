@@ -71,11 +71,15 @@ GO_DEVICE_INFO="${GO_DEVICE_INFO:-/home/.device-info/model}"
 GO_SERIAL="${GO_SERIAL:-/dev/ttyAMA0}"
 
 go_serial_answers() {
-    timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null
+    local tries=$1
+    while [ "$tries" -gt 0 ]; do
+        timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null && return 0
+        tries=$((tries - 1))
+    done
+    return 1
 }
 
 go_storage() {
-    # shellcheck disable=SC2086 # the glob must expand
     grep -qs max3421 $MAX3421_COMPATIBLE_GLOB || grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null
 }
 
@@ -185,8 +189,8 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
             debugger "End script now. Platform is M4+."
 
     # Not the overlay or device-info: they live on the CM4 eMMC and move with it.
-    # Go storage gets two more reads: a missed line must not fail a real Go.
-    elif go_serial_answers || { go_storage && { go_serial_answers || go_serial_answers; }; }; then
+    # A missed controller line must not fail a real Go.
+    elif go_serial_answers 1 || { go_storage && go_serial_answers 2; }; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Go"
