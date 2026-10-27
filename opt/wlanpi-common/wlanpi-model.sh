@@ -62,6 +62,9 @@ USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr
 USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
 
 CPUINFO="${CPUINFO:-/proc/cpuinfo}"
+MAX3421_COMPATIBLE_GLOB="${MAX3421_COMPATIBLE_GLOB:-/sys/firmware/devicetree/base/soc/spi@*/*/compatible}"
+GO_DEVICE_INFO="${GO_DEVICE_INFO:-/home/.device-info/model}"
+GO_SERIAL="${GO_SERIAL:-/dev/ttyAMA0}"
 
 usb_mode() {
     local dr_mode usb_devices
@@ -159,8 +162,9 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
     # It is powered by CM4 but it isn't Pro
 
 
-    # Is it Go?
-    elif timeout 2 grep -q -m 1 -E "^14," /dev/ttyAMA0 2>/dev/null || grep -i -q "^go$" /home/.device-info/model 2>/dev/null; then
+    # Is it Go? Only the Go image loads the max3421 USB host overlay, so
+    # other boards skip the 2 s serial read.
+    elif grep -qs max3421 $MAX3421_COMPATIBLE_GLOB && { grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null || timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null; }; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Go"
