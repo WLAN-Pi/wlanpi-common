@@ -175,8 +175,7 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
             fi
             debugger "End script now. Platform is M4+."
 
-    # Only the Go board answers on the serial port; its overlay and device-info
-    # files move with the storage.
+    # Not the overlay or device-info: they live on the CM4 eMMC and move with it.
     elif timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
@@ -187,7 +186,6 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
         fi
         debugger "End script now. Platform is Go."
 
-    # The Go lite image lacks packages other boards need, so fail instead of guessing.
     elif grep -qs max3421 $MAX3421_COMPATIBLE_GLOB || grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null; then
         echo "wlanpi-model: Go software without Go hardware" >&2
         echo "Unknown platform"

@@ -38,8 +38,7 @@ NO_OVERLAY="$TMPROOT/dt/spi@*/spidev@*/compatible"
 SILENT="$TMPROOT/blocking-serial-fifo"
 NONE="$TMPROOT/none"
 
-# Stubs keep host I2C, USB, and PCIe devices out of the detected model;
-# i2cdetect finds the M4+ EEPROM only when $TMPROOT/eeprom exists.
+# Stubs keep host I2C, USB, and PCIe devices out of the detected model.
 mkdir "$TMPROOT/bin"
 printf '#!/bin/sh\nexit 1\n' > "$TMPROOT/bin/lsusb"
 cp "$TMPROOT/bin/lsusb" "$TMPROOT/bin/lspci"
@@ -47,14 +46,13 @@ printf '#!/bin/sh\n[ -e "%s" ] && echo "50: 50 -- -- --"\nexit 0\n' "$TMPROOT/ee
 printf '#!/bin/sh\necho "$*" >> "%s"\nexec %s "$@"\n' "$TMPROOT/timeout.log" "$(command -v timeout)" > "$TMPROOT/bin/timeout"
 chmod +x "$TMPROOT/bin/"*
 
-# Set SERIAL, INFO, and OVERLAY for each case; EEPROM=1, CACHE, and I2C are optional.
 detect(){
     : > "$TMPROOT/timeout.log"
     rm -f "$TMPROOT/eeprom"
     [ "${EEPROM:-0}" = 1 ] && touch "$TMPROOT/eeprom"
     MODEL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" UPTIME_FILE="$TMPROOT/uptime" \
-        PRO_BATTERY_PRESENT="$NONE" GO_SERIAL="$SERIAL" GO_DEVICE_INFO="$INFO" \
-        MAX3421_COMPATIBLE_GLOB="$OVERLAY" MODEL_CACHE="${CACHE:-$NONE}" \
+        PRO_BATTERY_PRESENT="$NONE" GO_SERIAL="${SERIAL:?}" GO_DEVICE_INFO="${INFO:?}" \
+        MAX3421_COMPATIBLE_GLOB="${OVERLAY:?}" MODEL_CACHE="${CACHE:-$NONE}" \
         I2C_DEV="${I2C:-$TMPROOT/readable-i2c}" "$SCRIPT_NAME" -b 2>"$TMPROOT/stderr")
 }
 
