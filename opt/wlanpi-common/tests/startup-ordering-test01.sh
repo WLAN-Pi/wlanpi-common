@@ -44,7 +44,6 @@ first_reboot_line=$(grep -n 'systemctl reboot$' "$CONFIG_SCRIPT" | cut -d: -f1 |
 assert_ok "model cache uses a temporary file in /etc" grep -q 'mktemp /etc/.wlanpi-model.XXXXXX' "$CONFIG_SCRIPT"
 assert_ok "model cache is readable by unprivileged consumers" grep -q 'chmod 0644 "$MODEL_CACHE_TMP"' "$CONFIG_SCRIPT"
 assert_ok "model cache is published atomically" test -n "$cache_line"
-assert_ok "no model removes the stale model cache" grep -A3 '^if \[ -z "\$MODEL" \]; then$' "$CONFIG_SCRIPT" | grep -q 'rm -f /etc/wlanpi-model'
 assert_ok "model cache precedes reboot" test "$cache_line" -lt "$first_reboot_line"
 assert_ok "config-at-startup reboots only from the final block" test "$(grep -c 'reboot$' "$CONFIG_SCRIPT")" -eq 2
 assert_ok "reboot waits for multi-user.target" grep -q '^[[:space:]]*systemd-run --no-block --property=After=multi-user.target systemctl reboot$' "$CONFIG_SCRIPT"
@@ -58,6 +57,25 @@ if [ -n "$DEBIAN_RULES" ]; then
     assert_ok "rename-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start wlanpi-config-at-startup.service wlanpi-rename-at-startup.service' "$DEBIAN_RULES"
     assert_ok "check-for-updates runs during package install" grep -qE '^[[:space:]]*dh_installsystemd[[:space:]]+wlanpi-check-for-updates\.service[[:space:]]+wlanpi-networkinfo\.service' "$DEBIAN_RULES"
 fi
+
+# Runs the model-cache block with a stub wlanpi-model and /etc moved under a
+# temporary directory, starting from a cache another board left behind.
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+mkdir -p "$TMP/bin" "$TMP/etc"
+sed -n '/^SPECS=\$(wlanpi-model)$/,/^trap - EXIT$/p' "$CONFIG_SCRIPT" | sed "s#/etc/#$TMP/etc/#g" > "$TMP/cache-block.sh"
+run_cache_block(){
+    printf '#!/bin/sh\nprintf "%%s\\n" "%s"\n' "$1" > "$TMP/bin/wlanpi-model"
+    chmod +x "$TMP/bin/wlanpi-model"
+    printf 'WLAN Pi Go\n' > "$TMP/etc/wlanpi-model"
+    PATH="$TMP/bin:$PATH" bash -e "$TMP/cache-block.sh" 2>/dev/null
+}
+assert_ok "model cache block found" grep -q 'rm -f' "$TMP/cache-block.sh"
+run_cache_block "Unknown platform"
+assert_ok "no model exits nonzero" test "$?" -ne 0
+assert_ok "no model removes the stale model cache" test ! -e "$TMP/etc/wlanpi-model"
+run_cache_block "Model:                WLAN Pi M4"
+assert_ok "a detected model replaces the stale model cache" grep -qx "WLAN Pi M4" "$TMP/etc/wlanpi-model"
 
 echo
 echo "Tests passed: $tests_passed, failed: $tests_failed"
