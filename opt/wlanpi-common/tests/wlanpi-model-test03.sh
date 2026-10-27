@@ -31,30 +31,39 @@ mkfifo "$TMPROOT/blocking-serial-fifo"
 printf '14,1,0\n' > "$TMPROOT/go-serial"
 printf 'Go\n' > "$TMPROOT/go-model"
 
-ELAPSED_MS=0
+# Stubs keep host I2C, USB, and PCIe devices out of the result and log every
+# timeout call, so a test can check whether the serial port was read.
+mkdir "$TMPROOT/bin"
+for tool in i2cdetect lsusb lspci; do
+    printf '#!/bin/sh\nexit 1\n' > "$TMPROOT/bin/$tool"
+done
+printf '#!/bin/sh\necho "$*" >> "%s"\nexec %s "$@"\n' "$TMPROOT/timeout.log" "$(command -v timeout)" > "$TMPROOT/bin/timeout"
+chmod +x "$TMPROOT/bin/"*
+
 brief(){
-    local start
-    start=$(date +%s%N)
-    MODEL=$(CPUINFO="$TMPROOT/cpuinfo" MAX3421_COMPATIBLE_GLOB="$1" GO_SERIAL="$2" \
-        GO_DEVICE_INFO="$3" "$SCRIPT_NAME" -b 2>/dev/null)
-    ELAPSED_MS=$(( ($(date +%s%N) - start) / 1000000 ))
+    : > "$TMPROOT/timeout.log"
+    MODEL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" MAX3421_COMPATIBLE_GLOB="$1" \
+        GO_SERIAL="$2" GO_DEVICE_INFO="$3" "$SCRIPT_NAME" -b 2>/dev/null)
+}
+
+serial_read(){
+    grep -q -- "$1" "$TMPROOT/timeout.log" && echo read || echo skipped
 }
 
 brief "$TMPROOT/dt/spi@*/spidev@*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/none"
 assert_eq "M4" "$MODEL" "no max3421 node reports M4"
-assert_eq "skipped" "$([ "$ELAPSED_MS" -lt 1500 ] && echo skipped || echo "waited ${ELAPSED_MS}ms")" \
-    "no max3421 node skips the serial read"
+assert_eq "skipped" "$(serial_read "$TMPROOT/blocking-serial-fifo")" "no max3421 node skips the serial read"
 
 brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/go-model"
 assert_eq "Go" "$MODEL" "max3421 and device-info model report Go"
-assert_eq "skipped" "$([ "$ELAPSED_MS" -lt 1500 ] && echo skipped || echo "waited ${ELAPSED_MS}ms")" \
-    "device-info model skips the serial read"
+assert_eq "skipped" "$(serial_read "$TMPROOT/blocking-serial-fifo")" "device-info model skips the serial read"
 
 brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/go-serial" "$TMPROOT/none"
 assert_eq "Go" "$MODEL" "max3421 and Go serial line report Go"
 
 brief "$TMPROOT/dt/spi@*/*/compatible" "$TMPROOT/blocking-serial-fifo" "$TMPROOT/none"
 assert_eq "M4" "$MODEL" "max3421 without a Go answer falls back to M4"
+assert_eq "read" "$(serial_read "$TMPROOT/blocking-serial-fifo")" "max3421 without device-info reads the serial port"
 
 brief "$TMPROOT/dt/spi@*/spidev@*/compatible" "$TMPROOT/go-serial" "$TMPROOT/go-model"
 assert_eq "M4" "$MODEL" "Go answers are ignored without a max3421 node"
