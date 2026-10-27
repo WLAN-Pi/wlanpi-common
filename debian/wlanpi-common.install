@@ -8,3 +8,7 @@ usr/lib/systemd/system/irtt.service.d/wlanpi-common.conf usr/lib/systemd/system/
 usr/lib/systemd/network/usb0.network usr/lib/systemd/network/
 usr/lib/udev/rules.d/90-wlanpi-usb-otg.rules usr/lib/udev/rules.d/
 usr/lib/sysctl.d/90-wlanpi.conf usr/lib/sysctl.d/
+debian/wlanpi-check-for-updates.service usr/lib/systemd/system/
+debian/wlanpi-networkinfo.service usr/lib/systemd/system/
+debian/wlanpi-config-at-startup.service usr/lib/systemd/system/
+debian/wlanpi-rename-at-startup.service usr/lib/systemd/system/
