@@ -120,6 +120,14 @@ assert_eq "" "$(echo "$FULL" | grep -E '^(Model|Main board):')" "full output for
 SERIAL_MISSES=2 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
 assert_eq "Go" "$MODEL" "Go storage reports Go when the third serial read answers"
 
+SERIAL_MISSES=2 SERIAL="$TMPROOT/go-serial" INFO="$NONE" OVERLAY="$WITH_OVERLAY" detect
+assert_eq "Go" "$MODEL" "Go overlay alone retries until the third serial read"
+assert_eq "3" "$(serial_reads)" "Go overlay alone reads the serial port three times"
+
+SERIAL_MISSES=2 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$NO_OVERLAY" detect
+assert_eq "Go" "$MODEL" "Go device-info alone retries until the third serial read"
+assert_eq "3" "$(serial_reads)" "Go device-info alone reads the serial port three times"
+
 SERIAL_MISSES=3 SERIAL="$TMPROOT/go-serial" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" detect
 assert_eq "Unknown platform" "$MODEL" "Go storage reports Unknown platform after three missed reads"
 assert_eq "3" "$(serial_reads)" "Go storage reads the serial port three times"
