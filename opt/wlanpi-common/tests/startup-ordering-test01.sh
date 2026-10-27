@@ -12,8 +12,8 @@ CONFIG_SCRIPT="$DIR/wlanpi-config-at-startup.sh"
 SOURCE_ROOT="$DIR/../.."
 
 if [ -d "$SOURCE_ROOT/debian" ]; then
-    CONFIG_UNIT="$SOURCE_ROOT/debian/wlanpi-common.wlanpi-config-at-startup.service"
-    RENAME_UNIT="$SOURCE_ROOT/debian/wlanpi-common.wlanpi-rename-at-startup.service"
+    CONFIG_UNIT="$SOURCE_ROOT/debian/wlanpi-config-at-startup.service"
+    RENAME_UNIT="$SOURCE_ROOT/debian/wlanpi-rename-at-startup.service"
     AVAHI_OVERRIDE="$SOURCE_ROOT/etc/systemd/system/avahi-daemon.service.d/override.conf"
     DEBIAN_RULES="$SOURCE_ROOT/debian/rules"
 else
@@ -53,8 +53,9 @@ assert_ok "config-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.serv
 assert_ok "rename-at-startup runs before FPMS" grep -q '^Before=wlanpi-fpms.service$' "$RENAME_UNIT"
 assert_ok "Avahi runs after config-at-startup" grep -q '^After=wlanpi-config-at-startup.service$' "$AVAHI_OVERRIDE"
 if [ -n "$DEBIAN_RULES" ]; then
-    assert_ok "config-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start --name=wlanpi-config-at-startup' "$DEBIAN_RULES"
-    assert_ok "rename-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start --name=wlanpi-rename-at-startup' "$DEBIAN_RULES"
+    assert_ok "config-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start wlanpi-config-at-startup.service wlanpi-rename-at-startup.service' "$DEBIAN_RULES"
+    assert_ok "rename-at-startup does not run during package upgrades" grep -q 'dh_installsystemd --no-start wlanpi-config-at-startup.service wlanpi-rename-at-startup.service' "$DEBIAN_RULES"
+    assert_ok "check-for-updates runs during package install" grep -qE '^[[:space:]]*dh_installsystemd[[:space:]]+wlanpi-check-for-updates\.service[[:space:]]+wlanpi-networkinfo\.service' "$DEBIAN_RULES"
 fi
 
 echo
