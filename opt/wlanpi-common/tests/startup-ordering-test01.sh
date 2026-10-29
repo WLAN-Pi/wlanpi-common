@@ -58,6 +58,26 @@ if [ -n "$DEBIAN_RULES" ]; then
     assert_ok "check-for-updates runs during package install" grep -qE '^[[:space:]]*dh_installsystemd[[:space:]]+wlanpi-check-for-updates\.service[[:space:]]+wlanpi-networkinfo\.service' "$DEBIAN_RULES"
 fi
 
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+mkdir -p "$TMP/bin" "$TMP/etc"
+sed -n '/^SPECS=\$(wlanpi-model)$/,/^trap - EXIT$/p' "$CONFIG_SCRIPT" | sed "s#/etc/#$TMP/etc/#g" > "$TMP/cache-block.sh"
+seed_stale_cache_from_another_board(){
+    printf 'WLAN Pi Go\n' > "$TMP/etc/wlanpi-model"
+}
+run_cache_block(){
+    printf '#!/bin/sh\nprintf "%%s\\n" "%s"\n' "$1" > "$TMP/bin/wlanpi-model"
+    chmod +x "$TMP/bin/wlanpi-model"
+    seed_stale_cache_from_another_board
+    PATH="$TMP/bin:$PATH" bash -e "$TMP/cache-block.sh" 2>/dev/null
+}
+assert_ok "model cache block found" grep -q 'rm -f' "$TMP/cache-block.sh"
+run_cache_block "Unknown platform"
+assert_ok "no model exits nonzero" test "$?" -ne 0
+assert_ok "no model removes the stale model cache" test ! -e "$TMP/etc/wlanpi-model"
+run_cache_block "Model:                WLAN Pi M4"
+assert_ok "a detected model replaces the stale model cache" grep -qx "WLAN Pi M4" "$TMP/etc/wlanpi-model"
+
 echo
 echo "Tests passed: $tests_passed, failed: $tests_failed"
 [ "$tests_failed" -eq 0 ]

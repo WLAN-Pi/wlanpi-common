@@ -182,6 +182,8 @@ BOARD=$(echo "$SPECS" | grep "Main board:" | cut -d ":" -f2 | xargs)
 
 if [ -z "$MODEL" ]; then
     echo "ERROR: wlanpi-model returned no model" >&2
+    # The cache lives on boot storage, so a moved Go eMMC would keep its old model.
+    rm -f /etc/wlanpi-model
     exit 1
 fi
 
