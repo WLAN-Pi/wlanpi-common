@@ -1,0 +1,96 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: '0 4 * * *'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  offline-tests:
+    name: offline tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run offline regression tests
+        run: |
+          failed=0
+          skip=' wlanpi-hostname-test01.sh pcie-32bit-dma-device-test01.sh pcie-32bit-dma-parity-test01.sh '
+          for f in tests/*-test.sh; do
+            [ -e "$f" ] || continue
+            echo "::group::$f"
+            if ! bash "$f" </dev/null; then
+              echo "::error file=$f::$f failed"
+              failed=$((failed + 1))
+            fi
+            echo "::endgroup::"
+          done
+          cd opt/wlanpi-common/tests
+          for f in *-test0*.sh; do
+            [ -e "$f" ] || continue
+            case "$skip" in
+              *" $f "*)
+                echo "skipped $f (needs root, hardware, or separate job)"
+                continue
+                ;;
+            esac
+            echo "::group::$f"
+            if ! bash "$f" </dev/null; then
+              echo "::error file=opt/wlanpi-common/tests/$f::$f failed"
+              failed=$((failed + 1))
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::$failed offline test script(s) failed"
+            exit 1
+          fi
+
+  pcie-32bit-dma-parity:
+    name: pcie 32bit dma parity
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether to run
+        id: decide
+        run: |
+          run=false
+          case "$GITHUB_EVENT_NAME" in
+            schedule|workflow_dispatch)
+              run=true
+              ;;
+            push)
+              if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
+                | grep -qxE 'opt/wlanpi-common/wlanpi-config-at-startup\.sh|opt/wlanpi-common/tests/pcie-32bit-dma-parity-test01\.sh'; then
+                run=true
+              fi
+              ;;
+            pull_request)
+              if git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD \
+                | grep -qxE 'opt/wlanpi-common/wlanpi-config-at-startup\.sh|opt/wlanpi-common/tests/pcie-32bit-dma-parity-test01\.sh'; then
+                run=true
+              fi
+              ;;
+          esac
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: Run parity test
+        if: steps.decide.outputs.run == 'true'
+        run: bash pcie-32bit-dma-parity-test01.sh </dev/null
+        working-directory: opt/wlanpi-common/tests
