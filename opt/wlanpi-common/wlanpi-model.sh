@@ -62,9 +62,6 @@ USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr
 USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
 
 CPUINFO="${CPUINFO:-/proc/cpuinfo}"
-UPTIME_FILE="${UPTIME_FILE:-/proc/uptime}"
-MODEL_CACHE="${MODEL_CACHE:-/etc/wlanpi-model}"
-I2C_DEV="${I2C_DEV:-/dev/i2c-1}"
 PRO_BATTERY_PRESENT="${PRO_BATTERY_PRESENT:-/sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present}"
 MAX3421_COMPATIBLE_GLOB="${MAX3421_COMPATIBLE_GLOB:-/sys/firmware/devicetree/base/soc/spi@*/*/compatible}"
 GO_DEVICE_INFO="${GO_DEVICE_INFO:-/home/.device-info/model}"
@@ -77,10 +74,6 @@ go_serial_answers() {
         tries=$((tries - 1))
     done
     return 1
-}
-
-go_storage() {
-    grep -qs max3421 $MAX3421_COMPATIBLE_GLOB || grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null
 }
 
 usb_mode() {
@@ -117,14 +110,14 @@ fi
 # while a hub port retries enumeration. Only short-circuit when the model is
 # already on disk; with no cache the full detection must run so the first boot
 # records the correct model and board.
-UPTIME="$(cut -f1 -d '.' "$UPTIME_FILE")"
+UPTIME="$(cut -f1 -d '.' /proc/uptime)"
 EARLY_BOOT=0
 if [ "$UPTIME" -lt 60 ]; then
     EARLY_BOOT=1
 fi
 
 SKIP_PROBES=0
-if [ "$EARLY_BOOT" -eq 1 ] && [ -s "$MODEL_CACHE" ]; then
+if [ "$EARLY_BOOT" -eq 1 ] && [ -s /etc/wlanpi-model ]; then
     SKIP_PROBES=1
 fi
 
@@ -188,9 +181,9 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
             fi
             debugger "End script now. Platform is M4+."
 
-    # Not the overlay or device-info: they live on the CM4 eMMC and move with it.
-    # A missed controller line must not fail a real Go.
-    elif go_serial_answers 1 || { go_storage && go_serial_answers 2; }; then
+    # A second ttyAMA0 reader can swallow the controller line, so device-info goes first.
+    # The max3421 overlay ships only in the Go image, so it earns two more serial reads.
+    elif grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null || go_serial_answers 1 || { grep -qs max3421 $MAX3421_COMPATIBLE_GLOB && go_serial_answers 2; }; then
         debugger "Detected Go"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "Go"
@@ -199,11 +192,6 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
             echo "Main board:           Oscium Go"
         fi
         debugger "End script now. Platform is Go."
-
-    elif go_storage; then
-        echo "wlanpi-model: Go software without Go hardware" >&2
-        echo "Unknown platform"
-        debugger "End script now. Go software without Go hardware."
 
     # Is it M4+ prototype with PCIe packet switch? Skipped when the model is
     # cached and we are in early boot (see SKIP_PROBES): it probes USB/PCIe.
@@ -223,8 +211,8 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
     # at SSH login) cannot open /dev/i2c-1 to detect the Mcuzone EEPROM, and in OTG
     # mode the USB hub is not visible either, so trust the model cached at boot by
     # wlanpi-config-at-startup.sh running as root
-    elif [ ! -r "$I2C_DEV" ] && grep -q "M4+" "$MODEL_CACHE" 2>/dev/null; then
-        debugger "Cannot access i2c bus, using cached model from $MODEL_CACHE"
+    elif [ ! -r /dev/i2c-1 ] && grep -q "M4+" /etc/wlanpi-model 2>/dev/null; then
+        debugger "Cannot access i2c bus, using cached model from /etc/wlanpi-model"
         if [ "$BRIEF_OUTPUT" -ne 0 ]; then
             echo "M4+"
         else
