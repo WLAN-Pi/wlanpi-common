@@ -62,6 +62,68 @@ USB_DR_MODE_GLOB="${USB_DR_MODE_GLOB:-/sys/firmware/devicetree/base/soc/usb@*/dr
 USB_DEVICES_PATH="${USB_DEVICES_PATH:-/sys/bus/usb/devices}"
 
 CPUINFO="${CPUINFO:-/proc/cpuinfo}"
+PRO_BATTERY_PRESENT="${PRO_BATTERY_PRESENT:-/sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present}"
+MAX3421_COMPATIBLE_GLOB="${MAX3421_COMPATIBLE_GLOB:-/sys/firmware/devicetree/base/soc/spi@*/*/compatible}"
+GO_DEVICE_INFO="${GO_DEVICE_INFO:-/home/.device-info/model}"
+GO_SERIAL="${GO_SERIAL:-/dev/ttyAMA0}"
+
+go_serial_answers() {
+    local tries=$1
+    while [ "$tries" -gt 0 ]; do
+        timeout 2 grep -q -m 1 -E "^14," "$GO_SERIAL" 2>/dev/null && return 0
+        tries=$((tries - 1))
+    done
+    return 1
+}
+
+pro_battery_present() {
+    grep -q "1" "$PRO_BATTERY_PRESENT" > /dev/null 2>&1
+}
+
+m4plus_eeprom_present() {
+    timeout 3 i2cdetect -y 1 2>/dev/null | grep -q "50: 50"
+}
+
+go_device_info_says_go() {
+    grep -i -q "^go$" "$GO_DEVICE_INFO" 2>/dev/null
+}
+
+max3421_overlay_present() {
+    grep -qs max3421 $MAX3421_COMPATIBLE_GLOB
+}
+
+m4plus_prototype_ids() {
+    timeout 3 lsusb | grep -q "2109:3431" && timeout 3 lspci -n | grep -q "1106:3483" && timeout 3 lspci -n | grep -q "1b21:1182"
+}
+
+cache_says_m4plus() {
+    grep -q "M4+" /etc/wlanpi-model 2>/dev/null
+}
+
+emit_model() {
+    local brief=$1
+    local model=$2
+    local board=$3
+    if [ "$BRIEF_OUTPUT" -ne 0 ]; then
+        echo "$brief"
+    else
+        echo "Model:                $model"
+        echo "Main board:           $board"
+    fi
+}
+
+emit_m4plus_usb_mode() {
+    emit_model "M4+" "WLAN Pi M4+" "Mcuzone M4+"
+    if [ "$BRIEF_OUTPUT" -eq 0 ]; then
+        echo "USB mode:             $(usb_mode)"
+    fi
+}
+
+report_go() {
+    debugger "Detected Go"
+    emit_model "Go" "WLAN Pi Go" "Oscium Go"
+    debugger "End script now. Platform is Go."
+}
 
 usb_mode() {
     local dr_mode usb_devices
@@ -145,81 +207,42 @@ elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
         sleep 1
     fi
 
-    # Look for WLAN Pi Pro i2c Texas Instruments battery fuel gauge
-    if grep -q "1" /sys/devices/platform/soc/fe804000.i2c/i2c-1/1-0055/power_supply/bq27546-0/present > /dev/null 2>&1; then
+    if pro_battery_present; then
         debugger "Found WLAN Pi Pro i2c Texas Instruments battery fuel gauge"
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "Pro"
-        else
-            echo "Model:                WLAN Pi Pro"
-            echo "Main board:           WLAN Pi Pro"
-        fi
+        emit_model "Pro" "WLAN Pi Pro" "WLAN Pi Pro"
         debugger "End script now. Platform is WLAN Pi Pro."
 
-    # It is powered by CM4 but it isn't Pro
+    elif m4plus_eeprom_present; then
+        debugger "Detected M4+ Mcuzone EEPROM"
+        emit_m4plus_usb_mode
+        debugger "End script now. Platform is M4+."
 
+    elif go_device_info_says_go; then
+        report_go
 
-    # Is it Go?
-    elif timeout 2 grep -q -m 1 -E "^14," /dev/ttyAMA0 2>/dev/null || grep -i -q "^go$" /home/.device-info/model 2>/dev/null; then
-        debugger "Detected Go"
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "Go"
-        else
-            echo "Model:                WLAN Pi Go"
-            echo "Main board:           Oscium Go"
-        fi
-        debugger "End script now. Platform is Go."
+    elif go_serial_answers 1; then
+        report_go
 
-    # Is it M4+?
-    elif timeout 3 i2cdetect -y 1 2>/dev/null | grep -q "50: 50"; then
-            debugger "Detected M4+ Mcuzone EEPROM"
-            if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-                echo "M4+"
-            else
-                echo "Model:                WLAN Pi M4+"
-                echo "Main board:           Mcuzone M4+"
-                echo "USB mode:             $(usb_mode)"
-            fi
-            debugger "End script now. Platform is M4+."
+    elif max3421_overlay_present && go_serial_answers 2; then
+        report_go
 
-    # Is it M4+ prototype with PCIe packet switch? Skipped when the model is
-    # cached and we are in early boot (see SKIP_PROBES): it probes USB/PCIe.
-    elif [ "$SKIP_PROBES" -eq 0 ] && timeout 3 lsusb | grep -q "2109:3431" && timeout 3 lspci -n | grep -q "1106:3483" && timeout 3 lspci -n | grep -q "1b21:1182"; then
+    elif max3421_overlay_present; then
+        report_go
+
+    elif [ "$SKIP_PROBES" -eq 0 ] && m4plus_prototype_ids; then
         debugger "Found ID 2109:3431 VIA Labs, Inc. Hub in lsusb"
         debugger "Found USB controller: VIA Technologies, Inc. VL805/806 xHCI USB 3.0 Controller (rev 01) in lspci"
         debugger "Found PCI bridge: ASMedia Technology Inc. ASM1182e 2-Port PCIe x1 Gen2 Packet Switch in lspci"
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "M4+"
-        else
-            echo "Model:                WLAN Pi M4+"
-            echo "Main board:           Mcuzone M4+"
-        fi
+        emit_model "M4+" "WLAN Pi M4+" "Mcuzone M4+"
         debugger "End script now. Platform is M4+ prototype with PCIe packet switch."
 
-    # Is it M4+ that we cannot probe directly? Unprivileged users (e.g. wlanpi-stats
-    # at SSH login) cannot open /dev/i2c-1 to detect the Mcuzone EEPROM, and in OTG
-    # mode the USB hub is not visible either, so trust the model cached at boot by
-    # wlanpi-config-at-startup.sh running as root
-    elif [ ! -r /dev/i2c-1 ] && grep -q "M4+" /etc/wlanpi-model 2>/dev/null; then
+    elif [ ! -r /dev/i2c-1 ] && cache_says_m4plus; then
         debugger "Cannot access i2c bus, using cached model from /etc/wlanpi-model"
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "M4+"
-        else
-            echo "Model:                WLAN Pi M4+"
-            echo "Main board:           Mcuzone M4+"
-            echo "USB mode:             $(usb_mode)"
-        fi
+        emit_m4plus_usb_mode
         debugger "End script now. Platform is M4+ from cached model."
 
-    # Assume M4
     else
-            # HDMI module is loaded (status 0)
-        if [ "$BRIEF_OUTPUT" -ne 0 ]; then
-            echo "M4"
-        else
-            echo "Model:                WLAN Pi M4"
-            echo "Main board:           Mcuzone M4"
-        fi
+        emit_model "M4" "WLAN Pi M4" "Mcuzone M4"
         debugger "End script now. Platform is M4."
     fi
 
