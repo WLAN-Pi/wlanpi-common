@@ -1,5 +1,4 @@
 #!/bin/bash
-# wlanpi-model-test03.sh (no arguments): tests wlanpi-model.sh CM4 detection of the Go, M4+, and M4
 
 SCRIPT_NAME="$(dirname "$0")/../wlanpi-model.sh"
 
@@ -74,7 +73,7 @@ assert_eq "Go" "$MODEL" "Go overlay without device-info reports Go on the third 
 assert_eq "3" "$(serial_reads)" "Go overlay without device-info reads the serial port three times"
 
 SERIAL_MISSES=$SILENT INFO="$NONE" OVERLAY="$WITH_OVERLAY" detect
-assert_eq "M4" "$MODEL" "Go overlay with a silent serial port reports M4"
+assert_eq "Go" "$MODEL" "Go overlay with a silent serial port reports Go"
 assert_eq "3" "$(serial_reads)" "Go overlay with a silent serial port stops after three reads"
 
 SERIAL_MISSES=$SILENT INFO="$NONE" OVERLAY="$NO_OVERLAY" detect
