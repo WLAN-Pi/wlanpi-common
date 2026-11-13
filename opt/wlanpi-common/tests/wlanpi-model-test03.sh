@@ -50,11 +50,13 @@ chmod +x "$TMPROOT/bin/"*
 
 detect(){
     : > "$TMPROOT/timeout.log"
-    rm -f "$TMPROOT/eeprom"
+    rm -f "$TMPROOT/eeprom" "$TMPROOT/platform-cache"
     [ "${EEPROM:-0}" = 1 ] && touch "$TMPROOT/eeprom"
+    [ -n "${CACHE:-}" ] && printf '%s\n' "$CACHE" > "$TMPROOT/platform-cache"
     MODEL=$(PATH="$TMPROOT/bin:$PATH" CPUINFO="$TMPROOT/cpuinfo" \
         PRO_BATTERY_PRESENT="${PRO:-$NONE}" GO_SERIAL="$TMPROOT/go-serial" GO_DEVICE_INFO="${INFO:?}" \
-        MAX3421_COMPATIBLE_GLOB="${OVERLAY:?}" "$SCRIPT_NAME" -b 2>/dev/null)
+        MAX3421_COMPATIBLE_GLOB="${OVERLAY:?}" PLATFORM_CACHE="$TMPROOT/platform-cache" \
+        "$SCRIPT_NAME" -b 2>/dev/null)
 }
 
 serial_reads(){
