@@ -23,20 +23,11 @@ Tips shown after SSH login appear one per line in `/opt/wlanpi-common/motd-tips.
 
 ### Platform detection
 
-`wlanpi-model` identifies the platform (R4, R5, M4, M4+, Pro, Go) by a first-match sequence of hardware probes: the SoC from `/proc/cpuinfo`, then on a CM4 the Pro battery gauge, the M4+ EEPROM, a Go device-info file, the Go serial port, and the Go `max3421` overlay.
+`wlanpi-model` identifies the platform by a first-match sequence of hardware probes, then writes the model to `/etc/wlanpi-model`. Later calls use that file if it exists; delete it to force a new detection. Moving the card or CM4 to a different device means a reflash.
 
-The detected platform is written to `/etc/wlanpi-model` on the first successful detection. On later boots, detection is skipped when that file exists and still matches this SoC family (Raspberry Pi 4, Raspberry Pi 5, or Compute Module 4). "Matches" is that cheap family check only; a cached Pro on any CM4 is treated as a match, even if the board is an M4.
+`/home/.device-info/model` is a Go identity file, not this cache.
 
-These media moves are not supported and are not handled in code. They will apply the cached platform's settings on the wrong hardware and can break the device:
-
-- Moving an SD card from a Pro to an M4, or from an M4 to a Pro
-- Moving a Go CM4 (onboard eMMC; the Go has no microSD slot) to another platform
-
-If a cheap check disagrees with a cached CM4 subtype (a Pro cache with no battery gauge, an M4 cache with a Pro battery, or a Go cache with no Go overlay and no Go device-info), `wlanpi-model` prints a warning and still uses the cache. Delete `/etc/wlanpi-model` to force a new detection. A family mismatch (for example an R4 cache on a CM4) is re-detected and the cache is overwritten.
-
-`/home/.device-info/model` is not this cache. It is a Go identity file written by the Go image (`go-hw-machine-id`) onto the Go's eMMC, and `wlanpi-model` only uses it as a Go probe.
-
-M.2 Wi-Fi cards are identified from `lspci` plus instantiation: a card is treated as present only when a network interface exists under its PCI device in sysfs. A card that enumerates in `lspci` but has no netdev (for example a BE200 that failed to load firmware) is reported as "enumerated, not instantiated".
+M.2 Wi-Fi cards come from `lspci`. A card with a netdev under its PCI device is listed as before. A card without a netdev is listed with three stages: PCI enumerated, driver bound (`/sys/bus/pci/devices/*/driver`), and netdev present.
 
 ## Installation
 

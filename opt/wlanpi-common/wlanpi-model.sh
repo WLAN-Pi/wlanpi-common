@@ -24,11 +24,10 @@ brief_output(){
 show_help(){
     echo "Detects WLAN Pi and Wi-Fi adapter model"
     echo
-    echo "The detected platform is cached in /etc/wlanpi-model after the"
-    echo "first successful detection. Later calls skip detection when that"
-    echo "file exists and the SoC family still matches. Moving an SD card"
-    echo "between a Pro and an M4, or a Go CM4 to another platform, is not"
-    echo "supported. Delete the cache file to force a new detection."
+    echo "The detected platform is cached in /etc/wlanpi-model. Later"
+    echo "calls use that file if it exists. Moving the card or CM4 to a"
+    echo "different device means a reflash; delete the file to force a"
+    echo "new detection."
     echo
     echo "Usage:"
     echo "  $SCRIPT_NAME"
@@ -118,34 +117,18 @@ cached_model_name() {
     printf '%s\n' "$raw"
 }
 
-soc_family() {
-    if grep -q "Raspberry Pi 3 Model B Rev 1.2" "$CPUINFO" || grep -q "Raspberry Pi 4 Model B" "$CPUINFO"; then
-        printf '%s\n' r4
-    elif grep -q "Raspberry Pi 5 Model B" "$CPUINFO"; then
-        printf '%s\n' r5
-    elif grep -q "Raspberry Pi Compute Module 4" "$CPUINFO"; then
-        printf '%s\n' cm4
-    else
-        printf '%s\n' unknown
-    fi
-}
-
-cached_soc_family() {
+known_cached_model() {
     case "$1" in
-        "WLAN Pi R4"|"R4") printf '%s\n' r4 ;;
-        "WLAN Pi R5"|"R5") printf '%s\n' r5 ;;
-        "WLAN Pi M4"|"M4"|"WLAN Pi M4+"|"M4+"|"WLAN Pi Pro"|"Pro"|"WLAN Pi Go"|"Go")
-            printf '%s\n' cm4 ;;
-        *) printf '%s\n' unknown ;;
+        "WLAN Pi R4"|"R4"|"WLAN Pi R5"|"R5"|"WLAN Pi M4"|"M4"|"WLAN Pi M4+"|"M4+"|"WLAN Pi Pro"|"Pro"|"WLAN Pi Go"|"Go")
+            return 0 ;;
+        *) return 1 ;;
     esac
 }
 
-platform_cache_matches() {
-    local cached cached_fam cpu_fam
+platform_cache_usable() {
+    local cached
     cached=$(cached_model_name) || return 1
-    cached_fam=$(cached_soc_family "$cached")
-    cpu_fam=$(soc_family)
-    [ "$cached_fam" != unknown ] && [ "$cpu_fam" != unknown ] && [ "$cached_fam" = "$cpu_fam" ]
+    known_cached_model "$cached"
 }
 
 write_platform_cache() {
@@ -159,34 +142,6 @@ write_platform_cache() {
     fi
     rm -f -- "$tmp"
     return 0
-}
-
-warn_unsupported() {
-    echo "wlanpi-model: $1" >&2
-    if command -v logger >/dev/null 2>&1; then
-        logger -t wlanpi-model -- "$1" || true
-    fi
-}
-
-warn_if_unsupported_move() {
-    local cached=$1
-    case "$cached" in
-        "WLAN Pi Pro"|"Pro")
-            if ! pro_battery_present; then
-                warn_unsupported "cached platform is Pro, but the Pro battery gauge is not present. Moving an SD card between a Pro and an M4 is not supported."
-            fi
-            ;;
-        "WLAN Pi M4"|"M4")
-            if pro_battery_present; then
-                warn_unsupported "cached platform is M4, but a Pro battery gauge is present. Moving an SD card between a Pro and an M4 is not supported."
-            fi
-            ;;
-        "WLAN Pi Go"|"Go")
-            if ! max3421_overlay_present && ! go_device_info_says_go; then
-                warn_unsupported "cached platform is Go, but this board has no Go overlay and no Go device-info. Moving a Go CM4 to another platform is not supported."
-            fi
-            ;;
-    esac
 }
 
 emit_model() {
@@ -218,7 +173,6 @@ report_go() {
 emit_cached_platform() {
     local cached brief model board
     cached=$(cached_model_name)
-    warn_if_unsupported_move "$cached"
     case "$cached" in
         "WLAN Pi R4"|"R4")
             brief=R4
@@ -260,6 +214,18 @@ pci_card_instantiated() {
     return 1
 }
 
+pci_driver_bound() {
+    local d="$PCI_DEVICES_DIR/$1/driver"
+    [ -L "$d" ] || [ -d "$d" ]
+}
+
+pci_driver_name() {
+    local d="$PCI_DEVICES_DIR/$1/driver" target
+    target=$(readlink -f "$d" 2>/dev/null || readlink "$d" 2>/dev/null) || return 0
+    [ -n "$target" ] || return 0
+    basename -- "$target"
+}
+
 pci_sysfs_addr() {
     case "$1" in
         *:*:*.*) printf '%s\n' "$1" ;;
@@ -268,18 +234,34 @@ pci_sysfs_addr() {
     esac
 }
 
+print_m2_stage() {
+    printf '                      %-20s %s\n' "$1" "$2"
+}
+
 print_m2_wifi_adapters() {
-    local line addr sysfs name any=0
+    local line addr sysfs name any=0 driver
     while IFS= read -r line; do
         [ -n "$line" ] || continue
         addr=${line%% *}
         sysfs=$(pci_sysfs_addr "$addr") || continue
         name=$(printf '%s\n' "$line" | cut -d ":" -f 3- | cut -c 2-)
+        echo "M.2 Wi-Fi adapter:    $name"
         if pci_card_instantiated "$sysfs"; then
-            echo "M.2 Wi-Fi adapter:    $name"
-        else
-            echo "M.2 Wi-Fi adapter:    $name (enumerated, not instantiated)"
+            any=1
+            continue
         fi
+        print_m2_stage "PCI enumerated:" "yes"
+        if pci_driver_bound "$sysfs"; then
+            driver=$(pci_driver_name "$sysfs")
+            if [ -n "$driver" ]; then
+                print_m2_stage "driver bound:" "yes ($driver)"
+            else
+                print_m2_stage "driver bound:" "yes"
+            fi
+        else
+            print_m2_stage "driver bound:" "no"
+        fi
+        print_m2_stage "netdev present:" "no"
         any=1
     done
     [ "$any" -eq 1 ]
@@ -330,8 +312,8 @@ if [ "$EARLY_BOOT" -eq 1 ] && [ -s "$PLATFORM_CACHE" ]; then
     SKIP_PROBES=1
 fi
 
-if platform_cache_matches; then
-    debugger "Platform cache matches this SoC family"
+if platform_cache_usable; then
+    debugger "Using cached platform from $PLATFORM_CACHE"
     emit_cached_platform
 
 # Is it Raspberry Pi 3? It isn't officially supported but let's pretend it is R4.

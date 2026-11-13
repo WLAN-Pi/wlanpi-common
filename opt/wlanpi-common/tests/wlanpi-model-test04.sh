@@ -49,14 +49,11 @@ assert_not_contains(){
 
 printf 'Model\t\t: Raspberry Pi Compute Module 4 Rev 1.1\n' > "$TMPROOT/cpuinfo-cm4"
 printf 'Model\t\t: Raspberry Pi 4 Model B Rev 1.4\n' > "$TMPROOT/cpuinfo-r4"
-mkdir -p "$TMPROOT/dt/spi@7e204000/max3421@0" "$TMPROOT/dt/spi@7e204000/spidev@1"
-printf 'maxim,max3421\0' > "$TMPROOT/dt/spi@7e204000/max3421@0/compatible"
+mkdir -p "$TMPROOT/dt/spi@7e204000/spidev@1"
 printf 'spidev\0' > "$TMPROOT/dt/spi@7e204000/spidev@1/compatible"
 printf '14,1,0\n' > "$TMPROOT/go-serial"
-printf 'Go\n' > "$TMPROOT/go-model"
 printf '1\n' > "$TMPROOT/pro-battery"
 
-WITH_OVERLAY="$TMPROOT/dt/spi@*/*/compatible"
 NO_OVERLAY="$TMPROOT/dt/spi@*/spidev@*/compatible"
 NONE="$TMPROOT/none"
 SILENT=9
@@ -97,48 +94,47 @@ run_model(){
         "$SCRIPT_NAME" "$@" 2>"$TMPROOT/stderr"
 }
 
+
 MODEL=$(SERIAL_MISSES=$SILENT INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" CACHE="" run_model)
 assert_eq "M4" "$MODEL" "first CM4 detection with no Go signals reports M4"
 assert_eq "WLAN Pi M4" "$(cat "$TMPROOT/platform-cache")" "first detection writes the platform cache"
 assert_eq "1" "$(serial_reads)" "first M4 detection reads the serial port once"
 
 MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi Go" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
-assert_eq "Go" "$MODEL" "matching Go cache reports Go without detection"
-assert_eq "0" "$(serial_reads)" "matching Go cache skips the serial read"
-assert_contains "Moving a Go CM4 to another platform is not supported" "$(cat "$TMPROOT/stderr")" \
-    "Go cache without overlay or device-info warns that the move is unsupported"
-
-MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi Go" INFO="$TMPROOT/go-model" OVERLAY="$WITH_OVERLAY" PRO="$NONE" run_model)
-assert_eq "Go" "$MODEL" "matching Go cache with Go hardware reports Go"
-assert_eq "0" "$(serial_reads)" "matching Go cache with Go hardware skips the serial read"
-assert_eq "" "$(cat "$TMPROOT/stderr")" "matching Go cache with Go hardware does not warn"
+assert_eq "Go" "$MODEL" "Go cache reports Go and skips detection"
+assert_eq "0" "$(serial_reads)" "Go cache skips the serial read"
+assert_eq "" "$(cat "$TMPROOT/stderr")" "Go cache does not warn"
+assert_eq "WLAN Pi Go" "$(cat "$TMPROOT/platform-cache")" "Go cache is left unchanged"
 
 MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi Pro" PRO="$NONE" INFO="$NONE" OVERLAY="$NO_OVERLAY" run_model)
-assert_eq "Pro" "$MODEL" "matching Pro cache reports Pro when the battery is absent"
-assert_eq "0" "$(serial_reads)" "matching Pro cache skips the serial read"
-assert_contains "Moving an SD card between a Pro and an M4 is not supported" "$(cat "$TMPROOT/stderr")" \
-    "Pro cache without a battery warns that the SD move is unsupported"
+assert_eq "Pro" "$MODEL" "Pro cache is trusted when the battery is absent"
+assert_eq "0" "$(serial_reads)" "Pro cache skips the serial read"
+assert_eq "" "$(cat "$TMPROOT/stderr")" "Pro cache does not warn"
 
 MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi M4" PRO="$TMPROOT/pro-battery" INFO="$NONE" OVERLAY="$NO_OVERLAY" run_model)
-assert_eq "M4" "$MODEL" "matching M4 cache reports M4 when a Pro battery is present"
-assert_contains "Moving an SD card between a Pro and an M4 is not supported" "$(cat "$TMPROOT/stderr")" \
-    "M4 cache with a Pro battery warns that the SD move is unsupported"
+assert_eq "M4" "$MODEL" "M4 cache is trusted when a Pro battery is present"
+assert_eq "" "$(cat "$TMPROOT/stderr")" "M4 cache does not warn"
 
 MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
-assert_eq "M4" "$MODEL" "R4 cache on a CM4 is a family mismatch and re-detects as M4"
-assert_eq "1" "$(serial_reads)" "family-mismatch cache does not skip detection"
-assert_eq "WLAN Pi M4" "$(cat "$TMPROOT/platform-cache")" "re-detection overwrites a mismatched cache"
+assert_eq "R4" "$MODEL" "R4 cache on a CM4 is trusted without re-detection"
+assert_eq "0" "$(serial_reads)" "R4 cache on a CM4 skips detection"
+assert_eq "WLAN Pi R4" "$(cat "$TMPROOT/platform-cache")" "trusted R4 cache is not overwritten"
 
 MODEL=$(SERIAL_MISSES=$SILENT CACHE="WLAN Pi M4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" EEPROM=1 run_model)
-assert_eq "M4" "$MODEL" "matching M4 cache is used even when an M4+ EEPROM is present"
-assert_eq "0" "$(serial_reads)" "matching M4 cache skips EEPROM and serial probes"
+assert_eq "M4" "$MODEL" "M4 cache is used even when an M4+ EEPROM is present"
+assert_eq "0" "$(serial_reads)" "M4 cache skips EEPROM and serial probes"
+
+MODEL=$(SERIAL_MISSES=$SILENT CACHE="not-a-model" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
+assert_eq "M4" "$MODEL" "unrecognized cache content is ignored and detection runs"
+assert_eq "1" "$(serial_reads)" "unrecognized cache does not skip detection"
+assert_eq "WLAN Pi M4" "$(cat "$TMPROOT/platform-cache")" "detection overwrites unrecognized cache content"
 
 MODEL=$(CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
 assert_eq "R4" "$MODEL" "Pi 4 first detection reports R4"
 assert_eq "WLAN Pi R4" "$(cat "$TMPROOT/platform-cache")" "Pi 4 first detection writes the platform cache"
 
 MODEL=$(CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
-assert_eq "R4" "$MODEL" "matching R4 cache reports R4"
+assert_eq "R4" "$MODEL" "R4 cache on a Pi 4 reports R4"
 
 BE200='01:00.0 Network controller [0280]: Intel Corporation Wi-Fi 7(R) BE200 320MHz [8086:272b] (rev 1a)'
 BE200_NAME='Intel Corporation Wi-Fi 7(R) BE200 320MHz [8086:272b] (rev 1a)'
@@ -146,23 +142,47 @@ mkdir -p "$TMPROOT/pci/0000:01:00.0"
 printf '%s\n' "$BE200" > "$TMPROOT/lspci.out"
 
 OUT=$(FULL=1 CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
-assert_contains "M.2 Wi-Fi adapter:    $BE200_NAME (enumerated, not instantiated)" "$OUT" \
-    "a BE200 in lspci without a netdev is reported as not instantiated"
+assert_contains "M.2 Wi-Fi adapter:    $BE200_NAME" "$OUT" \
+    "a BE200 in lspci is listed as an M.2 adapter"
+assert_contains "PCI enumerated:      yes" "$OUT" \
+    "an enumerated BE200 with no driver reports PCI enumerated yes"
+assert_contains "driver bound:        no" "$OUT" \
+    "an enumerated BE200 with no driver reports driver bound no"
+assert_not_contains "firmware loaded:" "$OUT" \
+    "firmware loaded is not reported"
+assert_contains "netdev present:      no" "$OUT" \
+    "an enumerated BE200 with no netdev reports netdev present no"
 assert_not_contains "No Wi-Fi adapter" "$OUT" \
     "an enumerated but uninstantiated card is not reported as no adapter"
+
+mkdir -p "$TMPROOT/drivers/iwlwifi"
+ln -sfn "$TMPROOT/drivers/iwlwifi" "$TMPROOT/pci/0000:01:00.0/driver"
+OUT=$(FULL=1 CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
+assert_contains "M.2 Wi-Fi adapter:    $BE200_NAME" "$OUT" \
+    "a bound BE200 without a netdev keeps the adapter name line"
+assert_contains "PCI enumerated:      yes" "$OUT" \
+    "a bound BE200 without a netdev reports PCI enumerated yes"
+assert_contains "driver bound:        yes (iwlwifi)" "$OUT" \
+    "a bound BE200 without a netdev reports the bound driver"
+assert_not_contains "firmware loaded:" "$OUT" \
+    "a bound BE200 without a netdev does not report firmware loaded"
+assert_contains "netdev present:      no" "$OUT" \
+    "a bound BE200 without a netdev reports netdev present no"
+assert_not_contains "enumerated, not instantiated" "$OUT" \
+    "the old single-label wording is not used"
 
 mkdir -p "$TMPROOT/pci/0000:01:00.0/net/wlan0"
 OUT=$(FULL=1 CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
 assert_contains "M.2 Wi-Fi adapter:    $BE200_NAME" "$OUT" \
     "a BE200 with a netdev is reported as an M.2 adapter"
+assert_not_contains "PCI enumerated:" "$OUT" \
+    "an instantiated BE200 does not include stage lines"
+assert_not_contains "firmware loaded:" "$OUT" \
+    "an instantiated BE200 does not report firmware"
+assert_not_contains "netdev present:" "$OUT" \
+    "an instantiated BE200 does not report netdev stage"
 assert_not_contains "not instantiated" "$OUT" \
     "an instantiated BE200 is not labelled as uninstantiated"
-
-rm -rf "$TMPROOT/pci/0000:01:00.0/net"
-mkdir -p "$TMPROOT/pci/0000:01:00.0/driver"
-OUT=$(FULL=1 CPUINFO="$TMPROOT/cpuinfo-r4" CACHE="WLAN Pi R4" INFO="$NONE" OVERLAY="$NO_OVERLAY" PRO="$NONE" run_model)
-assert_contains "M.2 Wi-Fi adapter:    $BE200_NAME (enumerated, not instantiated)" "$OUT" \
-    "a bound driver without a netdev is not treated as instantiated"
 
 : > "$TMPROOT/lspci.out"
 rm -rf "$TMPROOT/pci"
