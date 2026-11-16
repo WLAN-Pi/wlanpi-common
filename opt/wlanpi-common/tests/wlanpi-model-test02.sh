@@ -28,11 +28,13 @@ fake_cpuinfo(){
 }
 
 model_line(){
-    CPUINFO="$TMPROOT/cpuinfo" "$SCRIPT_NAME" 2>/dev/null | grep "^$1:" | cut -d ":" -f2 | xargs
+    rm -f "$TMPROOT/platform-cache"
+    CPUINFO="$TMPROOT/cpuinfo" PLATFORM_CACHE="$TMPROOT/platform-cache" "$SCRIPT_NAME" 2>/dev/null | grep "^$1:" | cut -d ":" -f2 | xargs
 }
 
 brief(){
-    CPUINFO="$TMPROOT/cpuinfo" "$SCRIPT_NAME" -b
+    rm -f "$TMPROOT/platform-cache"
+    CPUINFO="$TMPROOT/cpuinfo" PLATFORM_CACHE="$TMPROOT/platform-cache" "$SCRIPT_NAME" -b
 }
 
 fake_cpuinfo c03114 "Raspberry Pi 4 Model B Rev 1.4"

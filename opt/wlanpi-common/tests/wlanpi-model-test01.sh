@@ -84,7 +84,7 @@ printf '#!/bin/sh\ncat "$HCICONFIG_OUT"\n' > "$TMPROOT/bin/hciconfig"
 chmod +x "$TMPROOT/bin/"*
 bluetooth_line() {
     HCICONFIG_OUT="$TMPROOT/hciconfig.out" PATH="$TMPROOT/bin:$PATH" \
-        bash "$SCRIPT_NAME" | grep -E "^(No )?Bluetooth adapter"
+        PLATFORM_CACHE="$TMPROOT/none-cache" bash "$SCRIPT_NAME" | grep -E "^(No )?Bluetooth adapter"
 }
 
 printf 'hci0:\tType: Primary  Bus: UART\n\tBD Address: B8:27:EB:00:00:01  ACL MTU: 1021:8  SCO MTU: 64:1\n' > "$TMPROOT/hciconfig.out"
